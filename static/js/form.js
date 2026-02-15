@@ -3,7 +3,7 @@
     'use strict';
 
     // ВАЖНО: Обнови этот URL после деплоя Cloudflare Worker!
-    const FORM_API_URL = 'https://REPLACE_WITH_YOUR_WORKER_URL';
+    const FORM_API_URL = 'https://platform.mctl.me/api/submit';
 
     const form = document.getElementById('access-form');
     const formStatus = document.getElementById('form-status');
