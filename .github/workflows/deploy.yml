@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: dmitriimashkov/mctl-landing
+  IMAGE_NAME: mashkovd/mctl-landing
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -18,6 +18,10 @@ jobs:
         with: {registry: ghcr.io, username: '${{github.actor}}', password: '${{secrets.GITHUB_TOKEN}}'}
       - id: meta
         uses: docker/metadata-action@v5
-        with: {images: 'ghcr.io/dmitriimashkov/mctl-landing', tags: 'type=sha\ntype=raw,value=latest'}
+        with:
+          images: ghcr.io/mashkovd/mctl-landing
+          tags: |
+            type=sha
+            type=raw,value=latest
       - uses: docker/build-push-action@v6
         with: {context: ., push: true, tags: '${{steps.meta.outputs.tags}}', cache-from: 'type=gha', cache-to: 'type=gha,mode=max'}
