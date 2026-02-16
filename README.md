@@ -1,141 +1,92 @@
 # mctl.me Landing Page
 
-Landing page for the mctl.me GitOps platform with Telegram bot integration for access requests.
+Landing page for the mctl.me GitOps platform with GitHub OAuth authentication and Telegram notifications.
 
-## 🚀 Quick Start
+## How It Works
 
-### 1. Cloudflare Worker Setup (FIRST!)
+```
+User clicks "Sign in with GitHub"
+    ↓
+GitHub OAuth → Cloudflare Worker exchanges code for token
+    ↓
+Worker fetches user profile, signs login with HMAC
+    ↓
+Redirect back with verified identity in URL hash
+    ↓
+User fills team name → submits form
+    ↓
+Worker verifies HMAC signature → sends Telegram notification
+```
+
+## Setup
+
+### 1. Create GitHub OAuth App
+
+Go to https://github.com/settings/developers → New OAuth App:
+- **Application name:** mctl.me Landing
+- **Homepage URL:** https://mctl.me
+- **Authorization callback URL:** https://platform.mctl.me/api/github/callback
+
+### 2. Cloudflare Worker Secrets
 
 ```bash
 cd cloudflare-worker
 
-# Install Wrangler
-npm install -g wrangler
-
-# Login to Cloudflare
-wrangler login
-
-# Set secrets
 wrangler secret put TELEGRAM_BOT_TOKEN
-# Paste: 1378576085:AAEfwLsUyxo-0q1IUKzuanqS-RrY6263ocQ
-
 wrangler secret put TELEGRAM_CHAT_ID
-# Paste: 210408407
+wrangler secret put GITHUB_CLIENT_ID
+wrangler secret put GITHUB_CLIENT_SECRET
+wrangler secret put GITHUB_OAUTH_HMAC_KEY    # random 32+ char string
 
-# Deploy worker
 wrangler deploy
 ```
 
-After deployment, you'll get a URL like:
-```
-https://mctl-landing-form.<your-subdomain>.workers.dev
-```
-
-### 2. Update Landing Page
-
-Edit `static/js/form.js` line 6:
-```javascript
-const FORM_API_URL = 'https://mctl-landing-form.<your-subdomain>.workers.dev';
-```
-
-### 3. Create GitHub Repository
+### 3. Deploy
 
 ```bash
-# Create on GitHub
-gh repo create mctl-landing --public
-
-# Push code
-git remote add origin https://github.com/dmitriimashkov/mctl-landing.git
-git add .
-git commit -m "feat: initial landing page with Telegram integration"
-git push -u origin main
+git push origin main
+# GitHub Actions builds → ArgoCD deploys to https://platform.mctl.me
 ```
 
-### 4. Deploy to ArgoCD
-
-В основном репозитории `mctl.me` уже есть:
-- `platform-gitops/services/preview/admin/landing-page/values.yaml`
-- `platform-gitops/services/preview/admin/landing-page/catalog-info.yaml`
-
-ArgoCD автоматически задеплоит landing page на `https://platform.mctl.me`
-
-## 📋 How It Works
-
-```
-User fills form → JavaScript POST to Cloudflare Worker
-                ↓
-         Cloudflare Worker validates
-                ↓
-         Sends message to Telegram
-                ↓
-      You receive notification in Telegram
-```
-
-## 🔧 Configuration
-
-**Telegram Bot Token:** `1378576085:AAEfwLsUyxo-0q1IUKzuanqS-RrY6263ocQ`
-**Your Chat ID:** `210408407`
-
-## 🎨 Design
-
-- DevOps terminal aesthetic
-- Dark theme with neon accents
-- Fully responsive
-- Pure HTML/CSS/JS (no build step)
-
-## 📦 Deployment
+## Local Development
 
 ```bash
-# Local test
 docker build -t mctl-landing .
 docker run -p 8080:80 mctl-landing
 open http://localhost:8080
-
-# Production
-git push origin main
-# GitHub Actions builds → ArgoCD deploys
 ```
 
-## 🐛 Debugging
+Note: OAuth flow won't work locally (GitHub redirects to production callback URL).
 
-Test Cloudflare Worker directly:
-```bash
-curl -X POST https://YOUR-WORKER-URL \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test User",
-    "email": "test@example.com",
-    "github": "testuser",
-    "team": "test-team",
-    "usecase": "Testing"
-  }'
-```
+## Worker API Endpoints
 
-You should receive a Telegram message!
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/api/github/login` | Initiate GitHub OAuth |
+| GET | `/api/github/callback` | OAuth callback, exchange code, redirect with user data |
+| POST | `/api/submit` | Submit access request (requires HMAC-verified GitHub auth) |
 
-## 📝 Files
+## Files
 
 ```
 mctl-landing/
 ├── static/
-│   ├── index.html       # Landing page
-│   ├── css/style.css    # Styles
-│   └── js/form.js       # Form handler
+│   ├── index.html          # Landing page
+│   ├── css/style.css        # Styles
+│   ├── js/form.js           # OAuth + form handler
+│   └── img/                 # Tech stack SVG logos
 ├── cloudflare-worker/
-│   ├── index.js         # Worker code
-│   ├── wrangler.toml    # Config
-│   └── README.md        # Setup instructions
-├── Dockerfile           # Nginx container
+│   ├── index.js             # Worker (OAuth + Telegram)
+│   └── wrangler.toml        # Config
+├── Dockerfile               # Nginx container
 ├── .github/workflows/
-│   └── deploy.yml       # CI/CD
-└── README.md            # This file
+│   └── deploy.yml           # CI/CD
+└── README.md
 ```
 
-## 🚀 Next Steps
+## Security
 
-1. ✅ Deploy Cloudflare Worker
-2. ✅ Update `FORM_API_URL` in `static/js/form.js`
-3. ✅ Push to GitHub
-4. ✅ Verify ArgoCD deployment
-5. ✅ Test form submission
-6. ✅ Receive Telegram notification!
+- **CSRF protection:** State parameter signed with HMAC, stored in HttpOnly cookie (5 min TTL)
+- **Identity verification:** GitHub login signed with HMAC — cannot forge the `#auth=` URL fragment
+- **Token isolation:** GitHub access token used only server-side in Worker, never sent to frontend
+- **CORS:** Restricted to `https://mctl.me`
