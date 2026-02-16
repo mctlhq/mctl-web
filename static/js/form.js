@@ -33,8 +33,6 @@
     const githubAuthSection = document.getElementById('github-auth');
     const githubProfileSection = document.getElementById('github-profile');
     const authErrorEl = document.getElementById('auth-error');
-    const nameInput = document.getElementById('name');
-    const emailInput = document.getElementById('email');
     const teamInput = document.getElementById('team');
 
     // Modal refs
@@ -106,16 +104,10 @@
     }
 
     function prefillForm(user) {
-        if (user.name) {
-            nameInput.value = user.name;
-        }
-        if (user.email) {
-            emailInput.value = user.email;
-        }
         document.getElementById('github-auth-data').value = JSON.stringify({
             login: user.login,
-            name: user.name,
-            email: user.email,
+            name: user.name || user.login,
+            email: user.email || '',
             avatar_url: user.avatar_url,
             html_url: user.html_url,
             sig: user.sig,
@@ -130,8 +122,6 @@
         githubAuthSection.style.display = '';
         githubProfileSection.style.display = 'none';
         submitBtn.disabled = true;
-        nameInput.value = '';
-        emailInput.value = '';
         document.getElementById('github-auth-data').value = '';
         teamInput.value = '';
     }
@@ -238,8 +228,6 @@
 
             // Build payload
             const githubAuth = JSON.parse(document.getElementById('github-auth-data').value);
-            githubAuth.name = nameInput.value.trim();
-            githubAuth.email = emailInput.value.trim();
 
             try {
                 const response = await fetch(FORM_API_URL, {

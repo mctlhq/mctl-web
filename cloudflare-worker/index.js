@@ -264,8 +264,8 @@ async function handleFormSubmit(request, env) {
 
     const { login, name, email, avatar_url, html_url } = github_auth;
 
-    if (!name || !email || !team) {
-      return jsonResponse({ success: false, message: 'Missing required fields' }, 400);
+    if (!team) {
+      return jsonResponse({ success: false, message: 'Missing team name' }, 400);
     }
 
     const teamNameRegex = /^[a-z0-9][a-z0-9-]{0,62}$/;
@@ -328,8 +328,8 @@ async function handleFormSubmit(request, env) {
     const msg = [
       `🚀 *mctl\\.me — New Access*`,
       ``,
-      `👤 [@${esc(login)}](${esc(html_url)})`,
-      `📧 ${esc(email)}`,
+      `👤 [@${esc(login)}](${esc(html_url)})${name ? ` \\(${esc(name)}\\)` : ''}`,
+      email ? `📧 ${esc(email)}` : null,
       `🏷 Team: \`${esc(team)}\` ${esc(teamStatus)}`,
       `👥 Membership: ${esc(inviteStatus)}`,
       usecase ? `📝 ${esc(usecase)}` : null,
