@@ -1,19 +1,22 @@
 /**
  * Cloudflare Worker for mctl.me landing page
  * - GitHub OAuth (login + callback)
- * - Form submission with HMAC-verified GitHub identity → Telegram
+ * - Team availability check via GitHub API
+ * - Auto-create team + invite user + Telegram notification
  *
  * Environment variables (set via wrangler secret):
  * - TELEGRAM_BOT_TOKEN: Telegram bot token
- * - TELEGRAM_CHAT_ID: Telegram chat ID for notifications
+ * - TELEGRAM_CHAT_ID: Telegram chat ID
  * - GITHUB_CLIENT_ID: GitHub OAuth App client ID
  * - GITHUB_CLIENT_SECRET: GitHub OAuth App client secret
  * - GITHUB_OAUTH_HMAC_KEY: random 32+ char string for signing
+ * - GITHUB_ORG_TOKEN: PAT with admin:org scope for team management
  */
 
 const ALLOWED_ORIGIN = 'https://platform.mctl.me';
 const LANDING_URL = 'https://platform.mctl.me';
 const CALLBACK_URL = 'https://platform.mctl.me/api/github/callback';
+const GITHUB_ORG = 'dmitriimashkov';
 
 export default {
   async fetch(request, env) {
@@ -35,6 +38,11 @@ export default {
       return handleGitHubCallback(url, request, env);
     }
 
+    // Check team availability
+    if (request.method === 'GET' && path === '/api/github/check-team') {
+      return handleCheckTeam(url, env);
+    }
+
     // Form submission
     if (request.method === 'POST' && path === '/api/submit') {
       return handleFormSubmit(request, env);
@@ -49,7 +57,7 @@ export default {
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 }
@@ -58,6 +66,20 @@ function jsonResponse(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders(), 'Content-Type': 'application/json', ...extraHeaders },
+  });
+}
+
+// ─── GitHub API helper ───────────────────────────────────────────────────────
+
+function githubAPI(path, token, options = {}) {
+  return fetch(`https://api.github.com${path}`, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'User-Agent': 'mctl-landing',
+      'Accept': 'application/vnd.github+json',
+      ...(options.headers || {}),
+    },
   });
 }
 
@@ -80,12 +102,9 @@ async function hmacVerify(data, signature, secret) {
 // ─── GitHub OAuth: Login ─────────────────────────────────────────────────────
 
 async function handleGitHubLogin(env) {
-  // Generate random state for CSRF protection
   const stateBytes = new Uint8Array(16);
   crypto.getRandomValues(stateBytes);
   const state = Array.from(stateBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-
-  // Sign state for verification in callback
   const stateSig = await hmacSign(state, env.GITHUB_OAUTH_HMAC_KEY);
 
   const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
@@ -110,22 +129,13 @@ async function handleGitHubCallback(url, request, env) {
   const state = url.searchParams.get('state');
   const error = url.searchParams.get('error');
 
-  // User denied access
-  if (error) {
-    return redirectWithError('ACCESS_DENIED');
-  }
-
-  if (!code || !state) {
-    return redirectWithError('MISSING_PARAMS');
-  }
+  if (error) return redirectWithError('ACCESS_DENIED');
+  if (!code || !state) return redirectWithError('MISSING_PARAMS');
 
   // Validate state from cookie
   const cookies = parseCookies(request.headers.get('Cookie') || '');
   const stateCookie = cookies['__gh_state'];
-
-  if (!stateCookie) {
-    return redirectWithError('INVALID_STATE');
-  }
+  if (!stateCookie) return redirectWithError('INVALID_STATE');
 
   const [cookieState, cookieSig] = stateCookie.split('.');
   if (cookieState !== state || !await hmacVerify(cookieState, cookieSig, env.GITHUB_OAUTH_HMAC_KEY)) {
@@ -137,10 +147,7 @@ async function handleGitHubCallback(url, request, env) {
   try {
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({
         client_id: env.GITHUB_CLIENT_ID,
         client_secret: env.GITHUB_CLIENT_SECRET,
@@ -149,45 +156,30 @@ async function handleGitHubCallback(url, request, env) {
       }),
     });
     const tokenData = await tokenResponse.json();
-    if (tokenData.error) {
-      console.error('Token exchange error:', tokenData.error);
-      return redirectWithError('TOKEN_EXCHANGE');
-    }
+    if (tokenData.error) return redirectWithError('TOKEN_EXCHANGE');
     accessToken = tokenData.access_token;
   } catch (e) {
-    console.error('Token exchange failed:', e);
     return redirectWithError('TOKEN_EXCHANGE');
   }
 
-  // Fetch GitHub user profile and emails
+  // Fetch user profile and emails
   let user, emails;
   try {
     const [userRes, emailsRes] = await Promise.all([
-      fetch('https://api.github.com/user', {
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'User-Agent': 'mctl-landing' },
-      }),
-      fetch('https://api.github.com/user/emails', {
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'User-Agent': 'mctl-landing' },
-      }),
+      githubAPI('/user', accessToken),
+      githubAPI('/user/emails', accessToken),
     ]);
-    if (!userRes.ok || !emailsRes.ok) {
-      return redirectWithError('PROFILE_FETCH');
-    }
+    if (!userRes.ok || !emailsRes.ok) return redirectWithError('PROFILE_FETCH');
     user = await userRes.json();
     emails = await emailsRes.json();
   } catch (e) {
-    console.error('Profile fetch failed:', e);
     return redirectWithError('PROFILE_FETCH');
   }
 
-  // Find verified primary email
   const primaryEmail = emails.find(e => e.primary && e.verified);
   const email = primaryEmail ? primaryEmail.email : (user.email || '');
-
-  // Sign login for verification on form submit
   const sig = await hmacSign(user.login, env.GITHUB_OAUTH_HMAC_KEY);
 
-  // Build user data payload
   const userData = {
     login: user.login,
     name: user.name || '',
@@ -197,16 +189,13 @@ async function handleGitHubCallback(url, request, env) {
     sig,
   };
 
-  // Base64url encode
   const encoded = btoa(JSON.stringify(userData))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-  // Redirect back to landing page with auth data in hash
   return new Response(null, {
     status: 302,
     headers: {
       'Location': `${LANDING_URL}/#auth=${encoded}`,
-      // Clear state cookie
       'Set-Cookie': '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
     },
   });
@@ -231,6 +220,31 @@ function parseCookies(cookieHeader) {
   return cookies;
 }
 
+// ─── Check Team Availability ─────────────────────────────────────────────────
+
+async function handleCheckTeam(url, env) {
+  const name = url.searchParams.get('name');
+  if (!name) {
+    return jsonResponse({ error: 'Missing team name' }, 400);
+  }
+
+  const teamNameRegex = /^[a-z0-9][a-z0-9-]{0,62}$/;
+  if (!teamNameRegex.test(name)) {
+    return jsonResponse({ available: false, error: 'Invalid team name format' }, 400);
+  }
+
+  try {
+    const res = await githubAPI(`/orgs/${GITHUB_ORG}/teams/${name}`, env.GITHUB_ORG_TOKEN);
+    if (res.status === 404) {
+      return jsonResponse({ available: true });
+    }
+    return jsonResponse({ available: false, message: 'Team already exists' });
+  } catch (e) {
+    console.error('Check team error:', e);
+    return jsonResponse({ error: 'Failed to check team' }, 500);
+  }
+}
+
 // ─── Form Submit ─────────────────────────────────────────────────────────────
 
 async function handleFormSubmit(request, env) {
@@ -238,12 +252,11 @@ async function handleFormSubmit(request, env) {
     const data = await request.json();
     const { github_auth, team, usecase } = data;
 
-    // Validate GitHub auth data
+    // Validate GitHub auth
     if (!github_auth || !github_auth.login || !github_auth.sig) {
       return jsonResponse({ success: false, message: 'GitHub authentication required' }, 401);
     }
 
-    // Verify HMAC signature
     const validSig = await hmacVerify(github_auth.login, github_auth.sig, env.GITHUB_OAUTH_HMAC_KEY);
     if (!validSig) {
       return jsonResponse({ success: false, message: 'Invalid authentication signature' }, 403);
@@ -251,74 +264,113 @@ async function handleFormSubmit(request, env) {
 
     const { login, name, email, avatar_url, html_url } = github_auth;
 
-    // Validate required fields
     if (!name || !email || !team) {
       return jsonResponse({ success: false, message: 'Missing required fields' }, 400);
     }
 
-    // Validate team name
     const teamNameRegex = /^[a-z0-9][a-z0-9-]{0,62}$/;
     if (!teamNameRegex.test(team)) {
-      return jsonResponse({ success: false, message: 'Invalid team name format. Use lowercase alphanumeric with hyphens (max 63 chars).' }, 400);
+      return jsonResponse({ success: false, message: 'Invalid team name format' }, 400);
     }
 
-    // Build Telegram message
-    const message = `
-🚀 *New mctl\\.me Access Request*
+    // ─── Create GitHub team ───
+    let teamCreated = false;
+    let teamError = null;
+    try {
+      const createRes = await githubAPI(`/orgs/${GITHUB_ORG}/teams`, env.GITHUB_ORG_TOKEN, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: team,
+          description: `mctl.me team. Backstage: https://backstage-preview.mctl.me/ | ArgoCD: https://argocd-preview.mctl.me/ | Access via GitHub SSO`,
+          privacy: 'secret',
+        }),
+      });
+      if (createRes.status === 201) {
+        teamCreated = true;
+      } else {
+        const err = await createRes.json();
+        teamError = err.message || `Status ${createRes.status}`;
+      }
+    } catch (e) {
+      teamError = e.message;
+    }
 
-🐙 *GitHub:* [@${escapeMarkdown(login)}](${escapeMarkdown(html_url)}) \\(verified via OAuth\\)
-👤 *Name:* ${escapeMarkdown(name)}
-📧 *Email:* ${escapeMarkdown(email)}
-🏷 *Team:* \`${escapeMarkdown(team)}\`
-📝 *Use Case:* ${escapeMarkdown(usecase || 'Not specified')}
+    // ─── Invite user to team ───
+    let userInvited = false;
+    let inviteError = null;
+    if (teamCreated) {
+      try {
+        const inviteRes = await githubAPI(
+          `/orgs/${GITHUB_ORG}/teams/${team}/memberships/${login}`,
+          env.GITHUB_ORG_TOKEN,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: 'member' }),
+          }
+        );
+        if (inviteRes.ok) {
+          userInvited = true;
+        } else {
+          const err = await inviteRes.json();
+          inviteError = err.message || `Status ${inviteRes.status}`;
+        }
+      } catch (e) {
+        inviteError = e.message;
+      }
+    }
 
-⏰ *Submitted:* ${new Date().toISOString()}
+    // ─── Build Telegram message ───
+    const teamStatus = teamCreated ? '✅ Created' : `❌ ${teamError}`;
+    const inviteStatus = userInvited ? '✅ Invited' : (teamCreated ? `❌ ${inviteError}` : '⏭ Skipped');
 
-\\-\\-\\-
-
-*Next Steps:*
-\`\`\`bash
-# 1. Create GitHub team
-gh api /orgs/dmitriimashkov/teams \\
-  -f name=${team} \\
-  -f privacy=secret
-
-# 2. Invite user
-gh api /orgs/dmitriimashkov/teams/${team}/memberships/${login} \\
-  -X PUT -f role=member
-
-# 3. Trigger RBAC sync
-gh workflow run sync-argocd-teams.yml
-\`\`\`
-
-✅ User will get:
-• Namespace: \`${team}\`
-• ArgoCD access: \`preview\\-${team}\\-*\`
-• Backstage login via GitHub OAuth
-    `.trim();
+    const msg = [
+      `🚀 *mctl\\.me — New Access*`,
+      ``,
+      `👤 [@${esc(login)}](${esc(html_url)})`,
+      `📧 ${esc(email)}`,
+      `🏷 Team: \`${esc(team)}\` ${esc(teamStatus)}`,
+      `👥 Membership: ${esc(inviteStatus)}`,
+      usecase ? `📝 ${esc(usecase)}` : null,
+      ``,
+      `🔗 *Platform Access \\(via GitHub SSO\\):*`,
+      `• [Backstage](https://backstage\\-preview\\.mctl\\.me/)`,
+      `• [ArgoCD](https://argocd\\-preview\\.mctl\\.me/)`,
+      ``,
+      `⏰ ${new Date().toISOString().replace(/[-.]/g, '\\$&')}`,
+    ].filter(Boolean).join('\n');
 
     // Send to Telegram
     const telegramUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
-    const telegramResponse = await fetch(telegramUrl, {
+    await fetch(telegramUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: env.TELEGRAM_CHAT_ID,
-        text: message,
+        text: msg,
         parse_mode: 'MarkdownV2',
+        disable_web_page_preview: true,
       }),
     });
 
-    if (!telegramResponse.ok) {
-      const error = await telegramResponse.text();
-      console.error('Telegram API error:', error);
-      throw new Error('Failed to send Telegram message');
+    // Response to frontend
+    if (teamCreated && userInvited) {
+      return jsonResponse({
+        success: true,
+        message: `Team "${team}" created! Check your GitHub for an invitation.`,
+      });
+    } else if (teamCreated) {
+      return jsonResponse({
+        success: true,
+        message: `Team "${team}" created, but invitation failed. Admin will follow up.`,
+      });
+    } else {
+      return jsonResponse({
+        success: false,
+        message: `Failed to create team: ${teamError}`,
+      }, 500);
     }
-
-    return jsonResponse({
-      success: true,
-      message: 'Request submitted! You will be contacted soon.',
-    });
 
   } catch (error) {
     console.error('Error:', error);
@@ -326,9 +378,9 @@ gh workflow run sync-argocd-teams.yml
   }
 }
 
-// ─── Telegram Markdown V2 escaping ──────────────────────────────────────────
+// ─── Telegram MarkdownV2 escaping ────────────────────────────────────────────
 
-function escapeMarkdown(text) {
+function esc(text) {
   if (!text) return '';
-  return text.replace(/[_*\[\]()~`>#+\-=|{}.!\\]/g, '\\$&');
+  return String(text).replace(/[_*\[\]()~`>#+\-=|{}.!\\]/g, '\\$&');
 }

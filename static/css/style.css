@@ -76,12 +76,14 @@ html { scroll-behavior: smooth; }
 
 .ascii-art {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.85rem;
+  font-weight: bold;
   color: var(--color-accent);
   text-align: center;
   margin-bottom: 2rem;
   line-height: 1.2;
   overflow: hidden;
+  text-shadow: 0 0 10px rgba(0,245,255,0.4);
 }
 
 .glitch {
@@ -251,6 +253,14 @@ html { scroll-behavior: smooth; }
 .form-group input::placeholder,
 .form-group textarea::placeholder { color: var(--color-text-muted); }
 
+/* Disabled inputs (name/email filled from GitHub) */
+.form-group input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: rgba(0,245,255,0.1);
+  background: rgba(10,14,39,0.5);
+}
+
 .form-help { font-size: 0.85rem; color: var(--color-text-muted); font-family: var(--font-mono); }
 
 .form-status { padding: 1rem; border-radius: 6px; font-family: var(--font-mono); font-size: 0.9rem; display: none; word-break: break-word; }
@@ -286,9 +296,7 @@ html { scroll-behavior: smooth; }
   box-shadow: 0 0 20px rgba(255,255,255,0.1);
 }
 
-.btn-github svg {
-  flex-shrink: 0;
-}
+.btn-github svg { flex-shrink: 0; }
 
 .github-profile {
   display: flex;
@@ -309,27 +317,10 @@ html { scroll-behavior: smooth; }
   flex-shrink: 0;
 }
 
-.github-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.github-info strong {
-  display: block;
-  color: var(--color-text);
-  font-size: 1rem;
-}
-
-.github-info a {
-  color: var(--color-accent);
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  text-decoration: none;
-}
-
-.github-info a:hover {
-  text-decoration: underline;
-}
+.github-info { flex: 1; min-width: 0; }
+.github-info strong { display: block; color: var(--color-text); font-size: 1rem; }
+.github-info a { color: var(--color-accent); font-family: var(--font-mono); font-size: 0.9rem; text-decoration: none; }
+.github-info a:hover { text-decoration: underline; }
 
 .btn-logout {
   background: transparent;
@@ -345,16 +336,52 @@ html { scroll-behavior: smooth; }
   flex-shrink: 0;
 }
 
-.btn-logout:hover {
-  border-color: var(--color-error);
-  color: var(--color-error);
+.btn-logout:hover { border-color: var(--color-error); color: var(--color-error); }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
 }
 
-/* Prefilled (auto-filled from GitHub) */
-.prefilled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  border-color: rgba(0,245,255,0.1) !important;
+.modal-content {
+  background: var(--color-terminal);
+  border: 1px solid rgba(0,245,255,0.3);
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-mono);
+}
+
+.modal-content p {
+  color: var(--color-text);
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.modal-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(0,245,255,0.2);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ===== TECH STACK ===== */
@@ -384,19 +411,9 @@ html { scroll-behavior: smooth; }
   opacity: 0.5;
 }
 
-.tech-logo:hover {
-  opacity: 1;
-  color: var(--color-accent);
-}
-
-.tech-logo img {
-  filter: grayscale(100%) brightness(1.5);
-  transition: filter 0.3s ease;
-}
-
-.tech-logo:hover img {
-  filter: none;
-}
+.tech-logo:hover { opacity: 1; color: var(--color-accent); }
+.tech-logo img { filter: grayscale(100%) brightness(1.5); transition: filter 0.3s ease; }
+.tech-logo:hover img { filter: none; }
 
 /* ===== FOOTER ===== */
 .footer { padding: 3rem 0; background: var(--color-terminal); border-top: 1px solid rgba(0,245,255,0.2); }
@@ -413,7 +430,7 @@ html { scroll-behavior: smooth; }
   /* Hero */
   .hero { min-height: auto; padding: 3rem 0; }
   .hero-content { padding: 1.5rem 1rem; }
-  .ascii-art { font-size: 0.38rem; margin-bottom: 1.5rem; }
+  .ascii-art { font-size: 0.45rem; margin-bottom: 1.5rem; }
   .glitch { font-size: 1.4rem; line-height: 1.3; }
   .subtitle { font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; }
   .cta-buttons { flex-direction: column; }
@@ -451,6 +468,9 @@ html { scroll-behavior: smooth; }
   .github-avatar { width: 40px; height: 40px; }
   .github-info strong { font-size: 0.9rem; }
   .github-info a { font-size: 0.8rem; }
+
+  /* Modal */
+  .modal-content { padding: 1.5rem; }
 
   /* Tech Stack */
   .tech-stack { padding: 2rem 0; }

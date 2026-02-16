@@ -3,6 +3,7 @@
     'use strict';
 
     const FORM_API_URL = 'https://platform.mctl.me/api/submit';
+    const CHECK_TEAM_URL = 'https://platform.mctl.me/api/github/check-team';
 
     // ─── Extensible validators ───────────────────────────────────────────────
     const validators = {
@@ -10,9 +11,6 @@
             regex: /^[a-z0-9][a-z0-9-]{0,62}$/,
             message: 'Team name must be lowercase alphanumeric with hyphens (max 63 chars)'
         }
-        // Add more validators as needed:
-        // usecase: { minLength: 10, message: 'At least 10 characters' },
-        // email: { custom: (v) => v.endsWith('@company.com'), message: 'Company email only' }
     };
 
     function validate(fieldName, value) {
@@ -26,6 +24,7 @@
 
     // ─── State ───────────────────────────────────────────────────────────────
     let githubUser = null;
+    let teamAvailable = false;
 
     // ─── DOM refs ────────────────────────────────────────────────────────────
     const form = document.getElementById('access-form');
@@ -37,6 +36,12 @@
     const nameInput = document.getElementById('name');
     const emailInput = document.getElementById('email');
     const teamInput = document.getElementById('team');
+
+    // Modal refs
+    const modal = document.getElementById('team-check-modal');
+    const modalSpinner = document.getElementById('modal-spinner');
+    const modalMessage = document.getElementById('modal-message');
+    const modalClose = document.getElementById('modal-close');
 
     // ─── OAuth: check URL hash on page load ──────────────────────────────────
 
@@ -55,6 +60,10 @@
             };
             showAuthError(messages[errorCode] || 'Authentication failed. Please try again.');
             history.replaceState(null, '', window.location.pathname + window.location.search);
+            // Scroll to form section
+            setTimeout(function() {
+                document.getElementById('request-access').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
             return;
         }
 
@@ -63,7 +72,6 @@
 
         try {
             const encoded = hash.substring(6);
-            // Base64url decode
             const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
             const json = atob(base64);
             githubUser = JSON.parse(json);
@@ -74,14 +82,17 @@
             showAuthError('Failed to process authentication. Please try again.');
         }
 
-        // Clean URL hash
+        // Clean URL hash and scroll to form
         history.replaceState(null, '', window.location.pathname + window.location.search);
+        setTimeout(function() {
+            document.getElementById('request-access').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     }
 
     function showAuthError(message) {
         authErrorEl.textContent = message;
         authErrorEl.style.display = 'block';
-        setTimeout(() => { authErrorEl.style.display = 'none'; }, 10000);
+        setTimeout(function() { authErrorEl.style.display = 'none'; }, 10000);
     }
 
     function showGitHubProfile(user) {
@@ -97,13 +108,9 @@
     function prefillForm(user) {
         if (user.name) {
             nameInput.value = user.name;
-            nameInput.readOnly = true;
-            nameInput.classList.add('prefilled');
         }
         if (user.email) {
             emailInput.value = user.email;
-            emailInput.readOnly = true;
-            emailInput.classList.add('prefilled');
         }
         document.getElementById('github-auth-data').value = JSON.stringify({
             login: user.login,
@@ -119,32 +126,83 @@
 
     function logout() {
         githubUser = null;
+        teamAvailable = false;
         githubAuthSection.style.display = '';
         githubProfileSection.style.display = 'none';
         submitBtn.disabled = true;
         nameInput.value = '';
-        nameInput.readOnly = false;
-        nameInput.classList.remove('prefilled');
         emailInput.value = '';
-        emailInput.readOnly = false;
-        emailInput.classList.remove('prefilled');
         document.getElementById('github-auth-data').value = '';
+        teamInput.value = '';
     }
 
     document.getElementById('github-logout').addEventListener('click', logout);
 
-    // ─── Real-time validation ────────────────────────────────────────────────
+    // ─── Team input: auto-lowercase + validation ─────────────────────────────
+
+    let checkTeamTimeout = null;
 
     if (teamInput) {
+        // Force lowercase on every keystroke
         teamInput.addEventListener('input', function() {
+            const pos = this.selectionStart;
+            this.value = this.value.toLowerCase();
+            this.setSelectionRange(pos, pos);
+
             const value = this.value.trim();
+            teamAvailable = false;
+
             if (value === '') {
                 this.setCustomValidity('');
                 return;
             }
             const error = validate('team', value);
             this.setCustomValidity(error || '');
+
+            // Debounce team check
+            if (checkTeamTimeout) clearTimeout(checkTeamTimeout);
+            if (!error && value.length >= 2) {
+                checkTeamTimeout = setTimeout(function() {
+                    checkTeamAvailability(value);
+                }, 600);
+            }
         });
+    }
+
+    // ─── Modal for team check ────────────────────────────────────────────────
+
+    function showModal(message, showSpinner, showClose) {
+        modalMessage.textContent = message;
+        modalSpinner.style.display = showSpinner ? 'block' : 'none';
+        modalClose.style.display = showClose ? 'inline-flex' : 'none';
+        modal.style.display = 'flex';
+    }
+
+    function hideModal() {
+        modal.style.display = 'none';
+    }
+
+    modalClose.addEventListener('click', hideModal);
+
+    async function checkTeamAvailability(name) {
+        showModal('Checking team availability...', true, false);
+
+        try {
+            const res = await fetch(CHECK_TEAM_URL + '?name=' + encodeURIComponent(name));
+            const data = await res.json();
+
+            if (data.available) {
+                teamAvailable = true;
+                hideModal();
+            } else {
+                teamAvailable = false;
+                showModal('Team "' + name + '" already exists. Choose a different name.', false, true);
+            }
+        } catch (e) {
+            console.error('Team check failed:', e);
+            teamAvailable = false;
+            showModal('Failed to check team. Try again.', false, true);
+        }
     }
 
     // ─── Form submission ─────────────────────────────────────────────────────
@@ -158,26 +216,28 @@
                 return;
             }
 
-            const originalText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="terminal-prompt">$</span> Submitting...';
-
             const team = teamInput.value.trim();
             const usecase = document.getElementById('usecase').value.trim();
 
-            // Validate team name
+            // Validate team
             const teamError = validate('team', team);
             if (teamError) {
                 showStatus(teamError, 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
                 return;
             }
 
-            // Build payload with verified GitHub auth data
-            const githubAuth = JSON.parse(document.getElementById('github-auth-data').value);
+            // Check team availability if not already checked
+            if (!teamAvailable) {
+                await checkTeamAvailability(team);
+                if (!teamAvailable) return;
+            }
 
-            // Use name/email from form (may have been prefilled or manually entered)
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="terminal-prompt">$</span> Processing...';
+
+            // Build payload
+            const githubAuth = JSON.parse(document.getElementById('github-auth-data').value);
             githubAuth.name = nameInput.value.trim();
             githubAuth.email = emailInput.value.trim();
 
@@ -187,8 +247,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         github_auth: githubAuth,
-                        team,
-                        usecase,
+                        team: team,
+                        usecase: usecase,
                     }),
                 });
 
@@ -198,12 +258,13 @@
                     showStatus(result.message, 'success');
                     teamInput.value = '';
                     document.getElementById('usecase').value = '';
+                    teamAvailable = false;
                 } else {
                     showStatus(result.message, 'error');
                 }
             } catch (error) {
                 console.error('Submission error:', error);
-                showStatus('Failed to submit. Please try again.', 'error');
+                showStatus('Network error. Please try again.', 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
@@ -222,10 +283,10 @@
 
     // ─── Smooth scroll for anchor links ──────────────────────────────────────
 
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
         anchor.addEventListener('click', function(e) {
             e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
+            var target = document.querySelector(this.getAttribute('href'));
             if (target) {
                 target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
@@ -234,7 +295,7 @@
 
     // ─── Terminal cursor effect ──────────────────────────────────────────────
 
-    document.querySelectorAll('input, textarea').forEach(input => {
+    document.querySelectorAll('input:not(:disabled), textarea').forEach(function(input) {
         input.addEventListener('focus', function() {
             this.style.caretColor = '#00f5ff';
         });
