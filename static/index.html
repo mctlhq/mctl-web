@@ -3,9 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Control Layer - Platform Engineering as a Service</title>
-    <meta name="description" content="Modern Control Layer - Your Platform Engineering as a Service. Deploy web services to Kubernetes without complexity.">
-    <link rel="stylesheet" href="css/style.css?v=6">
+    <title>MCTL - Platform Engineering as a Service</title>
+    <meta name="description" content="Internal Developer Platform for teams that scale. Deploy to Kubernetes without complexity.">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="MCTL - Platform Engineering as a Service">
+    <meta property="og:description" content="Internal Developer Platform for teams that scale. Deploy to Kubernetes without complexity.">
+    <meta property="og:url" content="https://mctl.me">
+    <meta property="og:image" content="https://mctl.me/img/og-image.png">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MCTL - Platform Engineering as a Service">
+    <meta name="twitter:description" content="Internal Developer Platform for teams that scale.">
+    <meta name="twitter:image" content="https://mctl.me/img/twitter-card.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+    <link rel="icon" type="image/png" href="/img/favicon.png">
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -14,12 +33,18 @@
             <a href="#" class="logo">
                 <span class="logo-m">M</span>CTL
             </a>
-            <div class="nav-links">
+            <div class="burger-menu" id="burger-menu" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="nav-links" id="nav-links">
                 <a href="#features">Features</a>
                 <a href="#how-it-works">Workflow</a>
                 <a href="#request-access" class="nav-cta">Get Started</a>
             </div>
         </div>
+        <div class="nav-overlay" id="nav-overlay"></div>
     </nav>
 
     <!-- Hero Section -->
@@ -43,8 +68,8 @@
                     </pre>
                     <h1>Modern Control Layer</h1>
                     <p class="subtitle">
-                        The Internal Developer Platform (IDP) for teams that scale.<br>
-                        Build your platform with <span class="highlight">MCTL</span>. We handle the complexity, you focus on shipping value.
+                        The Internal Developer Platform that scales with your team.<br>
+                        Build on <span class="highlight">MCTL</span>. We handle the complexity, you ship features.
                     </p>
                     <div class="cta-buttons">
                         <a href="#request-access" class="btn btn-primary">
@@ -61,7 +86,7 @@
     <section class="orchestration" id="orchestration">
         <div class="container">
             <p class="section-tag">Internal Developer Platform</p>
-            <h2 class="section-title text-center">Standardize your entire software lifecycle</h2>
+            <h2 class="section-title text-center">Orchestrate your entire software delivery lifecycle</h2>
             <div class="diagram-container">
                 <div class="diagram-box">
                     <div class="box-icon">💻</div>
@@ -95,19 +120,19 @@
     <section class="features" id="features">
         <div class="container">
             <p class="section-tag">Capabilities</p>
-            <h2 class="section-title">A complete toolset for platform engineering</h2>
+            <h2 class="section-title">Everything you need for platform engineering</h2>
             <div class="features-grid">
                 <div class="feature-card reveal">
                     <div class="feature-icon">🏗️</div>
                     <h3>Platform as a Service</h3>
                     <code class="feature-code">reusable infrastructure</code>
-                    <p>MCTL provides a pre-integrated, production-ready platform. Scale your team without rebuilding infrastructure from scratch every time.</p>
+                    <p>MCTL provides a pre-integrated, production-ready platform. Scale without rebuilding infrastructure from scratch.</p>
                 </div>
                 <div class="feature-card reveal">
                     <div class="feature-icon">🚀</div>
                     <h3>GitOps Delivery</h3>
                     <code class="feature-code">push to deploy</code>
-                    <p>Fully automated deployments via ArgoCD. No manual kubectl commands. Your code moves to production securely and predictably.</p>
+                    <p>Fully automated deployments via ArgoCD. No manual kubectl. Code moves to production securely and predictably.</p>
                 </div>
                 <div class="feature-card reveal">
                     <div class="feature-icon">🔒</div>
@@ -119,7 +144,7 @@
                     <div class="feature-icon">🎯</div>
                     <h3>Self-Service</h3>
                     <code class="feature-code">no tickets • no waiting</code>
-                    <p>Standardized service templates via Backstage. Developers create services, databases, and infrastructure in minutes, not days.</p>
+                    <p>Standardized service templates via Backstage. Provision services, databases, and infrastructure in minutes—not days.</p>
                 </div>
             </div>
         </div>
@@ -237,7 +262,7 @@
                             autocorrect="off"
                             spellcheck="false"
                         >
-                        <small class="form-help">Team name (used for namespace and GitHub team)</small>
+                        <small class="form-help">Team slug (lowercase, used for k8s namespace)</small>
                     </div>
 
                     <div class="form-group">
@@ -289,6 +314,6 @@
         </div>
     </footer>
 
-    <script src="js/form.js?v=5"></script>
+    <script src="js/form.js?v=6"></script>
 </body>
 </html>

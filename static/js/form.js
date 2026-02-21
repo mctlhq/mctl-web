@@ -269,6 +269,39 @@
         }, 10000);
     }
 
+    // ─── Mobile navigation burger menu ────────────────────────────────────────
+
+    const burgerMenu = document.getElementById('burger-menu');
+    const navLinks = document.getElementById('nav-links');
+    const navOverlay = document.getElementById('nav-overlay');
+
+    function toggleMobileMenu() {
+        burgerMenu.classList.toggle('active');
+        navLinks.classList.toggle('active');
+        navOverlay.classList.toggle('active');
+        document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
+    }
+
+    function closeMobileMenu() {
+        burgerMenu.classList.remove('active');
+        navLinks.classList.remove('active');
+        navOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (burgerMenu) {
+        burgerMenu.addEventListener('click', toggleMobileMenu);
+    }
+
+    if (navOverlay) {
+        navOverlay.addEventListener('click', closeMobileMenu);
+    }
+
+    // Close mobile menu when clicking a nav link
+    document.querySelectorAll('.nav-links a').forEach(function(link) {
+        link.addEventListener('click', closeMobileMenu);
+    });
+
     // ─── Smooth scroll for anchor links ──────────────────────────────────────
 
     document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
