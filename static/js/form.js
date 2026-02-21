@@ -2,8 +2,8 @@
 (function() {
     'use strict';
 
-    const FORM_API_URL = 'https://mctl.me/api/submit';
-    const CHECK_TEAM_URL = 'https://mctl.me/api/github/check-team';
+    const FORM_API_URL = 'https://platform.mctl.me/api/submit';
+    const CHECK_TEAM_URL = 'https://platform.mctl.me/api/github/check-team';
 
     // ─── Extensible validators ───────────────────────────────────────────────
     const validators = {
@@ -342,6 +342,24 @@
         document.querySelectorAll('.reveal, .diagram-box, .feature-card').forEach(el => {
             el.classList.add('reveal'); // Ensure they have the class
             observer.observe(el);
+        });
+    }
+
+    // ─── Click on disabled submit button highlights GitHub auth ─────────────
+
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function(e) {
+            if (this.disabled && !githubUser) {
+                e.preventDefault();
+                const githubBtn = document.querySelector('.btn-github');
+                if (githubBtn) {
+                    githubBtn.classList.add('highlight-required');
+                    githubBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(function() {
+                        githubBtn.classList.remove('highlight-required');
+                    }, 3000);
+                }
+            }
         });
     }
 

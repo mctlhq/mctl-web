@@ -11,20 +11,19 @@
     <meta property="og:title" content="MCTL - Platform Engineering as a Service">
     <meta property="og:description" content="Internal Developer Platform for teams that scale. Deploy to Kubernetes without complexity.">
     <meta property="og:url" content="https://mctl.me">
-    <meta property="og:image" content="https://mctl.me/img/og-image.png">
+    <meta property="og:image" content="https://mctl.me/img/og-image.svg">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="MCTL - Platform Engineering as a Service">
     <meta name="twitter:description" content="Internal Developer Platform for teams that scale.">
-    <meta name="twitter:image" content="https://mctl.me/img/twitter-card.png">
+    <meta name="twitter:image" content="https://mctl.me/img/og-image.svg">
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
-    <link rel="icon" type="image/png" href="/img/favicon.png">
-    <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.svg">
 
-    <link rel="stylesheet" href="css/style.css?v=7">
+    <link rel="stylesheet" href="css/style.css?v=17">
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -51,32 +50,16 @@
     <section class="hero">
         <div class="hero-glow"></div>
         <div class="container">
-            <div class="terminal-window">
-                <div class="terminal-header">
-                    <span class="terminal-button red"></span>
-                    <span class="terminal-button yellow"></span>
-                    <span class="terminal-button green"></span>
-                    <span class="terminal-title">mctl — platform-engineering-as-a-service</span>
-                </div>
-                <div class="hero-content">
-                    <pre class="ascii-art">
- __  __  ____ _____ _     
-|  \/  |/ ___|_   _| |    
-| |\/| | |     | | | |    
-| |  | | |___  | | | |___ 
-|_|  |_|\____| |_| |_____|
-                    </pre>
-                    <h1>Modern Control Layer</h1>
-                    <p class="subtitle">
-                        The Internal Developer Platform that scales with your team.<br>
-                        Build on <span class="highlight">MCTL</span>. We handle the complexity, you ship features.
-                    </p>
-                    <div class="cta-buttons">
-                        <a href="#request-access" class="btn btn-primary">
-                            <span class="terminal-prompt">$</span> Request Access
-                        </a>
-                        <a href="#features" class="btn btn-secondary">Explore Features</a>
-                    </div>
+            <div class="hero-content">
+                <h1>Modern Control Layer</h1>
+                <p class="subtitle">
+                    The Internal Developer Platform that scales with your team.<br>
+                    Build on <span class="highlight">MCTL</span>. We handle the complexity, you ship features.
+                </p>
+                <div class="cta-buttons">
+                    <a href="#request-access" class="btn btn-primary">
+                        <span class="terminal-prompt">$</span> Request Access
+                    </a>
                 </div>
             </div>
         </div>
@@ -86,10 +69,12 @@
     <section class="orchestration" id="orchestration">
         <div class="container">
             <p class="section-tag">Internal Developer Platform</p>
-            <h2 class="section-title text-center">Orchestrate your entire software delivery lifecycle</h2>
+            <h2 class="section-title">Orchestrate your entire software delivery lifecycle</h2>
             <div class="diagram-container">
                 <div class="diagram-box">
-                    <div class="box-icon">💻</div>
+                    <div class="box-icon">
+                        <img src="img/icon-developer.svg" alt="Developer" width="48" height="48">
+                    </div>
                     <h4>Developer</h4>
                     <p>Code & Push</p>
                 </div>
@@ -98,7 +83,9 @@
                     <div class="connector-arrow"></div>
                 </div>
                 <div class="diagram-box highlight-box">
-                    <div class="box-icon">⚙️</div>
+                    <div class="box-icon">
+                        <img src="img/icon-mctl.svg" alt="MCTL" width="48" height="48">
+                    </div>
                     <h4>MCTL</h4>
                     <p>Platform Orchestrator</p>
                     <div class="box-glow"></div>
@@ -108,7 +95,9 @@
                     <div class="connector-arrow"></div>
                 </div>
                 <div class="diagram-box">
-                    <div class="box-icon">☁️</div>
+                    <div class="box-icon">
+                        <img src="img/icon-cloud.svg" alt="Cloud" width="48" height="48">
+                    </div>
                     <h4>Cloud</h4>
                     <p>Deployed & Ready</p>
                 </div>
@@ -123,25 +112,33 @@
             <h2 class="section-title">Everything you need for platform engineering</h2>
             <div class="features-grid">
                 <div class="feature-card reveal">
-                    <div class="feature-icon">🏗️</div>
+                    <div class="feature-icon">
+                        <img src="img/icon-platform.svg" alt="Platform" width="56" height="56">
+                    </div>
                     <h3>Platform as a Service</h3>
                     <code class="feature-code">reusable infrastructure</code>
                     <p>MCTL provides a pre-integrated, production-ready platform. Scale without rebuilding infrastructure from scratch.</p>
                 </div>
                 <div class="feature-card reveal">
-                    <div class="feature-icon">🚀</div>
+                    <div class="feature-icon">
+                        <img src="img/icon-gitops.svg" alt="GitOps" width="56" height="56">
+                    </div>
                     <h3>GitOps Delivery</h3>
                     <code class="feature-code">push to deploy</code>
                     <p>Fully automated deployments via ArgoCD. No manual kubectl. Code moves to production securely and predictably.</p>
                 </div>
                 <div class="feature-card reveal">
-                    <div class="feature-icon">🔒</div>
+                    <div class="feature-icon">
+                        <img src="img/icon-security.svg" alt="Security" width="56" height="56">
+                    </div>
                     <h3>Enterprise Security</h3>
                     <code class="feature-code">vault • certs • sso</code>
                     <p>Secrets in Vault, automatic TLS via cert-manager, and GitHub SSO. Enterprise-grade security is baked into every layer.</p>
                 </div>
                 <div class="feature-card reveal">
-                    <div class="feature-icon">🎯</div>
+                    <div class="feature-icon">
+                        <img src="img/icon-selfservice.svg" alt="Self-Service" width="56" height="56">
+                    </div>
                     <h3>Self-Service</h3>
                     <code class="feature-code">no tickets • no waiting</code>
                     <p>Standardized service templates via Backstage. Provision services, databases, and infrastructure in minutes—not days.</p>
@@ -153,9 +150,9 @@
     <!-- Open Source Tech Stack (Ecosystem) -->
     <section class="tech-stack" id="ecosystem">
         <div class="container">
-            <p class="section-tag">Enterprise Ecosystem</p>
-            <h2 class="section-title">Built on the Best Open Source Tools</h2>
-            <p class="section-subtitle">MCTL integrates industry-standard tools into a unified control plane.</p>
+            <p class="section-tag">Open Source</p>
+            <h2 class="section-title">Built on proven open source tools</h2>
+            <p class="section-subtitle">Battle-tested technologies integrated into a unified platform.</p>
             <div class="tech-logos">
                 <a href="https://backstage.io" target="_blank" rel="noopener" class="tech-logo">
                     <img src="img/backstage-logo.svg" alt="Backstage" height="50" width="50">
@@ -181,32 +178,32 @@
     <section class="how-it-works" id="how-it-works">
         <div class="container">
             <p class="section-tag">The Workflow</p>
-            <h2 class="section-title">From zero to production in minutes</h2>
+            <h2 class="section-title">Three steps to production</h2>
             <div class="workflow-steps">
                 <div class="workflow-step reveal">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                        <h3>Platform Request</h3>
-                        <p>Sign in with GitHub and request your team's isolated environment. Our automated engine sets up your namespaces and RBAC.</p>
-                        <pre class="code-block">$ curl -X POST https://mctl.me/request</pre>
+                        <h3>Request Access</h3>
+                        <p>Sign in with GitHub, choose team name, submit request. Accept invite to get your isolated namespace.</p>
+                        <pre class="code-block">Auth → Choose Team → Accept Invite</pre>
                     </div>
                 </div>
                 <div class="workflow-arrow reveal">↓</div>
                 <div class="workflow-step reveal">
                     <div class="step-number">2</div>
                     <div class="step-content">
-                        <h3>Create Service</h3>
-                        <p>Use pre-configured templates in Backstage. MCTL handles the scaffolding and Git repository creation.</p>
-                        <pre class="code-block">$ open https://backstage-preview.mctl.me</pre>
+                        <h3>Configure Service</h3>
+                        <p>Pick template in Backstage. Specify dependencies: database, domain, secrets. Generate repo and configs automatically.</p>
+                        <pre class="code-block">Template → Configure → Generate</pre>
                     </div>
                 </div>
                 <div class="workflow-arrow reveal">↓</div>
                 <div class="workflow-step reveal">
                     <div class="step-number">3</div>
                     <div class="step-content">
-                        <h3>Auto Deployment</h3>
-                        <p>ArgoCD monitors repository. On every push, it builds, tests, and deploys your service to production.</p>
-                        <pre class="code-block">ArgoCD sync → Deployed 🚀</pre>
+                        <h3>Deploy</h3>
+                        <p>GitHub workflow builds image, commits to ArgoCD repo. ArgoCD syncs and deploys to Kubernetes automatically.</p>
+                        <pre class="code-block">Build → Commit → ArgoCD → Live ✓</pre>
                     </div>
                 </div>
             </div>
@@ -305,15 +302,15 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-links">
-                    <a href="https://backstage-preview.mctl.me" target="_blank">Backstage</a>
-                    <a href="https://argocd-preview.mctl.me" target="_blank">ArgoCD</a>
-                    <a href="https://www.vaultproject.io/" target="_blank">Vault</a>
-                    <a href="https://k3s.io" target="_blank">K3s</a>
+                    <a href="https://backstage-preview.mctl.me" target="_blank" rel="noopener">Backstage</a>
+                    <a href="https://argocd-preview.mctl.me" target="_blank" rel="noopener">ArgoCD</a>
+                    <a href="https://www.vaultproject.io/" target="_blank" rel="noopener">Vault</a>
+                    <a href="https://k3s.io" target="_blank" rel="noopener">K3s</a>
                 </div>
             </div>
         </div>
     </footer>
 
-    <script src="js/form.js?v=6"></script>
+    <script src="js/form.js?v=7"></script>
 </body>
 </html>
