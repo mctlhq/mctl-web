@@ -1,9 +1,9 @@
-// mctl.me landing page - GitHub OAuth + form handler
+// Modern Control Layer landing page - GitHub OAuth + form handler
 (function() {
     'use strict';
 
-    const FORM_API_URL = 'https://platform.mctl.me/api/submit';
-    const CHECK_TEAM_URL = 'https://platform.mctl.me/api/github/check-team';
+    const FORM_API_URL = 'https://mctl.me/api/submit';
+    const CHECK_TEAM_URL = 'https://mctl.me/api/github/check-team';
 
     // ─── Extensible validators ───────────────────────────────────────────────
     const validators = {
@@ -289,6 +289,34 @@
         });
     });
 
+    // ─── Reveal animations ───────────────────────────────────────────────────
+    function initReveal() {
+        const observerOptions = {
+            threshold: 0.15,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Once visible, no need to observe anymore
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal, .diagram-box, .feature-card').forEach(el => {
+            el.classList.add('reveal'); // Ensure they have the class
+            observer.observe(el);
+        });
+    }
+
     // ─── Init ────────────────────────────────────────────────────────────────
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initReveal();
+    });
+
     checkOAuthReturn();
 })();
