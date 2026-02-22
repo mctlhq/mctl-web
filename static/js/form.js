@@ -25,7 +25,7 @@
     // ─── State ───────────────────────────────────────────────────────────────
     let githubUser = null;
     let teamAvailable = false;
-    let pendingScrollTarget = null;
+
 
     // ─── DOM refs ────────────────────────────────────────────────────────────
     const form = document.getElementById('access-form');
@@ -51,7 +51,7 @@
         // Try to get data from query params or hash
         const authError = urlParams.get('auth_error') || (hash.startsWith('#auth_error=') ? hash.substring(12) : null);
         const authData = urlParams.get('auth') || (hash.startsWith('#auth=') ? hash.substring(6) : null);
-        pendingScrollTarget = urlParams.get('to');
+
 
         // Handle OAuth errors
         if (authError) {
@@ -433,18 +433,6 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         initReveal();
-
-        // After OAuth redirect: skip reveal animations, scroll to target instantly
-        if (pendingScrollTarget) {
-            document.querySelectorAll('.reveal').forEach(function(el) {
-                el.classList.add('visible');
-            });
-            var target = document.getElementById(pendingScrollTarget);
-            if (target) {
-                target.scrollIntoView({ behavior: 'auto', block: 'start' });
-            }
-            pendingScrollTarget = null;
-        }
     });
 
     checkOAuthReturn();

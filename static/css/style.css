@@ -949,12 +949,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 @media (max-width: 1100px) {
   .hero-content h1 { font-size: 3.5rem; }
   .subtitle { font-size: 1.2rem; }
-  .features-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: none; gap: 2rem; }
+  .features-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: none; gap: 2rem; }
   .feature-card { grid-row: auto; display: flex; flex-direction: column; }
   .problems-grid { grid-template-columns: repeat(3, 1fr); }
   .audience-grid { grid-template-columns: repeat(2, 1fr); }
   .pricing-grid { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
   .pricing-card { padding: 2.5rem 2rem; }
+}
+
+@media (max-width: 900px) {
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .problems-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
