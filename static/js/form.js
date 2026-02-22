@@ -50,6 +50,7 @@
         // Try to get data from query params or hash
         const authError = urlParams.get('auth_error') || (hash.startsWith('#auth_error=') ? hash.substring(12) : null);
         const authData = urlParams.get('auth') || (hash.startsWith('#auth=') ? hash.substring(6) : null);
+        const scrollTo = urlParams.get('to');
 
         // Handle OAuth errors
         if (authError) {
@@ -62,12 +63,14 @@
             };
             showAuthError(messages[authError] || 'Authentication failed. Please try again.');
             
-            // Clean URL while preserving other parameters
-            urlParams.delete('auth');
-            urlParams.delete('auth_error');
-            const newSearch = urlParams.toString();
-            const newPath = window.location.pathname + (newSearch ? '?' + newSearch : '');
-            history.replaceState(null, '', newPath);
+            // Clean URL
+            history.replaceState(null, '', window.location.pathname);
+
+            // Instant scroll to target section
+            if (scrollTo) {
+                var target = document.getElementById(scrollTo);
+                if (target) target.scrollIntoView({ behavior: 'auto', block: 'start' });
+            }
             return;
         }
 
@@ -85,13 +88,13 @@
             showAuthError('Failed to process authentication. Please try again.');
         }
 
-        // Clean URL while preserving other parameters
-        if (authError || authData) {
-            urlParams.delete('auth');
-            urlParams.delete('auth_error');
-            const newSearch = urlParams.toString();
-            const newPath = window.location.pathname + (newSearch ? '?' + newSearch : '');
-            history.replaceState(null, '', newPath);
+        // Clean URL
+        history.replaceState(null, '', window.location.pathname);
+
+        // Instant scroll to target section
+        if (scrollTo) {
+            var target = document.getElementById(scrollTo);
+            if (target) target.scrollIntoView({ behavior: 'auto', block: 'start' });
         }
     }
 
@@ -287,7 +290,9 @@
         burgerMenu.classList.toggle('active');
         navLinks.classList.toggle('active');
         navOverlay.classList.toggle('active');
-        document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
+        var isOpen = navLinks.classList.contains('active');
+        document.body.style.overflow = isOpen ? 'hidden' : '';
+        burgerMenu.setAttribute('aria-expanded', isOpen);
     }
 
     function closeMobileMenu() {
@@ -295,10 +300,17 @@
         navLinks.classList.remove('active');
         navOverlay.classList.remove('active');
         document.body.style.overflow = '';
+        burgerMenu.setAttribute('aria-expanded', 'false');
     }
 
     if (burgerMenu) {
         burgerMenu.addEventListener('click', toggleMobileMenu);
+        burgerMenu.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleMobileMenu();
+            }
+        });
     }
 
     if (navOverlay) {

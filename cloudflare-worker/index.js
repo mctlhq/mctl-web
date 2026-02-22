@@ -200,7 +200,7 @@ async function handleGitHubCallback(url, request, env) {
   return new Response(null, {
     status: 302,
     headers: {
-      'Location': `${LANDING_URL}/?auth=${encoded}#request-access`,
+      'Location': `${LANDING_URL}/?auth=${encoded}&to=request-access`,
       'Set-Cookie': '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
     },
   });
@@ -210,7 +210,7 @@ function redirectWithError(errorCode) {
   return new Response(null, {
     status: 302,
     headers: {
-      'Location': `${LANDING_URL}/?auth_error=${errorCode}#request-access`,
+      'Location': `${LANDING_URL}/?auth_error=${errorCode}&to=request-access`,
       'Set-Cookie': '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
     },
   });

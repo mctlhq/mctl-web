@@ -23,6 +23,11 @@
     <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
     <link rel="apple-touch-icon" href="/img/apple-touch-icon.svg">
 
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="css/style.css?v=17">
 </head>
 <body>
@@ -32,7 +37,7 @@
             <a href="#" class="logo">
                 <span class="logo-m">M</span>CTL
             </a>
-            <div class="burger-menu" id="burger-menu" aria-label="Toggle menu">
+            <div class="burger-menu" id="burger-menu" role="button" tabindex="0" aria-label="Toggle menu" aria-expanded="false">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -117,7 +122,7 @@
                         <img src="img/icon-platform.svg" alt="Platform" width="56" height="56">
                     </div>
                     <h3>Platform as a Service</h3>
-                    <code class="feature-code"><span class="terminal-prompt">$</span> reusable infrastructure</code>
+                    <code class="feature-code">reusable infrastructure</code>
                     <p>MCTL provides a pre-integrated, production-ready platform. Scale without rebuilding infrastructure from scratch.</p>
                 </div>
                 <div class="feature-card reveal">
@@ -125,7 +130,7 @@
                         <img src="img/icon-gitops.svg" alt="GitOps" width="56" height="56">
                     </div>
                     <h3>GitOps Delivery</h3>
-                    <code class="feature-code"><span class="terminal-prompt">$</span> push to deploy</code>
+                    <code class="feature-code">push to deploy</code>
                     <p>Fully automated deployments via ArgoCD. No manual kubectl. Code moves to production securely and predictably.</p>
                 </div>
                 <div class="feature-card reveal">
@@ -133,7 +138,7 @@
                         <img src="img/icon-security.svg" alt="Security" width="56" height="56">
                     </div>
                     <h3>Enterprise Security</h3>
-                    <code class="feature-code"><span class="terminal-prompt">$</span> vault • certs • sso</code>
+                    <code class="feature-code">vault • certs • sso</code>
                     <p>Secrets in Vault, automatic TLS via cert-manager, and GitHub SSO. Enterprise-grade security is baked into every layer.</p>
                 </div>
                 <div class="feature-card reveal">
@@ -141,7 +146,7 @@
                         <img src="img/icon-selfservice.svg" alt="Self-Service" width="56" height="56">
                     </div>
                     <h3>Self-Service</h3>
-                    <code class="feature-code"><span class="terminal-prompt">$</span> no tickets • no waiting</code>
+                    <code class="feature-code">no tickets • no waiting</code>
                     <p>Standardized service templates via Backstage. Provision services, databases, and infrastructure in minutes—not days.</p>
                 </div>
             </div>
@@ -241,7 +246,7 @@
                 </div>
 
                 <!-- Auth error message -->
-                <div id="auth-error" class="form-status error" style="display:none"></div>
+                <div id="auth-error" class="form-status error" role="alert" aria-live="assertive" style="display:none"></div>
 
                 <form id="access-form" class="access-form">
                     <div class="form-group">
@@ -283,14 +288,14 @@
                         </button>
                     </div>
 
-                    <div id="form-status" class="form-status"></div>
+                    <div id="form-status" class="form-status" role="alert" aria-live="assertive"></div>
                 </form>
             </div>
         </div>
     </section>
 
     <!-- Team Check Modal -->
-    <div id="team-check-modal" class="modal-overlay" style="display:none">
+    <div id="team-check-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Team availability check" style="display:none">
         <div class="modal-content">
             <div id="modal-spinner" class="modal-spinner"></div>
             <p id="modal-message">Checking team availability...</p>
@@ -326,7 +331,7 @@
                             <span class="terminal-prompt">$</span> Send Message
                         </button>
 
-                        <div id="contact-status" class="form-status"></div>
+                        <div id="contact-status" class="form-status" role="alert" aria-live="assertive"></div>
                     </form>
                 </div>
             </div>
