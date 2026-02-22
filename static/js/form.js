@@ -42,6 +42,20 @@
     const modalMessage = document.getElementById('modal-message');
     const modalClose = document.getElementById('modal-close');
 
+    // Success modal refs
+    const successModal = document.getElementById('success-modal');
+    const successModalClose = document.getElementById('success-modal-close');
+
+    function showSuccessModal() {
+        successModal.style.display = 'flex';
+    }
+
+    function hideSuccessModal() {
+        successModal.style.display = 'none';
+    }
+
+    successModalClose.addEventListener('click', hideSuccessModal);
+
     // ─── OAuth: check URL hash on page load ──────────────────────────────────
 
     function checkOAuthReturn() {
@@ -243,7 +257,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showStatus(result.message, 'success');
+                    showSuccessModal();
                     teamInput.value = '';
                     document.getElementById('usecase').value = '';
                     teamAvailable = false;

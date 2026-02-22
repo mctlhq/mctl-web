@@ -18,6 +18,7 @@ const ALLOWED_ORIGIN = `https://${BASE_DOMAIN}`;
 const LANDING_URL = `https://${BASE_DOMAIN}`;
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
 const GITHUB_ORG = 'mctlhq';
+const UNLIMITED_USERS = ['mashkovd'];
 
 export default {
   async fetch(request, env) {
@@ -153,7 +154,7 @@ async function handleGitHubCallback(url, request, env) {
   try {
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'User-Agent': 'mctl-landing' },
       body: JSON.stringify({
         client_id: env.GITHUB_CLIENT_ID,
         client_secret: env.GITHUB_CLIENT_SECRET,
@@ -277,6 +278,30 @@ async function handleFormSubmit(request, env) {
     const teamNameRegex = /^[a-z0-9][a-z0-9-]{0,62}$/;
     if (!teamNameRegex.test(team)) {
       return jsonResponse({ success: false, message: 'Invalid team name format' }, 400);
+    }
+
+    // ─── Check if user already has a team (limit: 1 per user) ───
+    if (!UNLIMITED_USERS.includes(login)) {
+      try {
+        const teamsRes = await githubAPI(`/orgs/${GITHUB_ORG}/teams?per_page=100`, env.GITHUB_ORG_TOKEN);
+        if (teamsRes.ok) {
+          const orgTeams = await teamsRes.json();
+          for (const t of orgTeams) {
+            const memberRes = await githubAPI(
+              `/orgs/${GITHUB_ORG}/teams/${t.slug}/memberships/${login}`,
+              env.GITHUB_ORG_TOKEN
+            );
+            if (memberRes.ok) {
+              return jsonResponse({
+                success: false,
+                message: `You already have a team "${t.slug}". Only one team per user is allowed.`,
+              }, 409);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Team limit check error:', e);
+      }
     }
 
     // ─── Create GitHub team ───

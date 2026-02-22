@@ -155,6 +155,29 @@
         </div>
     </div>
 
+    <!-- Success Modal -->
+    <div id="success-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Team created" style="display:none">
+        <div class="modal-content success-modal-content">
+            <div class="success-icon">✅</div>
+            <h3>Team Created!</h3>
+            <div class="success-steps">
+                <div class="success-step">
+                    <span class="step-number">1</span>
+                    <p>Accept the GitHub organization invite — check your email or <a href="https://github.com/orgs/mctlhq/invitation" target="_blank" rel="noopener">open invitation page</a></p>
+                </div>
+                <div class="success-step">
+                    <span class="step-number">2</span>
+                    <p>After accepting, sign in with your GitHub account to access:</p>
+                    <div class="success-links">
+                        <a href="https://app.mctl.me/" target="_blank" rel="noopener" class="btn btn-outline">Portal — app.mctl.me</a>
+                        <a href="https://ops.mctl.me/" target="_blank" rel="noopener" class="btn btn-outline">ArgoCD — ops.mctl.me</a>
+                    </div>
+                </div>
+            </div>
+            <button type="button" id="success-modal-close" class="btn btn-primary">Got it</button>
+        </div>
+    </div>
+
     <!-- Why MCTL Section -->
     <section class="problems" id="problems">
         <div class="container">
