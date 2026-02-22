@@ -48,6 +48,11 @@ export default {
       return handleFormSubmit(request, env);
     }
 
+    // Contact form submission
+    if (request.method === 'POST' && path === '/api/contact') {
+      return handleContactForm(request, env);
+    }
+
     return new Response('Not Found', { status: 404 });
   }
 };
@@ -195,7 +200,7 @@ async function handleGitHubCallback(url, request, env) {
   return new Response(null, {
     status: 302,
     headers: {
-      'Location': `${LANDING_URL}/#auth=${encoded}`,
+      'Location': `${LANDING_URL}/?auth=${encoded}#request-access`,
       'Set-Cookie': '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
     },
   });
@@ -205,7 +210,7 @@ function redirectWithError(errorCode) {
   return new Response(null, {
     status: 302,
     headers: {
-      'Location': `${LANDING_URL}/#auth_error=${errorCode}`,
+      'Location': `${LANDING_URL}/?auth_error=${errorCode}#request-access`,
       'Set-Cookie': '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
     },
   });
@@ -375,6 +380,67 @@ async function handleFormSubmit(request, env) {
   } catch (error) {
     console.error('Error:', error);
     return jsonResponse({ success: false, message: 'Failed to submit request. Please try again.' }, 500);
+  }
+}
+
+// ─── Contact Form ────────────────────────────────────────────────────────────
+
+async function handleContactForm(request, env) {
+  try {
+    const data = await request.json();
+    const { name, email, message } = data;
+
+    // Basic validation
+    if (!name || !email || !message) {
+      return jsonResponse({ success: false, message: 'All fields are required' }, 400);
+    }
+
+    if (!email.includes('@') || email.length < 5) {
+      return jsonResponse({ success: false, message: 'Invalid email address' }, 400);
+    }
+
+    if (message.length < 10) {
+      return jsonResponse({ success: false, message: 'Message is too short' }, 400);
+    }
+
+    // Build Telegram message
+    const msg = [
+      `📬 *mctl\\.me — Contact Form*`,
+      ``,
+      `👤 ${esc(name)}`,
+      `📧 ${esc(email)}`,
+      ``,
+      `💬 *Message:*`,
+      esc(message),
+      ``,
+      `⏰ ${new Date().toISOString().replace(/[-.]/g, '\\$&')}`,
+    ].join('\n');
+
+    // Send to Telegram
+    const telegramUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
+    const telegramRes = await fetch(telegramUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: env.TELEGRAM_CHAT_ID,
+        text: msg,
+        parse_mode: 'MarkdownV2',
+      }),
+    });
+
+    if (!telegramRes.ok) {
+      console.error('Telegram error:', await telegramRes.text());
+      return jsonResponse({ success: false, message: 'Failed to send message. Please try again.' }, 500);
+    }
+
+    return jsonResponse({
+      success: true,
+      message: 'Message sent successfully! We will get back to you soon.',
+    });
+
+  } catch (error) {
+    console.error('Contact form error:', error);
+    return jsonResponse({ success: false, message: 'Failed to send message. Please try again.' }, 500);
   }
 }
 

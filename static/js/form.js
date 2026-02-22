@@ -45,10 +45,14 @@
 
     function checkOAuthReturn() {
         const hash = window.location.hash;
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Try to get data from query params or hash
+        const authError = urlParams.get('auth_error') || (hash.startsWith('#auth_error=') ? hash.substring(12) : null);
+        const authData = urlParams.get('auth') || (hash.startsWith('#auth=') ? hash.substring(6) : null);
 
         // Handle OAuth errors
-        if (hash.startsWith('#auth_error=')) {
-            const errorCode = hash.substring(12);
+        if (authError) {
             const messages = {
                 'ACCESS_DENIED': 'GitHub authorization was cancelled.',
                 'INVALID_STATE': 'Session expired. Please try again.',
@@ -56,21 +60,22 @@
                 'TOKEN_EXCHANGE': 'Failed to authenticate with GitHub. Please try again.',
                 'PROFILE_FETCH': 'Could not fetch GitHub profile. Please try again.',
             };
-            showAuthError(messages[errorCode] || 'Authentication failed. Please try again.');
-            history.replaceState(null, '', window.location.pathname + window.location.search);
-            // Scroll to form section
-            setTimeout(function() {
-                document.getElementById('request-access').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+            showAuthError(messages[authError] || 'Authentication failed. Please try again.');
+            
+            // Clean URL while preserving other parameters
+            urlParams.delete('auth');
+            urlParams.delete('auth_error');
+            const newSearch = urlParams.toString();
+            const newPath = window.location.pathname + (newSearch ? '?' + newSearch : '');
+            history.replaceState(null, '', newPath);
             return;
         }
 
         // Handle successful auth
-        if (!hash.startsWith('#auth=')) return;
+        if (!authData) return;
 
         try {
-            const encoded = hash.substring(6);
-            const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+            const base64 = authData.replace(/-/g, '+').replace(/_/g, '/');
             const json = atob(base64);
             githubUser = JSON.parse(json);
             showGitHubProfile(githubUser);
@@ -80,11 +85,14 @@
             showAuthError('Failed to process authentication. Please try again.');
         }
 
-        // Clean URL hash and scroll to form
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-        setTimeout(function() {
-            document.getElementById('request-access').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+        // Clean URL while preserving other parameters
+        if (authError || authData) {
+            urlParams.delete('auth');
+            urlParams.delete('auth_error');
+            const newSearch = urlParams.toString();
+            const newPath = window.location.pathname + (newSearch ? '?' + newSearch : '');
+            history.replaceState(null, '', newPath);
+        }
     }
 
     function showAuthError(message) {
@@ -302,14 +310,14 @@
         link.addEventListener('click', closeMobileMenu);
     });
 
-    // ─── Smooth scroll for anchor links ──────────────────────────────────────
+    // ─── Instant scroll for anchor links ────────────────────────────────────
 
     document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
         anchor.addEventListener('click', function(e) {
             e.preventDefault();
             var target = document.querySelector(this.getAttribute('href'));
             if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                target.scrollIntoView({ behavior: 'auto', block: 'start' });
             }
         });
     });
@@ -354,13 +362,70 @@
                 const githubBtn = document.querySelector('.btn-github');
                 if (githubBtn) {
                     githubBtn.classList.add('highlight-required');
-                    githubBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    githubBtn.scrollIntoView({ behavior: 'auto', block: 'center' });
                     setTimeout(function() {
                         githubBtn.classList.remove('highlight-required');
                     }, 3000);
                 }
             }
         });
+    }
+
+    // ─── Contact Form ────────────────────────────────────────────────────────
+
+    const contactForm = document.getElementById('contact-form');
+    const contactStatus = document.getElementById('contact-status');
+    const contactSubmitBtn = document.getElementById('contact-submit');
+
+    if (contactForm) {
+        contactForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('contact-name').value.trim();
+            const email = document.getElementById('contact-email').value.trim();
+            const message = document.getElementById('contact-message').value.trim();
+
+            if (!name || !email || !message) {
+                showContactStatus('Please fill in all fields.', 'error');
+                return;
+            }
+
+            const originalText = contactSubmitBtn.innerHTML;
+            contactSubmitBtn.disabled = true;
+            contactSubmitBtn.innerHTML = '<span class="terminal-prompt">$</span> Sending...';
+
+            try {
+                const response = await fetch('https://platform.mctl.me/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, message }),
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showContactStatus(result.message, 'success');
+                    contactForm.reset();
+                } else {
+                    showContactStatus(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Contact form error:', error);
+                showContactStatus('Network error. Please try again.', 'error');
+            } finally {
+                contactSubmitBtn.disabled = false;
+                contactSubmitBtn.innerHTML = originalText;
+            }
+        });
+    }
+
+    function showContactStatus(message, type) {
+        contactStatus.textContent = message;
+        contactStatus.className = 'form-status ' + type;
+        setTimeout(function() {
+            contactStatus.className = 'form-status';
+            contactStatus.textContent = '';
+        }, 10000);
     }
 
     // ─── Init ────────────────────────────────────────────────────────────────

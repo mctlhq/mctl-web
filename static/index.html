@@ -40,6 +40,7 @@
             <div class="nav-links" id="nav-links">
                 <a href="#features">Features</a>
                 <a href="#how-it-works">Workflow</a>
+                <a href="#contact">Contact</a>
                 <a href="#request-access" class="nav-cta">Get Started</a>
             </div>
         </div>
@@ -116,7 +117,7 @@
                         <img src="img/icon-platform.svg" alt="Platform" width="56" height="56">
                     </div>
                     <h3>Platform as a Service</h3>
-                    <code class="feature-code">reusable infrastructure</code>
+                    <code class="feature-code"><span class="terminal-prompt">$</span> reusable infrastructure</code>
                     <p>MCTL provides a pre-integrated, production-ready platform. Scale without rebuilding infrastructure from scratch.</p>
                 </div>
                 <div class="feature-card reveal">
@@ -124,7 +125,7 @@
                         <img src="img/icon-gitops.svg" alt="GitOps" width="56" height="56">
                     </div>
                     <h3>GitOps Delivery</h3>
-                    <code class="feature-code">push to deploy</code>
+                    <code class="feature-code"><span class="terminal-prompt">$</span> push to deploy</code>
                     <p>Fully automated deployments via ArgoCD. No manual kubectl. Code moves to production securely and predictably.</p>
                 </div>
                 <div class="feature-card reveal">
@@ -132,7 +133,7 @@
                         <img src="img/icon-security.svg" alt="Security" width="56" height="56">
                     </div>
                     <h3>Enterprise Security</h3>
-                    <code class="feature-code">vault • certs • sso</code>
+                    <code class="feature-code"><span class="terminal-prompt">$</span> vault • certs • sso</code>
                     <p>Secrets in Vault, automatic TLS via cert-manager, and GitHub SSO. Enterprise-grade security is baked into every layer.</p>
                 </div>
                 <div class="feature-card reveal">
@@ -140,7 +141,7 @@
                         <img src="img/icon-selfservice.svg" alt="Self-Service" width="56" height="56">
                     </div>
                     <h3>Self-Service</h3>
-                    <code class="feature-code">no tickets • no waiting</code>
+                    <code class="feature-code"><span class="terminal-prompt">$</span> no tickets • no waiting</code>
                     <p>Standardized service templates via Backstage. Provision services, databases, and infrastructure in minutes—not days.</p>
                 </div>
             </div>
@@ -193,7 +194,7 @@
                     <div class="step-number">2</div>
                     <div class="step-content">
                         <h3>Configure Service</h3>
-                        <p>Pick template in Backstage. Specify dependencies: database, domain, secrets. Generate repo and configs automatically.</p>
+                        <p>Pick template in Backstage. Specify dependencies: database, domain, secrets. Repo and configs generated instantly.</p>
                         <pre class="code-block">Template → Configure → Generate</pre>
                     </div>
                 </div>
@@ -202,7 +203,7 @@
                     <div class="step-number">3</div>
                     <div class="step-content">
                         <h3>Deploy</h3>
-                        <p>GitHub workflow builds image, commits to ArgoCD repo. ArgoCD syncs and deploys to Kubernetes automatically.</p>
+                        <p>GitHub builds image, commits manifest. ArgoCD detects changes and deploys to Kubernetes automatically.</p>
                         <pre class="code-block">Build → Commit → ArgoCD → Live ✓</pre>
                     </div>
                 </div>
@@ -296,6 +297,41 @@
             <button type="button" id="modal-close" class="btn btn-primary" style="display:none">OK</button>
         </div>
     </div>
+
+    <!-- Contact Section -->
+    <section class="contact" id="contact">
+        <div class="container">
+            <h2 class="section-title">Contact Us</h2>
+            <div class="contact-content">
+                <p class="contact-intro">We are here to assist you! Reach out to our solution engineers.</p>
+
+                <div class="contact-form-wrapper">
+                    <form id="contact-form" class="contact-form">
+                        <div class="form-group">
+                            <label for="contact-name">Name</label>
+                            <input type="text" id="contact-name" name="name" required placeholder="Your name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contact-email">Email</label>
+                            <input type="email" id="contact-email" name="email" required placeholder="your@email.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contact-message">Message</label>
+                            <textarea id="contact-message" name="message" rows="5" required placeholder="How can we help you?"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block" id="contact-submit">
+                            <span class="terminal-prompt">$</span> Send Message
+                        </button>
+
+                        <div id="contact-status" class="form-status"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Footer -->
     <footer class="footer">
