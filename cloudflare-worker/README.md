@@ -70,11 +70,11 @@ curl -X POST https://mctl-landing-form.<your-subdomain>.workers.dev \
 
 ## Custom Domain (опционально)
 
-Если хочешь использовать `platform.mctl.me/api/submit`:
+Если хочешь использовать `mctl.me/api/submit`:
 
 1. В Cloudflare Dashboard → Workers → mctl-landing-form
 2. Settings → Triggers → Add Route
-3. Route: `platform.mctl.me/api/*`
+3. Route: `mctl.me/api/*`
 4. Zone: `mctl.me`
 
-Тогда форма будет отправлять на `https://platform.mctl.me/api/submit`
+Тогда форма будет отправлять на `https://mctl.me/api/submit`

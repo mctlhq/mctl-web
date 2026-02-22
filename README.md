@@ -25,7 +25,7 @@ Worker verifies HMAC signature → sends Telegram notification
 Go to https://github.com/settings/developers → New OAuth App:
 - **Application name:** mctl.me Landing
 - **Homepage URL:** https://mctl.me
-- **Authorization callback URL:** https://platform.mctl.me/api/github/callback
+- **Authorization callback URL:** https://mctl.me/api/github/callback
 
 ### 2. Cloudflare Worker Secrets
 
@@ -45,7 +45,7 @@ wrangler deploy
 
 ```bash
 git push origin main
-# GitHub Actions builds → ArgoCD deploys to https://platform.mctl.me
+# GitHub Actions builds → ArgoCD deploys to https://mctl.me
 ```
 
 ## Local Development

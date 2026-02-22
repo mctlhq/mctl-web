@@ -13,9 +13,10 @@
  * - GITHUB_ORG_TOKEN: PAT with admin:org scope for team management
  */
 
-const ALLOWED_ORIGIN = 'https://platform.mctl.me';
-const LANDING_URL = 'https://platform.mctl.me';
-const CALLBACK_URL = 'https://platform.mctl.me/api/github/callback';
+const BASE_DOMAIN = 'mctl.me';
+const ALLOWED_ORIGIN = `https://${BASE_DOMAIN}`;
+const LANDING_URL = `https://${BASE_DOMAIN}`;
+const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
 const GITHUB_ORG = 'dmitriimashkov';
 
 export default {

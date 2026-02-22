@@ -2,8 +2,8 @@
 (function() {
     'use strict';
 
-    const FORM_API_URL = 'https://platform.mctl.me/api/submit';
-    const CHECK_TEAM_URL = 'https://platform.mctl.me/api/github/check-team';
+    const FORM_API_URL = 'https://mctl.me/api/submit';
+    const CHECK_TEAM_URL = 'https://mctl.me/api/github/check-team';
 
     // ─── Extensible validators ───────────────────────────────────────────────
     const validators = {
@@ -396,7 +396,7 @@
             contactSubmitBtn.innerHTML = '<span class="terminal-prompt">$</span> Sending...';
 
             try {
-                const response = await fetch('https://platform.mctl.me/api/contact', {
+                const response = await fetch('https://mctl.me/api/contact', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, email, message }),
