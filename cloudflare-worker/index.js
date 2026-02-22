@@ -17,7 +17,7 @@ const BASE_DOMAIN = 'mctl.me';
 const ALLOWED_ORIGIN = `https://${BASE_DOMAIN}`;
 const LANDING_URL = `https://${BASE_DOMAIN}`;
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
-const GITHUB_ORG = 'dmitriimashkov';
+const GITHUB_ORG = 'mctlhq';
 
 export default {
   async fetch(request, env) {
@@ -288,7 +288,7 @@ async function handleFormSubmit(request, env) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: team,
-          description: `mctl.me team. Backstage: https://backstage-preview.mctl.me/ | ArgoCD: https://argocd-preview.mctl.me/ | Access via GitHub SSO`,
+          description: `mctl.me team. Portal: https://app.mctl.me/ | ArgoCD: https://ops.mctl.me/ | Access via GitHub SSO`,
           privacy: 'secret',
         }),
       });
@@ -341,8 +341,8 @@ async function handleFormSubmit(request, env) {
       usecase ? `📝 ${esc(usecase)}` : null,
       ``,
       `🔗 *Platform Access \\(via GitHub SSO\\):*`,
-      `• [Backstage](https://backstage\\-preview\\.mctl\\.me/)`,
-      `• [ArgoCD](https://argocd\\-preview\\.mctl\\.me/)`,
+      `• [Portal](https://app\\.mctl\\.me/)`,
+      `• [ArgoCD](https://ops\\.mctl\\.me/)`,
       ``,
       `⏰ ${new Date().toISOString().replace(/[-.]/g, '\\$&')}`,
     ].filter(Boolean).join('\n');
