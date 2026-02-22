@@ -833,9 +833,8 @@ body {
 /* ===== TECH STACK / ECOSYSTEM ===== */
 
 /* ── Success Modal ── */
-.success-modal-content { max-width: 480px; }
+.success-modal-content { max-width: 480px; box-sizing: border-box; }
 .success-modal-content h3 { color: #fff; margin-bottom: 1.5rem; font-size: 1.3rem; }
-.success-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
 .success-steps { text-align: left; margin-bottom: 1.5rem; }
 .success-step { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; align-items: flex-start; }
 .success-step p { color: var(--color-text); font-size: 0.95rem; margin: 0; line-height: 1.5; }
@@ -1068,6 +1067,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   .workflow-step { flex-direction: column; gap: 1.5rem; text-align: center; padding: 2rem 1.5rem; }
   .step-number { width: 54px; height: 54px; font-size: 1.3rem; }
   .step-content h3 { font-size: 1.4rem; }
+
+  /* Success modal mobile */
+  .success-modal-content { padding: 1.5rem; }
+  .success-modal-content h3 { font-size: 1.1rem; margin-bottom: 1rem; }
+  .success-links { flex-direction: column; }
+  .success-links .btn { width: 100%; text-align: center; box-sizing: border-box; }
+  .success-step .step-number { width: 28px; height: 28px; font-size: 0.85rem; }
   
   .code-block {
     font-size: 0.8rem;
