@@ -138,6 +138,7 @@ body {
 }
 
 .highlight { color: var(--color-accent); font-weight: 600; }
+.highlight-ctl { color: #ffffff; font-weight: 600; }
 .terminal-prompt { color: var(--color-accent); opacity: 0.8; }
 
 .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
