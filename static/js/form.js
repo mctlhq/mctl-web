@@ -35,12 +35,8 @@
     const githubProfileSection = document.getElementById('github-profile');
     const authErrorEl = document.getElementById('auth-error');
     const teamInput = document.getElementById('team');
-
-    // Modal refs
-    const modal = document.getElementById('team-check-modal');
-    const modalSpinner = document.getElementById('modal-spinner');
-    const modalMessage = document.getElementById('modal-message');
-    const modalClose = document.getElementById('modal-close');
+    const teamCheckSpinner = document.getElementById('team-check-spinner');
+    const teamStatusEl = document.getElementById('team-status');
 
     // Success modal refs
     const successModal = document.getElementById('success-modal');
@@ -156,6 +152,8 @@
 
             const value = this.value.trim();
             teamAvailable = false;
+            teamStatusEl.textContent = '';
+            teamStatusEl.className = 'team-status';
 
             if (value === '') {
                 this.setCustomValidity('');
@@ -176,21 +174,11 @@
 
     // ─── Modal for team check ────────────────────────────────────────────────
 
-    function showModal(message, showSpinner, showClose) {
-        modalMessage.textContent = message;
-        modalSpinner.style.display = showSpinner ? 'block' : 'none';
-        modalClose.style.display = showClose ? 'inline-flex' : 'none';
-        modal.style.display = 'flex';
-    }
-
-    function hideModal() {
-        modal.style.display = 'none';
-    }
-
-    modalClose.addEventListener('click', hideModal);
-
     async function checkTeamAvailability(name) {
-        showModal('Checking team availability...', true, false);
+        teamInput.disabled = true;
+        teamCheckSpinner.classList.add('visible');
+        teamStatusEl.textContent = '';
+        teamStatusEl.className = 'team-status';
 
         try {
             const res = await fetch(CHECK_TEAM_URL + '?name=' + encodeURIComponent(name));
@@ -198,15 +186,20 @@
 
             if (data.available) {
                 teamAvailable = true;
-                hideModal();
             } else {
                 teamAvailable = false;
-                showModal('Team "' + name + '" already exists. Choose a different name.', false, true);
+                teamStatusEl.textContent = 'Team "' + name + '" is already taken. Choose a different name.';
+                teamStatusEl.className = 'team-status error';
             }
         } catch (e) {
             console.error('Team check failed:', e);
             teamAvailable = false;
-            showModal('Failed to check team. Try again.', false, true);
+            teamStatusEl.textContent = 'Failed to check team availability. Try again.';
+            teamStatusEl.className = 'team-status error';
+        } finally {
+            teamCheckSpinner.classList.remove('visible');
+            teamInput.disabled = false;
+            teamInput.focus();
         }
     }
 

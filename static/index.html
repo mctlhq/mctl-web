@@ -107,19 +107,23 @@
                 <form id="access-form" class="access-form">
                     <div class="form-group">
                         <label for="team">Team Name</label>
-                        <input
-                            type="text"
-                            id="team"
-                            name="team"
-                            placeholder="my-team"
-                            required
-                            pattern="^[a-z0-9][a-z0-9-]{0,62}$"
-                            title="Lowercase alphanumeric with hyphens (max 63 chars)"
-                            autocapitalize="none"
-                            autocorrect="off"
-                            spellcheck="false"
-                        >
+                        <div class="team-input-wrapper">
+                            <input
+                                type="text"
+                                id="team"
+                                name="team"
+                                placeholder="my-team"
+                                required
+                                pattern="^[a-z0-9][a-z0-9-]{0,62}$"
+                                title="Lowercase alphanumeric with hyphens (max 63 chars)"
+                                autocapitalize="none"
+                                autocorrect="off"
+                                spellcheck="false"
+                            >
+                            <div id="team-check-spinner" class="input-spinner"></div>
+                        </div>
                         <small class="form-help">Lowercase with hyphens — this becomes your workspace namespace</small>
+                        <p id="team-status" class="team-status"></p>
                     </div>
 
                     <div class="form-group">
@@ -146,14 +150,6 @@
         </div>
     </section>
 
-    <!-- Team Check Modal -->
-    <div id="team-check-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Team availability check" style="display:none">
-        <div class="modal-content">
-            <div id="modal-spinner" class="modal-spinner"></div>
-            <p id="modal-message">Checking team availability...</p>
-            <button type="button" id="modal-close" class="btn btn-primary" style="display:none">OK</button>
-        </div>
-    </div>
 
     <!-- Success Modal -->
     <div id="success-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Team created" style="display:none">
@@ -490,6 +486,6 @@
         </div>
     </footer>
 
-    <script src="js/form.js?v=9"></script>
+    <script src="js/form.js?v=10"></script>
 </body>
 </html>
