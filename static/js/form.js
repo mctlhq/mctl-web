@@ -66,13 +66,13 @@
         // Handle OAuth errors
         if (authError) {
             const messages = {
-                'ACCESS_DENIED': 'GitHub authorization was cancelled.',
-                'INVALID_STATE': 'Session expired. Please try again.',
-                'MISSING_PARAMS': 'Invalid OAuth response. Please try again.',
-                'TOKEN_EXCHANGE': 'Failed to authenticate with GitHub. Please try again.',
-                'PROFILE_FETCH': 'Could not fetch GitHub profile. Please try again.',
+                'ACCESS_DENIED': window.i18n.t('js.oauth.access_denied'),
+                'INVALID_STATE': window.i18n.t('js.oauth.invalid_state'),
+                'MISSING_PARAMS': window.i18n.t('js.oauth.missing_params'),
+                'TOKEN_EXCHANGE': window.i18n.t('js.oauth.token_exchange'),
+                'PROFILE_FETCH': window.i18n.t('js.oauth.profile_fetch'),
             };
-            showAuthError(messages[authError] || 'Authentication failed. Please try again.');
+            showAuthError(messages[authError] || window.i18n.t('js.oauth.failed'));
             
             // Clean URL
             history.replaceState(null, '', window.location.pathname);
@@ -90,7 +90,7 @@
             prefillForm(githubUser);
         } catch (e) {
             console.error('Failed to parse GitHub auth data:', e);
-            showAuthError('Failed to process authentication. Please try again.');
+            showAuthError(window.i18n.t('js.oauth.parse_error'));
         }
 
         // Clean URL and scroll to section
@@ -188,13 +188,13 @@
                 teamAvailable = true;
             } else {
                 teamAvailable = false;
-                teamStatusEl.textContent = 'Team "' + name + '" is already taken. Choose a different name.';
+                teamStatusEl.textContent = window.i18n.t('js.team.taken', { name: name });
                 teamStatusEl.className = 'team-status error';
             }
         } catch (e) {
             console.error('Team check failed:', e);
             teamAvailable = false;
-            teamStatusEl.textContent = 'Failed to check team availability. Try again.';
+            teamStatusEl.textContent = window.i18n.t('js.team.check_failed');
             teamStatusEl.className = 'team-status error';
         } finally {
             teamCheckSpinner.classList.remove('visible');
@@ -210,7 +210,7 @@
             e.preventDefault();
 
             if (!githubUser) {
-                showStatus('Sign in with GitHub first.', 'error');
+                showStatus(window.i18n.t('js.submit.github_required'), 'error');
                 return;
             }
 
@@ -232,7 +232,7 @@
 
             const originalText = submitBtn.innerHTML;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="terminal-prompt">$</span> Processing...';
+            submitBtn.innerHTML = '<span class="terminal-prompt">$</span> ' + window.i18n.t('js.submit.processing');
 
             // Build payload
             const githubAuth = JSON.parse(document.getElementById('github-auth-data').value);
@@ -260,7 +260,7 @@
                 }
             } catch (error) {
                 console.error('Submission error:', error);
-                showStatus('Network error. Please try again.', 'error');
+                showStatus(window.i18n.t('js.submit.network_error'), 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
@@ -395,13 +395,13 @@
             const message = document.getElementById('contact-message').value.trim();
 
             if (!name || !email || !message) {
-                showContactStatus('Please fill in all fields.', 'error');
+                showContactStatus(window.i18n.t('js.contact.fill_all'), 'error');
                 return;
             }
 
             const originalText = contactSubmitBtn.innerHTML;
             contactSubmitBtn.disabled = true;
-            contactSubmitBtn.innerHTML = '<span class="terminal-prompt">$</span> Sending...';
+            contactSubmitBtn.innerHTML = '<span class="terminal-prompt">$</span> ' + window.i18n.t('js.contact.sending');
 
             try {
                 const response = await fetch('https://mctl.me/api/contact', {
@@ -420,7 +420,7 @@
                 }
             } catch (error) {
                 console.error('Contact form error:', error);
-                showContactStatus('Network error. Please try again.', 'error');
+                showContactStatus(window.i18n.t('js.contact.network_error'), 'error');
             } finally {
                 contactSubmitBtn.disabled = false;
                 contactSubmitBtn.innerHTML = originalText;

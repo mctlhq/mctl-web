@@ -29,6 +29,8 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="css/style.css?v=21">
+    <script src="js/translations.js?v=1"></script>
+    <script src="js/i18n.js?v=1"></script>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -37,17 +39,17 @@
             <a href="#" class="logo">
                 <span class="logo-m">M</span>CTL
             </a>
-            <div class="burger-menu" id="burger-menu" role="button" tabindex="0" aria-label="Toggle menu" aria-expanded="false">
+            <div class="burger-menu" id="burger-menu" role="button" tabindex="0" data-i18n-attr="aria-label:nav.burger_label" aria-label="Toggle menu" aria-expanded="false">
                 <span></span>
                 <span></span>
                 <span></span>
             </div>
             <div class="nav-links" id="nav-links">
-                <a href="#features">Platform</a>
-                <a href="#how-it-works">How It Works</a>
-                <a href="#pricing">Pricing</a>
-                <a href="#contact">Contact</a>
-                <a href="#request-access" class="nav-cta">Request Access</a>
+                <a href="#features" data-i18n="nav.platform">Platform</a>
+                <a href="#how-it-works" data-i18n="nav.how_it_works">How It Works</a>
+                <a href="#pricing" data-i18n="nav.pricing">Pricing</a>
+                <a href="#contact" data-i18n="nav.contact">Contact</a>
+                <a href="#request-access" class="nav-cta" data-i18n="nav.request_access">Request Access</a>
             </div>
         </div>
         <div class="nav-overlay" id="nav-overlay"></div>
@@ -58,14 +60,14 @@
         <div class="hero-glow"></div>
         <div class="container">
             <div class="hero-content">
-                <h1>Kubernetes without building a platform team</h1>
-                <p class="subtitle">
+                <h1 data-i18n="hero.title">Kubernetes without building a platform team</h1>
+                <p class="subtitle" data-i18n-html="hero.subtitle">
                     <span class="logo-m">M</span><span class="highlight-ctl">CTL</span> gives growing product teams self-service Kubernetes
                     with GitOps, secrets, and team isolation built in.<br>
                     No tickets. No waiting. Production-ready from day one.
                 </p>
                 <div class="cta-buttons">
-                    <a href="#request-access" class="btn btn-primary">
+                    <a href="#request-access" class="btn btn-primary" data-i18n="hero.cta">
                         Request Access
                     </a>
                 </div>
@@ -77,17 +79,17 @@
     <section class="request-access" id="request-access">
         <div class="container">
             <div class="form-wrapper">
-                <h2 class="section-title">Request Access</h2>
-                <p class="form-subtitle">Sign in with GitHub to get started. We'll set up your team workspace.</p>
+                <h2 class="section-title" data-i18n="form.title">Request Access</h2>
+                <p class="form-subtitle" data-i18n="form.subtitle">Sign in with GitHub to get started. We'll set up your team workspace.</p>
 
                 <!-- GitHub Auth: Not authenticated -->
                 <div id="github-auth" class="github-auth">
-                    <p class="form-description">We verify your identity via GitHub — no passwords to remember.</p>
+                    <p class="form-description" data-i18n="form.github_desc">We verify your identity via GitHub — no passwords to remember.</p>
                     <a href="https://mctl.me/api/github/login" class="btn btn-github" id="github-login-btn">
                         <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden="true">
                             <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
                         </svg>
-                        Sign in with GitHub
+                        <span data-i18n="form.github_login">Sign in with GitHub</span>
                     </a>
                 </div>
 
@@ -98,7 +100,7 @@
                         <strong id="github-name"></strong>
                         <a id="github-link" href="" target="_blank" rel="noopener">@<span id="github-login"></span></a>
                     </div>
-                    <button type="button" id="github-logout" class="btn-logout" title="Sign out">&times;</button>
+                    <button type="button" id="github-logout" class="btn-logout" data-i18n-attr="title:form.logout_title" title="Sign out">&times;</button>
                 </div>
 
                 <!-- Auth error message -->
@@ -106,12 +108,13 @@
 
                 <form id="access-form" class="access-form">
                     <div class="form-group">
-                        <label for="team">Team Name</label>
+                        <label for="team" data-i18n="form.label.team">Team Name</label>
                         <div class="team-input-wrapper">
                             <input
                                 type="text"
                                 id="team"
                                 name="team"
+                                data-i18n-attr="placeholder:form.placeholder.team,title:form.validation.team"
                                 placeholder="my-team"
                                 required
                                 pattern="^[a-z0-9][a-z0-9-]{0,62}$"
@@ -122,16 +125,17 @@
                             >
                             <div id="team-check-spinner" class="input-spinner"></div>
                         </div>
-                        <small class="form-help">Lowercase with hyphens — this becomes your workspace namespace</small>
+                        <small class="form-help" data-i18n="form.help.team">Lowercase with hyphens — this becomes your workspace namespace</small>
                         <p id="team-status" class="team-status"></p>
                     </div>
 
                     <div class="form-group">
-                        <label for="usecase">What will you build?</label>
+                        <label for="usecase" data-i18n="form.label.usecase">What will you build?</label>
                         <textarea
                             id="usecase"
                             name="usecase"
                             rows="4"
+                            data-i18n-attr="placeholder:form.placeholder.usecase"
                             placeholder="Tell us about your project and what you'd like to deploy"
                         ></textarea>
                     </div>
@@ -139,7 +143,7 @@
                     <input type="hidden" id="github-auth-data" name="github_auth_data">
 
                     <div class="form-group">
-                        <button type="submit" class="btn btn-primary btn-block" id="submit-btn" disabled>
+                        <button type="submit" class="btn btn-primary btn-block" id="submit-btn" disabled data-i18n="form.submit">
                             Submit Request
                         </button>
                     </div>
@@ -154,50 +158,50 @@
     <!-- Success Modal -->
     <div id="success-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Team created" style="display:none">
         <div class="modal-content success-modal-content">
-            <h3>Team Created!</h3>
+            <h3 data-i18n="modal.team_created">Team Created!</h3>
             <div class="success-steps">
                 <div class="success-step">
                     <span class="step-number">1</span>
-                    <p>Accept the GitHub organization invite — check your email or <a href="https://github.com/orgs/mctlhq/invitation" target="_blank" rel="noopener">open invitation page</a></p>
+                    <p data-i18n-html="modal.step1">Accept the GitHub organization invite — check your email or <a href="https://github.com/orgs/mctlhq/invitation" target="_blank" rel="noopener">open invitation page</a></p>
                 </div>
                 <div class="success-step">
                     <span class="step-number">2</span>
-                    <p>After accepting, sign in with your GitHub account to access:</p>
+                    <p data-i18n="modal.step2">After accepting, sign in with your GitHub account to access:</p>
                     <div class="success-links">
-                        <a href="https://app.mctl.me/" target="_blank" rel="noopener" class="btn btn-outline">Portal — app.mctl.me</a>
-                        <a href="https://ops.mctl.me/" target="_blank" rel="noopener" class="btn btn-outline">ArgoCD — ops.mctl.me</a>
+                        <a href="https://app.mctl.me/" target="_blank" rel="noopener" class="btn btn-outline" data-i18n="modal.portal">Portal — app.mctl.me</a>
+                        <a href="https://ops.mctl.me/" target="_blank" rel="noopener" class="btn btn-outline" data-i18n="modal.argocd">ArgoCD — ops.mctl.me</a>
                     </div>
                 </div>
             </div>
-            <button type="button" id="success-modal-close" class="btn btn-primary">Got it</button>
+            <button type="button" id="success-modal-close" class="btn btn-primary" data-i18n="modal.close">Got it</button>
         </div>
     </div>
 
     <!-- Why MCTL Section -->
     <section class="problems" id="problems">
         <div class="container">
-            <p class="section-tag">Why MCTL</p>
-            <h2 class="section-title">Built for growing product teams</h2>
+            <p class="section-tag" data-i18n="why.tag">Why MCTL</p>
+            <h2 class="section-title" data-i18n="why.title">Built for growing product teams</h2>
             <div class="problems-grid">
                 <div class="problem-card reveal">
-                    <h3>No Platform Team Required</h3>
-                    <p>Most teams can't afford dedicated platform engineers. MCTL gives you a production-grade platform without the headcount.</p>
+                    <h3 data-i18n="why.card1.title">No Platform Team Required</h3>
+                    <p data-i18n="why.card1.desc">Most teams can't afford dedicated platform engineers. MCTL gives you a production-grade platform without the headcount.</p>
                 </div>
                 <div class="problem-card reveal">
-                    <h3>Self-Service, Not Tickets</h3>
-                    <p>Developers pick templates, configure services, and deploy. No waiting on DevOps for every change.</p>
+                    <h3 data-i18n="why.card2.title">Self-Service, Not Tickets</h3>
+                    <p data-i18n="why.card2.desc">Developers pick templates, configure services, and deploy. No waiting on DevOps for every change.</p>
                 </div>
                 <div class="problem-card reveal">
-                    <h3>Team Isolation by Default</h3>
-                    <p>Every team gets its own namespace, RBAC, network policies, and resource quotas. No shared-cluster risk.</p>
+                    <h3 data-i18n="why.card3.title">Team Isolation by Default</h3>
+                    <p data-i18n="why.card3.desc">Every team gets its own namespace, RBAC, network policies, and resource quotas. No shared-cluster risk.</p>
                 </div>
                 <div class="problem-card reveal">
-                    <h3>GitOps-Native Automation</h3>
-                    <p>Push code, everything deploys. No manual YAML, no kubectl, no ArgoCD babysitting.</p>
+                    <h3 data-i18n="why.card4.title">GitOps-Native Automation</h3>
+                    <p data-i18n="why.card4.desc">Push code, everything deploys. No manual YAML, no kubectl, no ArgoCD babysitting.</p>
                 </div>
                 <div class="problem-card reveal">
-                    <h3>Production-Ready from Day One</h3>
-                    <p>Secrets in Vault, TLS via cert-manager, SSO via GitHub. Security and ops baked in from the start.</p>
+                    <h3 data-i18n="why.card5.title">Production-Ready from Day One</h3>
+                    <p data-i18n="why.card5.desc">Secrets in Vault, TLS via cert-manager, SSO via GitHub. Security and ops baked in from the start.</p>
                 </div>
             </div>
         </div>
@@ -206,15 +210,15 @@
     <!-- Orchestration Diagram Section -->
     <section class="orchestration" id="orchestration">
         <div class="container">
-            <p class="section-tag">How MCTL Works</p>
-            <h2 class="section-title">One control plane for your entire delivery lifecycle</h2>
+            <p class="section-tag" data-i18n="orch.tag">How MCTL Works</p>
+            <h2 class="section-title" data-i18n="orch.title">One control plane for your entire delivery lifecycle</h2>
             <div class="diagram-container">
                 <div class="diagram-box">
                     <div class="box-icon">
                         <img src="img/icon-developer.svg" alt="Developer" width="48" height="48">
                     </div>
-                    <h4>Developer</h4>
-                    <p>Code & Push</p>
+                    <h4 data-i18n="orch.developer.title">Developer</h4>
+                    <p data-i18n="orch.developer.desc">Code & Push</p>
                 </div>
                 <div class="diagram-connector">
                     <div class="connector-line"></div>
@@ -224,8 +228,8 @@
                     <div class="box-icon">
                         <img src="img/icon-mctl.svg" alt="MCTL" width="48" height="48">
                     </div>
-                    <h4>MCTL</h4>
-                    <p>Platform Orchestrator</p>
+                    <h4 data-i18n="orch.mctl.title">MCTL</h4>
+                    <p data-i18n="orch.mctl.desc">Platform Orchestrator</p>
                     <div class="box-glow"></div>
                 </div>
                 <div class="diagram-connector">
@@ -236,8 +240,8 @@
                     <div class="box-icon">
                         <img src="img/icon-cloud.svg" alt="Cloud" width="48" height="48">
                     </div>
-                    <h4>Cloud</h4>
-                    <p>Deployed & Ready</p>
+                    <h4 data-i18n="orch.cloud.title">Cloud</h4>
+                    <p data-i18n="orch.cloud.desc">Deployed & Ready</p>
                 </div>
             </div>
         </div>
@@ -246,48 +250,48 @@
     <!-- Features Section -->
     <section class="features" id="features">
         <div class="container">
-            <p class="section-tag">Platform</p>
-            <h2 class="section-title">Everything your team needs to ship faster</h2>
+            <p class="section-tag" data-i18n="features.tag">Platform</p>
+            <h2 class="section-title" data-i18n="features.title">Everything your team needs to ship faster</h2>
             <div class="features-grid">
                 <div class="feature-card reveal">
                     <div class="feature-icon">
                         <img src="img/icon-platform.svg" alt="Platform" width="56" height="56">
                     </div>
-                    <h3>Production-Ready Platform</h3>
-                    <code class="feature-code">infrastructure out of the box</code>
-                    <p>Pre-integrated Kubernetes platform. Scale without rebuilding infrastructure from scratch.</p>
+                    <h3 data-i18n="features.card1.title">Production-Ready Platform</h3>
+                    <code class="feature-code" data-i18n="features.card1.code">infrastructure out of the box</code>
+                    <p data-i18n="features.card1.desc">Pre-integrated Kubernetes platform. Scale without rebuilding infrastructure from scratch.</p>
                 </div>
                 <div class="feature-card reveal">
                     <div class="feature-icon">
                         <img src="img/icon-gitops.svg" alt="GitOps" width="56" height="56">
                     </div>
-                    <h3>GitOps Delivery</h3>
-                    <code class="feature-code">push to deploy</code>
-                    <p>Fully automated deployments. No manual kubectl. Code moves to production securely and predictably.</p>
+                    <h3 data-i18n="features.card2.title">GitOps Delivery</h3>
+                    <code class="feature-code" data-i18n="features.card2.code">push to deploy</code>
+                    <p data-i18n="features.card2.desc">Fully automated deployments. No manual kubectl. Code moves to production securely and predictably.</p>
                 </div>
                 <div class="feature-card reveal">
                     <div class="feature-icon">
                         <img src="img/icon-security.svg" alt="Security" width="56" height="56">
                     </div>
-                    <h3>Enterprise Security</h3>
-                    <code class="feature-code">vault · certs · sso</code>
-                    <p>Secrets in Vault, automatic TLS via cert-manager, and GitHub SSO. Security baked into every layer.</p>
+                    <h3 data-i18n="features.card3.title">Enterprise Security</h3>
+                    <code class="feature-code" data-i18n="features.card3.code">vault · certs · sso</code>
+                    <p data-i18n="features.card3.desc">Secrets in Vault, automatic TLS via cert-manager, and GitHub SSO. Security baked into every layer.</p>
                 </div>
                 <div class="feature-card reveal">
                     <div class="feature-icon">
                         <img src="img/icon-selfservice.svg" alt="Self-Service" width="56" height="56">
                     </div>
-                    <h3>Self-Service Catalog</h3>
-                    <code class="feature-code">no tickets · no waiting</code>
-                    <p>Pick from ready-made templates in the Service Catalog. Provision services, databases, and infra in minutes.</p>
+                    <h3 data-i18n="features.card4.title">Self-Service Catalog</h3>
+                    <code class="feature-code" data-i18n="features.card4.code">no tickets · no waiting</code>
+                    <p data-i18n="features.card4.desc">Pick from ready-made templates in the Service Catalog. Provision services, databases, and infra in minutes.</p>
                 </div>
                 <div class="feature-card reveal">
                     <div class="feature-icon">
                         <img src="img/icon-cloud.svg" alt="Team Isolation" width="56" height="56">
                     </div>
-                    <h3>Team Isolation</h3>
-                    <code class="feature-code">namespace · rbac · network</code>
-                    <p>Each team gets an isolated namespace with RBAC, network policies, and resource quotas. Secure by design.</p>
+                    <h3 data-i18n="features.card5.title">Team Isolation</h3>
+                    <code class="feature-code" data-i18n="features.card5.code">namespace · rbac · network</code>
+                    <p data-i18n="features.card5.desc">Each team gets an isolated namespace with RBAC, network policies, and resource quotas. Secure by design.</p>
                 </div>
             </div>
         </div>
@@ -296,24 +300,24 @@
     <!-- Audience Section -->
     <section class="audience" id="audience">
         <div class="container">
-            <p class="section-tag">Who It's For</p>
-            <h2 class="section-title">Built for teams that want to move fast</h2>
+            <p class="section-tag" data-i18n="audience.tag">Who It's For</p>
+            <h2 class="section-title" data-i18n="audience.title">Built for teams that want to move fast</h2>
             <div class="audience-grid">
                 <div class="audience-card reveal">
-                    <h3>Startups</h3>
-                    <p>Multiple teams, no dedicated DevOps. Ship to production from day one without hiring platform engineers.</p>
+                    <h3 data-i18n="audience.card1.title">Startups</h3>
+                    <p data-i18n="audience.card1.desc">Multiple teams, no dedicated DevOps. Ship to production from day one without hiring platform engineers.</p>
                 </div>
                 <div class="audience-card reveal">
-                    <h3>B2B SaaS</h3>
-                    <p>Multi-tenant isolation out of the box. Manage customer environments with consistent security and governance.</p>
+                    <h3 data-i18n="audience.card2.title">B2B SaaS</h3>
+                    <p data-i18n="audience.card2.desc">Multi-tenant isolation out of the box. Manage customer environments with consistent security and governance.</p>
                 </div>
                 <div class="audience-card reveal">
-                    <h3>Platform Teams</h3>
-                    <p>Already building an internal platform? Accelerate with a production-ready foundation instead of starting from scratch.</p>
+                    <h3 data-i18n="audience.card3.title">Platform Teams</h3>
+                    <p data-i18n="audience.card3.desc">Already building an internal platform? Accelerate with a production-ready foundation instead of starting from scratch.</p>
                 </div>
                 <div class="audience-card reveal">
-                    <h3>White-Label Partners</h3>
-                    <p>Offer a branded developer platform to your clients. MCTL powers the infrastructure — your brand stays front and center.</p>
+                    <h3 data-i18n="audience.card4.title">White-Label Partners</h3>
+                    <p data-i18n="audience.card4.desc">Offer a branded developer platform to your clients. MCTL powers the infrastructure — your brand stays front and center.</p>
                 </div>
             </div>
         </div>
@@ -322,25 +326,25 @@
     <!-- Technology Stack -->
     <section class="tech-stack" id="ecosystem">
         <div class="container">
-            <p class="section-tag">Technology</p>
-            <h2 class="section-title">Powered by battle-tested infrastructure</h2>
-            <p class="section-subtitle">Industry-proven open source tools, integrated into a unified platform.</p>
+            <p class="section-tag" data-i18n="tech.tag">Technology</p>
+            <h2 class="section-title" data-i18n="tech.title">Powered by battle-tested infrastructure</h2>
+            <p class="section-subtitle" data-i18n="tech.subtitle">Industry-proven open source tools, integrated into a unified platform.</p>
             <div class="tech-logos">
                 <div class="tech-logo">
                     <img src="img/backstage-logo.svg" alt="Backstage" height="50" width="50">
-                    <span>Service Catalog</span>
+                    <span data-i18n="tech.catalog">Service Catalog</span>
                 </div>
                 <div class="tech-logo">
                     <img src="img/argocd-logo.svg" alt="ArgoCD" height="50" width="50">
-                    <span>GitOps Engine</span>
+                    <span data-i18n="tech.gitops">GitOps Engine</span>
                 </div>
                 <div class="tech-logo">
                     <img src="img/vault-logo.svg" alt="HashiCorp Vault" height="50" width="50">
-                    <span>Secrets Management</span>
+                    <span data-i18n="tech.secrets">Secrets Management</span>
                 </div>
                 <div class="tech-logo">
                     <img src="img/k3s-logo.svg" alt="K3s" height="50" width="50">
-                    <span>Kubernetes Runtime</span>
+                    <span data-i18n="tech.runtime">Kubernetes Runtime</span>
                 </div>
             </div>
         </div>
@@ -349,33 +353,33 @@
     <!-- How It Works Section -->
     <section class="how-it-works" id="how-it-works">
         <div class="container">
-            <p class="section-tag">Getting Started</p>
-            <h2 class="section-title">Three steps to production</h2>
+            <p class="section-tag" data-i18n="how.tag">Getting Started</p>
+            <h2 class="section-title" data-i18n="how.title">Three steps to production</h2>
             <div class="workflow-steps">
                 <div class="workflow-step reveal">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                        <h3>Get Your Workspace</h3>
-                        <p>Sign in with GitHub, choose a team name, and get your isolated namespace with RBAC and secrets — instantly.</p>
-                        <pre class="code-block">Sign In → Create Team → Get Namespace</pre>
+                        <h3 data-i18n="how.step1.title">Get Your Workspace</h3>
+                        <p data-i18n="how.step1.desc">Sign in with GitHub, choose a team name, and get your isolated namespace with RBAC and secrets — instantly.</p>
+                        <pre class="code-block" data-i18n="how.step1.code">Sign In → Create Team → Get Namespace</pre>
                     </div>
                 </div>
                 <div class="workflow-arrow reveal">↓</div>
                 <div class="workflow-step reveal">
                     <div class="step-number">2</div>
                     <div class="step-content">
-                        <h3>Configure Your Service</h3>
-                        <p>Pick a template from the Service Catalog. Specify database, domain, and secrets. Repo and configs generated automatically.</p>
-                        <pre class="code-block">Choose Template → Configure → Generate</pre>
+                        <h3 data-i18n="how.step2.title">Configure Your Service</h3>
+                        <p data-i18n="how.step2.desc">Pick a template from the Service Catalog. Specify database, domain, and secrets. Repo and configs generated automatically.</p>
+                        <pre class="code-block" data-i18n="how.step2.code">Choose Template → Configure → Generate</pre>
                     </div>
                 </div>
                 <div class="workflow-arrow reveal">↓</div>
                 <div class="workflow-step reveal">
                     <div class="step-number">3</div>
                     <div class="step-content">
-                        <h3>Push and Deploy</h3>
-                        <p>Push your code. The platform builds, tests, and deploys to Kubernetes automatically via GitOps.</p>
-                        <pre class="code-block">git push → Build → Deploy → Live ✓</pre>
+                        <h3 data-i18n="how.step3.title">Push and Deploy</h3>
+                        <p data-i18n="how.step3.desc">Push your code. The platform builds, tests, and deploys to Kubernetes automatically via GitOps.</p>
+                        <pre class="code-block" data-i18n="how.step3.code">git push → Build → Deploy → Live ✓</pre>
                     </div>
                 </div>
             </div>
@@ -385,48 +389,48 @@
     <!-- Pricing Section -->
     <section class="pricing" id="pricing">
         <div class="container">
-            <p class="section-tag">Pricing</p>
-            <h2 class="section-title">Simple, transparent plans</h2>
+            <p class="section-tag" data-i18n="pricing.tag">Pricing</p>
+            <h2 class="section-title" data-i18n="pricing.title">Simple, transparent plans</h2>
             <div class="pricing-grid">
                 <div class="pricing-card reveal">
-                    <h3>Starter</h3>
-                    <div class="pricing-price">Free</div>
-                    <p class="pricing-desc">For individuals and small experiments</p>
+                    <h3 data-i18n="pricing.starter.title">Starter</h3>
+                    <div class="pricing-price" data-i18n="pricing.starter.price">Free</div>
+                    <p class="pricing-desc" data-i18n="pricing.starter.desc">For individuals and small experiments</p>
                     <ul class="pricing-features">
-                        <li>1 team</li>
-                        <li>2 services</li>
-                        <li>Standard templates</li>
-                        <li>Shared infrastructure</li>
-                        <li>Community support</li>
+                        <li data-i18n="pricing.starter.f1">1 team</li>
+                        <li data-i18n="pricing.starter.f2">2 services</li>
+                        <li data-i18n="pricing.starter.f3">Standard templates</li>
+                        <li data-i18n="pricing.starter.f4">Shared infrastructure</li>
+                        <li data-i18n="pricing.starter.f5">Community support</li>
                     </ul>
-                    <a href="#request-access" class="btn btn-outline btn-block">Request Access</a>
+                    <a href="#request-access" class="btn btn-outline btn-block" data-i18n="pricing.starter.cta">Request Access</a>
                 </div>
                 <div class="pricing-card pricing-card-featured reveal">
-                    <div class="pricing-badge">Popular</div>
-                    <h3>Professional</h3>
-                    <div class="pricing-price">Contact Us</div>
-                    <p class="pricing-desc">For growing engineering teams</p>
+                    <div class="pricing-badge" data-i18n="pricing.pro.badge">Popular</div>
+                    <h3 data-i18n="pricing.pro.title">Professional</h3>
+                    <div class="pricing-price" data-i18n="pricing.pro.price">Contact Us</div>
+                    <p class="pricing-desc" data-i18n="pricing.pro.desc">For growing engineering teams</p>
                     <ul class="pricing-features">
-                        <li>Unlimited teams</li>
-                        <li>Custom templates</li>
-                        <li>Dedicated namespaces</li>
-                        <li>Priority support</li>
-                        <li>SLA guarantee</li>
+                        <li data-i18n="pricing.pro.f1">Unlimited teams</li>
+                        <li data-i18n="pricing.pro.f2">Custom templates</li>
+                        <li data-i18n="pricing.pro.f3">Dedicated namespaces</li>
+                        <li data-i18n="pricing.pro.f4">Priority support</li>
+                        <li data-i18n="pricing.pro.f5">SLA guarantee</li>
                     </ul>
-                    <a href="#contact" class="btn btn-primary btn-block">Talk to Sales</a>
+                    <a href="#contact" class="btn btn-primary btn-block" data-i18n="pricing.pro.cta">Talk to Sales</a>
                 </div>
                 <div class="pricing-card reveal">
-                    <h3>Enterprise</h3>
-                    <div class="pricing-price">Custom</div>
-                    <p class="pricing-desc">For organizations at scale</p>
+                    <h3 data-i18n="pricing.enterprise.title">Enterprise</h3>
+                    <div class="pricing-price" data-i18n="pricing.enterprise.price">Custom</div>
+                    <p class="pricing-desc" data-i18n="pricing.enterprise.desc">For organizations at scale</p>
                     <ul class="pricing-features">
-                        <li>White-label platform</li>
-                        <li>Dedicated infrastructure</li>
-                        <li>Custom integrations</li>
-                        <li>Dedicated support engineer</li>
-                        <li>Enterprise SLA</li>
+                        <li data-i18n="pricing.enterprise.f1">White-label platform</li>
+                        <li data-i18n="pricing.enterprise.f2">Dedicated infrastructure</li>
+                        <li data-i18n="pricing.enterprise.f3">Custom integrations</li>
+                        <li data-i18n="pricing.enterprise.f4">Dedicated support engineer</li>
+                        <li data-i18n="pricing.enterprise.f5">Enterprise SLA</li>
                     </ul>
-                    <a href="#contact" class="btn btn-outline btn-block">Contact Us</a>
+                    <a href="#contact" class="btn btn-outline btn-block" data-i18n="pricing.enterprise.cta">Contact Us</a>
                 </div>
             </div>
         </div>
@@ -435,28 +439,34 @@
     <!-- Contact Section -->
     <section class="contact" id="contact">
         <div class="container">
-            <h2 class="section-title">Get in Touch</h2>
+            <h2 class="section-title" data-i18n="contact.title">Get in Touch</h2>
             <div class="contact-content">
-                <p class="contact-intro">Questions about MCTL? Need a custom solution? Our team is here to help.</p>
+                <p class="contact-intro" data-i18n="contact.intro">Questions about MCTL? Need a custom solution? Our team is here to help.</p>
 
                 <div class="contact-form-wrapper">
                     <form id="contact-form" class="contact-form">
                         <div class="form-group">
-                            <label for="contact-name">Name</label>
-                            <input type="text" id="contact-name" name="name" required placeholder="Your name">
+                            <label for="contact-name" data-i18n="contact.label.name">Name</label>
+                            <input type="text" id="contact-name" name="name" required
+                                data-i18n-attr="placeholder:contact.placeholder.name"
+                                placeholder="Your name">
                         </div>
 
                         <div class="form-group">
-                            <label for="contact-email">Email</label>
-                            <input type="email" id="contact-email" name="email" required placeholder="your@email.com">
+                            <label for="contact-email" data-i18n="contact.label.email">Email</label>
+                            <input type="email" id="contact-email" name="email" required
+                                data-i18n-attr="placeholder:contact.placeholder.email"
+                                placeholder="your@email.com">
                         </div>
 
                         <div class="form-group">
-                            <label for="contact-message">Message</label>
-                            <textarea id="contact-message" name="message" rows="5" required placeholder="How can we help you?"></textarea>
+                            <label for="contact-message" data-i18n="contact.label.message">Message</label>
+                            <textarea id="contact-message" name="message" rows="5" required
+                                data-i18n-attr="placeholder:contact.placeholder.message"
+                                placeholder="How can we help you?"></textarea>
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-block" id="contact-submit">
+                        <button type="submit" class="btn btn-primary btn-block" id="contact-submit" data-i18n="contact.submit">
                             Send Message
                         </button>
 
@@ -475,17 +485,17 @@
                     <span class="logo"><span class="logo-m">M</span>CTL</span>
                 </div>
                 <div class="footer-links">
-                    <a href="#features">Platform</a>
-                    <a href="#pricing">Pricing</a>
-                    <a href="#contact">Contact</a>
+                    <a href="#features" data-i18n="footer.platform">Platform</a>
+                    <a href="#pricing" data-i18n="footer.pricing">Pricing</a>
+                    <a href="#contact" data-i18n="footer.contact">Contact</a>
                 </div>
-                <div class="footer-copy">
+                <div class="footer-copy" data-i18n-html="footer.copyright">
                     &copy; 2025 MCTL. All rights reserved.
                 </div>
             </div>
         </div>
     </footer>
 
-    <script src="js/form.js?v=10"></script>
+    <script src="js/form.js?v=11"></script>
 </body>
 </html>
