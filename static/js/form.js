@@ -97,8 +97,9 @@
             showAuthError('Failed to process authentication. Please try again.');
         }
 
-        // Clean URL
+        // Clean URL and scroll to section
         history.replaceState(null, '', window.location.pathname);
+        document.getElementById('request-access').scrollIntoView({ behavior: 'smooth' });
     }
 
     function showAuthError(message) {
