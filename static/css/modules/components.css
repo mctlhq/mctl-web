@@ -189,6 +189,8 @@
 
 .form-help { font-size: 0.85rem; color: var(--color-text-muted); }
 
+#usecase { height: 120px; resize: none; overflow-y: auto; }
+
 .team-input-wrapper { position: relative; }
 .team-input-wrapper input { width: 100%; box-sizing: border-box; padding-right: 2.75rem; }
 
