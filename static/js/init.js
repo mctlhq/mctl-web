@@ -37,6 +37,9 @@
     }
 
     // Wire up all modules
+    const version = (document.querySelector('meta[name="app-version"]') || {}).content || '—';
+    console.log('%c MCTL v' + version + ' ', 'background:#00f5ff;color:#0a0e27;font-weight:bold;padding:2px 8px;border-radius:3px');
+
     App.DOM.successModalClose.addEventListener('click', App.UI.hideSuccessModal);
     document.getElementById('github-logout').addEventListener('click', function() { App.Auth.logout(); });
 

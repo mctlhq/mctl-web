@@ -136,6 +136,8 @@
 /* Forms */
 .form-wrapper {
   max-width: 600px;
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   background: var(--color-terminal);
   padding: 3rem;
@@ -189,8 +191,8 @@
 
 .form-help { font-size: 0.85rem; color: var(--color-text-muted); }
 
-#usecase { width: 100%; height: 193px; resize: none; overflow-y: auto; box-sizing: border-box; }
-#contact-message { width: 100%; height: 139px; resize: none; overflow-y: auto; box-sizing: border-box; }
+#usecase { width: 100%; max-width: 100%; height: 193px; resize: none; overflow-y: auto; box-sizing: border-box; }
+#contact-message { width: 100%; max-width: 100%; height: 139px; resize: none; overflow-y: auto; box-sizing: border-box; }
 
 .team-input-wrapper { position: relative; }
 .team-input-wrapper input { width: 100%; box-sizing: border-box; padding-right: 2.75rem; }

@@ -508,6 +508,8 @@
 
 .contact-form-wrapper {
   max-width: 600px;
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto 3rem;
   background: var(--color-terminal);
   padding: 3rem;
