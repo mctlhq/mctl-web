@@ -71,6 +71,7 @@
 .footer { padding: 3rem 0; background: var(--color-terminal); border-top: 1px solid rgba(0,245,255,0.2); }
 .footer-content { display: flex; flex-direction: column; gap: 1.5rem; align-items: center; text-align: center; }
 .footer-logo .logo { font-size: 1.25rem; }
+.footer-version { font-size: 0.7rem; color: var(--color-text-muted); margin-left: 0.5rem; vertical-align: middle; opacity: 0.7; }
 .footer-links { display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; }
 .footer-links a { color: var(--color-accent); text-decoration: none; transition: all 0.3s ease; }
 .footer-links a:hover { color: #ffffff; transform: translateY(-2px); }
