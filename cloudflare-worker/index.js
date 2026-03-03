@@ -2,7 +2,7 @@
  * Cloudflare Worker for mctl.me landing page
  * - GitHub OAuth (login + callback)
  * - Team availability check via Backstage tenant API
- * - Auto-create GitHub team + invite user + submit tenant provisioning workflow
+ * - Submit tenant provisioning workflow via Backstage API
  * - Telegram notifications + welcome emails
  *
  * Environment variables (set via wrangler secret):
@@ -11,7 +11,6 @@
  * - GITHUB_CLIENT_ID: GitHub OAuth App client ID
  * - GITHUB_CLIENT_SECRET: GitHub OAuth App client secret
  * - GITHUB_OAUTH_HMAC_KEY: random 32+ char string for signing auth data
- * - GITHUB_ORG_TOKEN: PAT with admin:org scope for GitHub team management + user invite
  * - BACKSTAGE_API_TOKEN: Static bearer token for Backstage tenant API (BACKSTAGE_LANDING_TOKEN)
  * - RESEND_API_KEY: Resend.com API key for sending welcome emails
  */
@@ -245,8 +244,7 @@ function parseCookies(cookieHeader) {
 }
 
 // ─── Check Team Availability ─────────────────────────────────────────────────
-// Proxies to Backstage tenant API (source of truth for provisioned tenants).
-// Falls back to GitHub API if Backstage is unavailable.
+// Checks Backstage tenant API — the single source of truth for provisioned tenants.
 
 async function handleCheckTeam(url, env) {
   const name = url.searchParams.get('name');
@@ -259,37 +257,18 @@ async function handleCheckTeam(url, env) {
     return jsonResponse({ available: false, error: 'Invalid team name format' }, 400);
   }
 
-  // ── Primary: check Backstage tenant API ──────────────────────────────────
   try {
     const res = await backstageAPI(
       `/api/tenant-management/tenants/${encodeURIComponent(name)}`,
       env.BACKSTAGE_API_TOKEN,
     );
     if (res.status === 404) {
-      // Tenant not provisioned — also verify no GitHub team exists
-      // (handles the window between GitHub team creation and Argo workflow completion)
-      const ghRes = await githubAPI(`/orgs/${GITHUB_ORG}/teams/${name}`, env.GITHUB_ORG_TOKEN);
-      if (ghRes.status === 404) {
-        return jsonResponse({ available: true });
-      }
-      return jsonResponse({ available: false, message: 'Team already exists' });
-    }
-    if (res.ok) {
-      return jsonResponse({ available: false, message: 'Tenant already provisioned' });
-    }
-    // Unexpected status from Backstage — fall through to GitHub API fallback
-    console.warn(`Backstage tenant API returned ${res.status} for team check: ${name}`);
-  } catch (e) {
-    console.warn('Backstage tenant API unavailable, falling back to GitHub API:', e.message);
-  }
-
-  // ── Fallback: check GitHub API directly ──────────────────────────────────
-  try {
-    const res = await githubAPI(`/orgs/${GITHUB_ORG}/teams/${name}`, env.GITHUB_ORG_TOKEN);
-    if (res.status === 404) {
       return jsonResponse({ available: true });
     }
-    return jsonResponse({ available: false, message: 'Team already exists' });
+    if (res.ok) {
+      return jsonResponse({ available: false, message: 'Team name is already taken' });
+    }
+    return jsonResponse({ error: 'Failed to check team availability' }, 500);
   } catch (e) {
     console.error('Check team error:', e);
     return jsonResponse({ error: 'Failed to check team availability' }, 500);
@@ -342,62 +321,7 @@ async function handleFormSubmit(request, env) {
       }
     }
 
-    // ── Create GitHub team (for GitHub SSO / org membership) ────────────────
-    let teamCreated = false;
-    let teamError = null;
-    try {
-      const createRes = await githubAPI(`/orgs/${GITHUB_ORG}/teams`, env.GITHUB_ORG_TOKEN, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: team,
-          description: `mctl.me team. Portal: https://app.mctl.me/ | ArgoCD: https://ops.mctl.me/ | Access via GitHub SSO`,
-          privacy: 'secret',
-        }),
-      });
-      if (createRes.status === 201) {
-        teamCreated = true;
-      } else {
-        const err = await createRes.json();
-        teamError = err.message || `Status ${createRes.status}`;
-      }
-    } catch (e) {
-      teamError = e.message;
-    }
-
-    if (!teamCreated) {
-      // Can't proceed without GitHub team (needed for org membership + ArgoCD RBAC)
-      await sendTelegramError(env, { login, html_url, name, email, team, usecase, teamError });
-      return jsonResponse({
-        success: false,
-        message: `Failed to create team: ${teamError}`,
-      }, 500);
-    }
-
-    // ── Invite user to GitHub team ───────────────────────────────────────────
-    let userInvited = false;
-    let inviteError = null;
-    try {
-      const inviteRes = await githubAPI(
-        `/orgs/${GITHUB_ORG}/teams/${team}/memberships/${login}`,
-        env.GITHUB_ORG_TOKEN,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ role: 'member' }),
-        }
-      );
-      if (inviteRes.ok) {
-        userInvited = true;
-      } else {
-        const err = await inviteRes.json();
-        inviteError = err.message || `Status ${inviteRes.status}`;
-      }
-    } catch (e) {
-      inviteError = e.message;
-    }
-
-    // ── Submit tenant provisioning workflow (K8s namespace + Vault + RBAC) ──
+    // ── Submit tenant provisioning workflow ──────────────────────────────────
     let workflowSubmitted = false;
     let workflowName = null;
     let workflowError = null;
@@ -411,8 +335,8 @@ async function handleFormSubmit(request, env) {
             tenantName: team,
             displayName: name || team,
             description: usecase || '',
-            githubTeam: team,
             contactEmail: email || '',
+            creatorUserId: login,
           }),
         },
       );
@@ -431,8 +355,6 @@ async function handleFormSubmit(request, env) {
     }
 
     // ── Build Telegram notification ──────────────────────────────────────────
-    const teamStatus = '✅ GitHub team created';
-    const inviteStatus = userInvited ? '✅ Invited to team' : `❌ ${inviteError}`;
     const workflowStatus = workflowSubmitted
       ? `✅ Workflow submitted: \`${esc(workflowName || 'create-tenant')}\``
       : `❌ Workflow failed: ${esc(workflowError || 'unknown')}`;
@@ -445,12 +367,10 @@ async function handleFormSubmit(request, env) {
       `🏷 Team: \`${esc(team)}\``,
       ``,
       `*Status:*`,
-      `• ${esc(teamStatus)}`,
-      `• ${esc(inviteStatus)}`,
       `• ${esc(workflowStatus)}`,
       usecase ? `📝 ${esc(usecase)}` : null,
       ``,
-      `🔗 *Platform Access \\(via GitHub SSO\\):*`,
+      `🔗 *Platform Access:*`,
       `• [Portal](https://app\\.mctl\\.me/)`,
       `• [ArgoCD](https://ops\\.mctl\\.me/)`,
       workflowSubmitted ? `• [Workflow](https://workflows\\.mctl\\.me/)` : null,
@@ -471,7 +391,7 @@ async function handleFormSubmit(request, env) {
     });
 
     // ── Send welcome email ───────────────────────────────────────────────────
-    if (teamCreated && userInvited && email) {
+    if (workflowSubmitted && email) {
       try {
         await sendWelcomeEmail(env, { email, name: name || login, team, login, workflowSubmitted });
       } catch (e) {
@@ -480,25 +400,15 @@ async function handleFormSubmit(request, env) {
     }
 
     // ── Response ─────────────────────────────────────────────────────────────
-    if (teamCreated && userInvited && workflowSubmitted) {
+    if (workflowSubmitted) {
       return jsonResponse({
         success: true,
-        message: `Team "${team}" created! Accept the GitHub invitation — your Kubernetes namespace will be provisioned automatically within ~2 minutes.`,
-      });
-    } else if (teamCreated && userInvited) {
-      return jsonResponse({
-        success: true,
-        message: `Team "${team}" created! Accept the GitHub invitation. Namespace provisioning may take a few minutes — our team will follow up.`,
-      });
-    } else if (teamCreated) {
-      return jsonResponse({
-        success: true,
-        message: `Team "${team}" created, but the invitation couldn't be sent automatically. Our team will follow up shortly.`,
+        message: `Team "${team}" is being provisioned! Sign in to app.mctl.me with your GitHub account — your workspace will be ready in ~2 minutes.`,
       });
     } else {
       return jsonResponse({
         success: false,
-        message: `Failed to create team: ${teamError}`,
+        message: `Failed to submit provisioning request: ${workflowError}`,
       }, 500);
     }
 
@@ -506,30 +416,6 @@ async function handleFormSubmit(request, env) {
     console.error('Error:', error);
     return jsonResponse({ success: false, message: 'Failed to submit request. Please try again.' }, 500);
   }
-}
-
-async function sendTelegramError(env, { login, html_url, name, email, team, usecase, teamError }) {
-  const msg = [
-    `❌ *mctl\\.me — Team Creation Failed*`,
-    ``,
-    `👤 [@${esc(login)}](${esc(html_url)})${name ? ` \\(${esc(name)}\\)` : ''}`,
-    email ? `📧 ${esc(email)}` : null,
-    `🏷 Team: \`${esc(team)}\``,
-    `❌ Error: ${esc(teamError)}`,
-    usecase ? `📝 ${esc(usecase)}` : null,
-  ].filter(Boolean).join('\n');
-
-  const telegramUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
-  await fetch(telegramUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: env.TELEGRAM_CHAT_ID,
-      text: msg,
-      parse_mode: 'MarkdownV2',
-      disable_web_page_preview: true,
-    }),
-  }).catch(() => {});
 }
 
 // ─── Contact Form ────────────────────────────────────────────────────────────
@@ -607,7 +493,6 @@ function escHtml(text) {
 }
 
 async function sendWelcomeEmail(env, { email, name, team, login, workflowSubmitted }) {
-  const inviteUrl = 'https://github.com/orgs/mctlhq/invitation';
   const html = `
 <!DOCTYPE html>
 <html>
@@ -638,23 +523,6 @@ async function sendWelcomeEmail(env, { email, name, team, login, workflowSubmitt
                 <div style="width:28px;height:28px;border-radius:50%;background:#00f5ff;color:#0a0e14;font-weight:700;font-size:14px;line-height:28px;text-align:center">1</div>
               </td>
               <td style="padding-left:12px">
-                <p style="color:#ffffff;font-size:15px;margin:0 0 12px;line-height:1.5">
-                  <strong>Accept the GitHub organization invite</strong>
-                </p>
-                <a href="${inviteUrl}" style="display:inline-block;padding:10px 24px;background:#00f5ff;color:#0a0e14;font-weight:600;font-size:14px;text-decoration:none;border-radius:6px">
-                  Accept Invite on GitHub →
-                </a>
-              </td>
-            </tr>
-          </table>
-
-          <!-- Step 2 -->
-          <table cellpadding="0" cellspacing="0" style="margin-bottom:24px;width:100%">
-            <tr>
-              <td width="36" valign="top">
-                <div style="width:28px;height:28px;border-radius:50%;background:#00f5ff;color:#0a0e14;font-weight:700;font-size:14px;line-height:28px;text-align:center">2</div>
-              </td>
-              <td style="padding-left:12px">
                 <p style="color:#ffffff;font-size:15px;margin:0 0 4px;line-height:1.5">
                   <strong>Wait for namespace provisioning</strong> (~2 min)
                 </p>
@@ -665,11 +533,11 @@ async function sendWelcomeEmail(env, { email, name, team, login, workflowSubmitt
             </tr>
           </table>
 
-          <!-- Step 3 -->
+          <!-- Step 2 -->
           <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;width:100%">
             <tr>
               <td width="36" valign="top">
-                <div style="width:28px;height:28px;border-radius:50%;background:#00f5ff;color:#0a0e14;font-weight:700;font-size:14px;line-height:28px;text-align:center">3</div>
+                <div style="width:28px;height:28px;border-radius:50%;background:#00f5ff;color:#0a0e14;font-weight:700;font-size:14px;line-height:28px;text-align:center">2</div>
               </td>
               <td style="padding-left:12px">
                 <p style="color:#ffffff;font-size:15px;margin:0 0 12px;line-height:1.5">
@@ -719,7 +587,7 @@ async function sendWelcomeEmail(env, { email, name, team, login, workflowSubmitt
     body: JSON.stringify({
       from: 'MCTL <noreply@mctl.me>',
       to: [email],
-      subject: `Your team "${team}" is ready — accept the invite`,
+      subject: `Your team "${team}" is being provisioned — sign in to get started`,
       html,
     }),
   });

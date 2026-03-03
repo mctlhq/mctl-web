@@ -39,8 +39,8 @@ window.MCTL_TRANSLATIONS = {
 
         // ─── Success Modal ─────────────────────────────────────────────────
         'modal.team_created':    'Team Created!',
-        'modal.step1':           'Accept the GitHub organization invite — check your email or <a href="https://github.com/orgs/mctlhq/invitation" target="_blank" rel="noopener">open invitation page</a>',
-        'modal.step2':           'After accepting, sign in with your GitHub account to access:',
+        'modal.step1':           'Your Kubernetes namespace is being provisioned — this takes ~2 minutes.',
+        'modal.step2':           'Sign in with your GitHub account to access:',
         'modal.portal':          'Portal — app.mctl.me',
         'modal.argocd':          'ArgoCD — ops.mctl.me',
         'modal.close':           'Got it',
@@ -230,8 +230,8 @@ window.MCTL_TRANSLATIONS = {
 
         // ─── Success Modal ─────────────────────────────────────────────────
         'modal.team_created': 'Команда создана!',
-        'modal.step1':        'Примите приглашение в GitHub-организацию — проверьте почту или <a href="https://github.com/orgs/mctlhq/invitation" target="_blank" rel="noopener">откройте страницу приглашения</a>',
-        'modal.step2':        'После принятия войдите через GitHub, чтобы попасть в:',
+        'modal.step1':        'Ваш Kubernetes namespace разворачивается — это займёт ~2 минуты.',
+        'modal.step2':        'Войдите через GitHub, чтобы попасть в:',
         'modal.portal':       'Портал — app.mctl.me',
         'modal.argocd':       'ArgoCD — ops.mctl.me',
         'modal.close':        'Понятно',
