@@ -333,7 +333,7 @@ async function handleFormSubmit(request, env) {
           method: 'POST',
           body: JSON.stringify({
             tenantName: team,
-            displayName: name || team,
+            displayName: team,
             description: usecase || '',
             contactEmail: email || '',
             creatorUserId: login,
