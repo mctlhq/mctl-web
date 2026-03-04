@@ -11,7 +11,8 @@
  * - GITHUB_CLIENT_ID: GitHub OAuth App client ID
  * - GITHUB_CLIENT_SECRET: GitHub OAuth App client secret
  * - GITHUB_OAUTH_HMAC_KEY: random 32+ char string for signing auth data
- * - BACKSTAGE_API_TOKEN: Static bearer token for Backstage tenant API (BACKSTAGE_LANDING_TOKEN)
+ * - BACKSTAGE_API_TOKEN: Shared secret for signing landing-page JWT tokens (HMAC-SHA256).
+ *     Also used as static bearer fallback (BACKSTAGE_LANDING_TOKEN).
  * - RESEND_API_KEY: Resend.com API key for sending welcome emails
  */
 
@@ -104,6 +105,29 @@ function backstageAPI(path, token, options = {}) {
       ...(options.headers || {}),
     },
   });
+}
+
+// ─── JWT helpers ─────────────────────────────────────────────────────────────
+
+const JWT_HEADER = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+  .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+async function createLandingJwt(secret) {
+  const now = Math.floor(Date.now() / 1000);
+  const payload = { iss: 'mctl-landing', iat: now, exp: now + 60 };
+  const payloadB64 = btoa(JSON.stringify(payload))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  const sigInput = `${JWT_HEADER}.${payloadB64}`;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  );
+  const sigBytes = new Uint8Array(await crypto.subtle.sign('HMAC', key, encoder.encode(sigInput)));
+  const sigB64 = btoa(String.fromCharCode(...sigBytes))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  return `${sigInput}.${sigB64}`;
 }
 
 // ─── HMAC helpers ────────────────────────────────────────────────────────────
@@ -258,9 +282,10 @@ async function handleCheckTeam(url, env) {
   }
 
   try {
+    const jwt = await createLandingJwt(env.BACKSTAGE_API_TOKEN);
     const res = await backstageAPI(
       `/api/tenant-management/tenants/${encodeURIComponent(name)}`,
-      env.BACKSTAGE_API_TOKEN,
+      jwt,
     );
     if (res.status === 404) {
       return jsonResponse({ available: true });
@@ -304,11 +329,12 @@ async function handleFormSubmit(request, env) {
     }
 
     // ── Check if tenant already exists ─────────────────────────────────────
+    const jwt = await createLandingJwt(env.BACKSTAGE_API_TOKEN);
     if (!UNLIMITED_USERS.includes(login)) {
       try {
         const existsRes = await backstageAPI(
           `/api/tenant-management/tenants/${encodeURIComponent(team)}`,
-          env.BACKSTAGE_API_TOKEN,
+          jwt,
         );
         if (existsRes.ok) {
           return jsonResponse({
@@ -328,7 +354,7 @@ async function handleFormSubmit(request, env) {
     try {
       const tenantRes = await backstageAPI(
         '/api/tenant-management/tenants',
-        env.BACKSTAGE_API_TOKEN,
+        jwt,
         {
           method: 'POST',
           body: JSON.stringify({
