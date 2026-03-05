@@ -24,6 +24,13 @@ const GITHUB_ORG = 'mctlhq';
 const BACKSTAGE_APP_URL = 'https://app.mctl.me';
 const UNLIMITED_USERS = ['mashkovd'];
 
+// Rate limit: max requests per IP per window (seconds)
+const RATE_LIMITS = {
+  '/api/submit':  { max: 5,  windowSec: 300 },  // 5 per 5 min
+  '/api/contact': { max: 3,  windowSec: 300 },  // 3 per 5 min
+  '/api/github/login': { max: 10, windowSec: 60 }, // 10 per min
+};
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -32,6 +39,20 @@ export default {
     // CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders() });
+    }
+
+    // Rate limiting for sensitive endpoints
+    const limit = RATE_LIMITS[path];
+    if (limit) {
+      const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const limited = await checkRateLimit(clientIP, path, limit.max, limit.windowSec);
+      if (limited) {
+        return jsonResponse(
+          { error: 'Too many requests. Please try again later.' },
+          429,
+          { 'Retry-After': String(limit.windowSec) },
+        );
+      }
     }
 
     // GitHub OAuth: initiate login
@@ -62,6 +83,31 @@ export default {
     return new Response('Not Found', { status: 404 });
   }
 };
+
+// ─── Rate Limiting (Cache API) ──────────────────────────────────────────────
+// Simple per-IP rate limiter using Cloudflare Cache API.
+// Not perfectly accurate (distributed, eventually consistent) but provides
+// reasonable abuse protection without additional services (KV, D1).
+
+async function checkRateLimit(ip, path, maxRequests, windowSec) {
+  const cache = caches.default;
+  const key = `https://rate-limit.internal/${path}/${ip}`;
+  const cacheReq = new Request(key);
+
+  const cached = await cache.match(cacheReq);
+  let count = 1;
+  if (cached) {
+    count = parseInt(await cached.text(), 10) + 1;
+  }
+
+  // Store updated count with TTL = window
+  const resp = new Response(String(count), {
+    headers: { 'Cache-Control': `s-maxage=${windowSec}` },
+  });
+  await cache.put(cacheReq, resp);
+
+  return count > maxRequests;
+}
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
 
