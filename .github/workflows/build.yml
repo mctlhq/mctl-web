@@ -3,7 +3,6 @@ name: build
 on:
   push:
     branches: [main]
-    tags: ["[0-9]*"]
     paths-ignore: ['cloudflare-worker/**']
   pull_request:
     branches: [main]
@@ -55,19 +54,3 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: APP_VERSION=${{ steps.meta.outputs.version }}
-
-      # On semver tag: pin the new image version in GitOps repo
-      - name: Update mctl-core image tag
-        if: github.ref_type == 'tag'
-        env:
-          GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
-          VERSION: ${{ steps.meta.outputs.version }}
-        run: |
-          git clone https://x-access-token:${GITOPS_TOKEN}@github.com/mctlhq/mctl-core.git /tmp/mctl-core
-          cd /tmp/mctl-core
-          sed -i "s/  tag: \".*\"/  tag: \"${VERSION}\"/" platform-gitops/services/admins/mctl-web/values.yaml
-          git config user.email "ci@mctl.ai"
-          git config user.name "mctl-ci"
-          git add platform-gitops/services/admins/mctl-web/values.yaml
-          git diff --staged --quiet || git commit -m "chore: bump mctl-web to ${VERSION}"
-          git push
