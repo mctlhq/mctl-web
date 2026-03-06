@@ -6,7 +6,8 @@
     // ─── Domain → language config ─────────────────────────────────────────
     // Add new domains / languages here without touching anything else.
     var DOMAIN_CONFIG = {
-        'mctl.me':    { allowed: ['en'],       default: 'en' },
+        'mctl.ai':    { allowed: ['en', 'ru'], default: 'en' },
+        'mctl.me':    { allowed: ['en', 'ru'], default: 'en' },
         'mctl.ru':    { allowed: ['ru', 'en'], default: 'ru' },
         'localhost':  { allowed: ['ru', 'en'], default: 'ru' },
         '127.0.0.1':  { allowed: ['ru', 'en'], default: 'ru' },

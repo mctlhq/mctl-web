@@ -22,7 +22,7 @@ App.ContactForm = {
             App.DOM.contactSubmitBtn.innerHTML = '<span class="terminal-prompt">$</span> ' + window.i18n.t('js.contact.sending');
 
             try {
-                const response = await fetch('https://mctl.me/api/contact', {
+                const response = await fetch('https://mctl.ai/api/contact', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, email, message }),

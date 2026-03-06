@@ -6,7 +6,12 @@ compatibility_date = "2024-01-01"
 # TELEGRAM_BOT_TOKEN = "your-bot-token-here"
 # TELEGRAM_CHAT_ID = "your-chat-id-here"
 
-# Route configuration - deploy to mctl.me/api/*
+# Routes:
+#   mctl.ai/api/*  — primary API endpoint
+#   mctl.me/*      — redirect all traffic to mctl.ai
+#   mctl.ru/*      — redirect all traffic to mctl.ai
 routes = [
-  { pattern = "mctl.me/api/*", zone_name = "mctl.me" }
+  { pattern = "mctl.ai/api/*", zone_name = "mctl.ai" },
+  { pattern = "mctl.me/*",     zone_name = "mctl.me" },
+  { pattern = "mctl.ru/*",     zone_name = "mctl.ru" }
 ]

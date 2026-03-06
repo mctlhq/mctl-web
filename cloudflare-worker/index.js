@@ -1,5 +1,5 @@
 /**
- * Cloudflare Worker for mctl.me landing page
+ * Cloudflare Worker for mctl.ai landing page
  * - GitHub OAuth (login + callback)
  * - Team availability check via Backstage tenant API
  * - Submit tenant provisioning workflow via Backstage API
@@ -16,9 +16,11 @@
  * - RESEND_API_KEY: Resend.com API key for sending welcome emails
  */
 
-const BASE_DOMAIN = 'mctl.me';
-const ALLOWED_ORIGINS = new Set(['https://mctl.me', 'https://mctl.ai', 'https://mctl.ru']);
+const BASE_DOMAIN = 'mctl.ai';
+const REDIRECT_DOMAINS = new Set(['mctl.me', 'mctl.ru']);
+const ALLOWED_ORIGINS = new Set(['https://mctl.ai']);
 const LANDING_URL = `https://${BASE_DOMAIN}`;
+// NOTE: after deploying, update GitHub OAuth App callback URL to https://mctl.ai/api/github/callback
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
 const GITHUB_ORG = 'mctlhq';
 const BACKSTAGE_APP_URL = 'https://app.mctl.me';
@@ -36,6 +38,14 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     const origin = request.headers.get('Origin') || '';
+
+    // ── Redirect mctl.me and mctl.ru to mctl.ai ───────────────────────────
+    if (REDIRECT_DOMAINS.has(url.hostname)) {
+      return new Response(null, {
+        status: 301,
+        headers: { 'Location': `https://mctl.ai${url.pathname}${url.search}` },
+      });
+    }
 
     // CORS preflight
     if (request.method === 'OPTIONS') {
@@ -114,7 +124,7 @@ async function checkRateLimit(ip, path, maxRequests, windowSec) {
 // ─── CORS ────────────────────────────────────────────────────────────────────
 
 function corsHeaders(origin = '') {
-  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://mctl.me';
+  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://mctl.ai';
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -665,7 +675,7 @@ async function sendWelcomeEmail(env, { email, name, team, login, workflowSubmitt
           <div style="border-top:1px solid rgba(0,245,255,0.1);padding-top:20px">
             <p style="color:#8b949e;font-size:13px;margin:0;line-height:1.5">
               Questions? Reply to this email or reach us at
-              <a href="https://mctl.me/#contact" style="color:#00f5ff;text-decoration:none">mctl.me/contact</a>
+              <a href="https://mctl.ai/#contact" style="color:#00f5ff;text-decoration:none">mctl.ai/contact</a>
             </p>
           </div>
         </td></tr>
