@@ -1,0 +1,70 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths-ignore: ['cloudflare-worker/**']
+  pull_request:
+    branches: [main]
+    paths-ignore: ['cloudflare-worker/**']
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/mctlhq/mctl-web
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: APP_VERSION=${{ steps.meta.outputs.version }}
+
+      # On semver tag: pin the new image version in GitOps repo
+      - name: Update mctl-core image tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          git clone https://x-access-token:${GITOPS_TOKEN}@github.com/mctlhq/mctl-core.git /tmp/mctl-core
+          cd /tmp/mctl-core
+          sed -i "s/  tag: \".*\"/  tag: \"${VERSION}\"/" platform-gitops/services/admins/mctl-web/values.yaml
+          git config user.email "ci@mctl.ai"
+          git config user.name "mctl-ci"
+          git add platform-gitops/services/admins/mctl-web/values.yaml
+          git diff --staged --quiet || git commit -m "chore: bump mctl-web to ${VERSION}"
+          git push
