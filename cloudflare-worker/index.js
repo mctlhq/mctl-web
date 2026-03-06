@@ -17,7 +17,7 @@
  */
 
 const BASE_DOMAIN = 'mctl.me';
-const ALLOWED_ORIGIN = `https://${BASE_DOMAIN}`;
+const ALLOWED_ORIGINS = new Set(['https://mctl.me', 'https://mctl.ai', 'https://mctl.ru']);
 const LANDING_URL = `https://${BASE_DOMAIN}`;
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
 const GITHUB_ORG = 'mctlhq';
@@ -35,10 +35,11 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
+    const origin = request.headers.get('Origin') || '';
 
     // CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders() });
+      return new Response(null, { headers: corsHeaders(origin) });
     }
 
     // Rate limiting for sensitive endpoints
@@ -51,13 +52,14 @@ export default {
           { error: 'Too many requests. Please try again later.' },
           429,
           { 'Retry-After': String(limit.windowSec) },
+          origin,
         );
       }
     }
 
     // GitHub OAuth: initiate login
     if (request.method === 'GET' && path === '/api/github/login') {
-      return handleGitHubLogin(env, url);
+      return handleGitHubLogin(env, url, origin);
     }
 
     // GitHub OAuth: callback
@@ -67,17 +69,17 @@ export default {
 
     // Check team availability (proxies to Backstage tenant API)
     if (request.method === 'GET' && path === '/api/github/check-team') {
-      return handleCheckTeam(url, env);
+      return handleCheckTeam(url, env, origin);
     }
 
     // Form submission
     if (request.method === 'POST' && path === '/api/submit') {
-      return handleFormSubmit(request, env);
+      return handleFormSubmit(request, env, origin);
     }
 
     // Contact form submission
     if (request.method === 'POST' && path === '/api/contact') {
-      return handleContactForm(request, env);
+      return handleContactForm(request, env, origin);
     }
 
     return new Response('Not Found', { status: 404 });
@@ -111,18 +113,20 @@ async function checkRateLimit(ip, path, maxRequests, windowSec) {
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
 
-function corsHeaders() {
+function corsHeaders(origin = '') {
+  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://mctl.me';
   return {
-    'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin',
   };
 }
 
-function jsonResponse(body, status = 200, extraHeaders = {}) {
+function jsonResponse(body, status = 200, extraHeaders = {}, origin = '') {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders(), 'Content-Type': 'application/json', ...extraHeaders },
+    headers: { ...corsHeaders(origin), 'Content-Type': 'application/json', ...extraHeaders },
   });
 }
 
@@ -194,7 +198,7 @@ async function hmacVerify(data, signature, secret) {
 
 // ─── GitHub OAuth: Login ─────────────────────────────────────────────────────
 
-async function handleGitHubLogin(env, url) {
+async function handleGitHubLogin(env, url, origin) {
   const forMcp = url && url.searchParams.get('for') === 'mcp';
 
   const stateBytes = new Uint8Array(16);
@@ -343,15 +347,15 @@ function parseCookies(cookieHeader) {
 // ─── Check Team Availability ─────────────────────────────────────────────────
 // Checks Backstage tenant API — the single source of truth for provisioned tenants.
 
-async function handleCheckTeam(url, env) {
+async function handleCheckTeam(url, env, origin) {
   const name = url.searchParams.get('name');
   if (!name) {
-    return jsonResponse({ error: 'Missing team name' }, 400);
+    return jsonResponse({ error: 'Missing team name' }, 400, {}, origin);
   }
 
   const teamNameRegex = /^[a-z0-9][a-z0-9-]{0,62}$/;
   if (!teamNameRegex.test(name)) {
-    return jsonResponse({ available: false, error: 'Invalid team name format' }, 400);
+    return jsonResponse({ available: false, error: 'Invalid team name format' }, 400, {}, origin);
   }
 
   try {
@@ -361,44 +365,44 @@ async function handleCheckTeam(url, env) {
       jwt,
     );
     if (res.status === 404) {
-      return jsonResponse({ available: true });
+      return jsonResponse({ available: true }, 200, {}, origin);
     }
     if (res.ok) {
-      return jsonResponse({ available: false, message: 'Team name is already taken' });
+      return jsonResponse({ available: false, message: 'Team name is already taken' }, 200, {}, origin);
     }
-    return jsonResponse({ error: 'Failed to check team availability' }, 500);
+    return jsonResponse({ error: 'Failed to check team availability' }, 500, {}, origin);
   } catch (e) {
     console.error('Check team error:', e);
-    return jsonResponse({ error: 'Failed to check team availability' }, 500);
+    return jsonResponse({ error: 'Failed to check team availability' }, 500, {}, origin);
   }
 }
 
 // ─── Form Submit ─────────────────────────────────────────────────────────────
 
-async function handleFormSubmit(request, env) {
+async function handleFormSubmit(request, env, origin) {
   try {
     const data = await request.json();
     const { github_auth, team, usecase } = data;
 
     // ── Validate GitHub auth (HMAC signature) ───────────────────────────────
     if (!github_auth || !github_auth.login || !github_auth.sig) {
-      return jsonResponse({ success: false, message: 'GitHub authentication required' }, 401);
+      return jsonResponse({ success: false, message: 'GitHub authentication required' }, 401, {}, origin);
     }
 
     const validSig = await hmacVerify(github_auth.login, github_auth.sig, env.GITHUB_OAUTH_HMAC_KEY);
     if (!validSig) {
-      return jsonResponse({ success: false, message: 'Invalid authentication signature' }, 403);
+      return jsonResponse({ success: false, message: 'Invalid authentication signature' }, 403, {}, origin);
     }
 
     const { login, name, email, html_url } = github_auth;
 
     if (!team) {
-      return jsonResponse({ success: false, message: 'Missing team name' }, 400);
+      return jsonResponse({ success: false, message: 'Missing team name' }, 400, {}, origin);
     }
 
     const teamNameRegex = /^[a-z0-9][a-z0-9-]{0,62}$/;
     if (!teamNameRegex.test(team)) {
-      return jsonResponse({ success: false, message: 'Invalid team name format' }, 400);
+      return jsonResponse({ success: false, message: 'Invalid team name format' }, 400, {}, origin);
     }
 
     // ── Check if tenant already exists ─────────────────────────────────────
@@ -413,7 +417,7 @@ async function handleFormSubmit(request, env) {
           return jsonResponse({
             success: false,
             message: `Team "${team}" is already provisioned on the platform.`,
-          }, 409);
+          }, 409, {}, origin);
         }
       } catch (e) {
         console.warn('Tenant existence check failed, continuing:', e.message);
@@ -503,38 +507,38 @@ async function handleFormSubmit(request, env) {
       return jsonResponse({
         success: true,
         message: `Team "${team}" is being provisioned! Sign in to app.mctl.me with your GitHub account — your workspace will be ready in ~2 minutes.`,
-      });
+      }, 200, {}, origin);
     } else {
       return jsonResponse({
         success: false,
         message: `Failed to submit provisioning request: ${workflowError}`,
-      }, 500);
+      }, 500, {}, origin);
     }
 
   } catch (error) {
     console.error('Error:', error);
-    return jsonResponse({ success: false, message: 'Failed to submit request. Please try again.' }, 500);
+    return jsonResponse({ success: false, message: 'Failed to submit request. Please try again.' }, 500, {}, origin);
   }
 }
 
 // ─── Contact Form ────────────────────────────────────────────────────────────
 
-async function handleContactForm(request, env) {
+async function handleContactForm(request, env, origin) {
   try {
     const data = await request.json();
     const { name, email, message } = data;
 
     // Basic validation
     if (!name || !email || !message) {
-      return jsonResponse({ success: false, message: 'All fields are required' }, 400);
+      return jsonResponse({ success: false, message: 'All fields are required' }, 400, {}, origin);
     }
 
     if (!email.includes('@') || email.length < 5) {
-      return jsonResponse({ success: false, message: 'Invalid email address' }, 400);
+      return jsonResponse({ success: false, message: 'Invalid email address' }, 400, {}, origin);
     }
 
     if (message.length < 10) {
-      return jsonResponse({ success: false, message: 'Message is too short' }, 400);
+      return jsonResponse({ success: false, message: 'Message is too short' }, 400, {}, origin);
     }
 
     // Build Telegram message
@@ -564,17 +568,17 @@ async function handleContactForm(request, env) {
 
     if (!telegramRes.ok) {
       console.error('Telegram error:', await telegramRes.text());
-      return jsonResponse({ success: false, message: 'Failed to send message. Please try again.' }, 500);
+      return jsonResponse({ success: false, message: 'Failed to send message. Please try again.' }, 500, {}, origin);
     }
 
     return jsonResponse({
       success: true,
       message: 'Message sent successfully! We will get back to you soon.',
-    });
+    }, 200, {}, origin);
 
   } catch (error) {
     console.error('Contact form error:', error);
-    return jsonResponse({ success: false, message: 'Failed to send message. Please try again.' }, 500);
+    return jsonResponse({ success: false, message: 'Failed to send message. Please try again.' }, 500, {}, origin);
   }
 }
 
