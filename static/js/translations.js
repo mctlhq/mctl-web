@@ -41,8 +41,8 @@ window.MCTL_TRANSLATIONS = {
         'modal.team_created':    'Team Created!',
         'modal.step1':           'Your Kubernetes namespace is being provisioned — this takes ~2 minutes.',
         'modal.step2':           'Sign in with your GitHub account to access:',
-        'modal.portal':          'Portal — app.mctl.me',
-        'modal.argocd':          'ArgoCD — ops.mctl.me',
+        'modal.portal':          'Portal — app.mctl.ai',
+        'modal.argocd':          'ArgoCD — ops.mctl.ai',
         'modal.close':           'Got it',
 
         // ─── Why MCTL ──────────────────────────────────────────────────────
@@ -232,8 +232,8 @@ window.MCTL_TRANSLATIONS = {
         'modal.team_created': 'Команда создана!',
         'modal.step1':        'Ваш Kubernetes namespace разворачивается — это займёт ~2 минуты.',
         'modal.step2':        'Войдите через GitHub, чтобы попасть в:',
-        'modal.portal':       'Портал — app.mctl.me',
-        'modal.argocd':       'ArgoCD — ops.mctl.me',
+        'modal.portal':       'Портал — app.mctl.ai',
+        'modal.argocd':       'ArgoCD — ops.mctl.ai',
         'modal.close':        'Понятно',
 
         // ─── Why MCTL ──────────────────────────────────────────────────────

@@ -23,7 +23,7 @@ const LANDING_URL = `https://${BASE_DOMAIN}`;
 // NOTE: after deploying, update GitHub OAuth App callback URL to https://mctl.ai/api/github/callback
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
 const GITHUB_ORG = 'mctlhq';
-const BACKSTAGE_APP_URL = 'https://app.mctl.me';
+const BACKSTAGE_APP_URL = 'https://app.mctl.ai';
 const UNLIMITED_USERS = ['mashkovd'];
 
 // Rate limit: max requests per IP per window (seconds)
@@ -516,7 +516,7 @@ async function handleFormSubmit(request, env, origin) {
     if (workflowSubmitted) {
       return jsonResponse({
         success: true,
-        message: `Team "${team}" is being provisioned! Sign in to app.mctl.me with your GitHub account — your workspace will be ready in ~2 minutes.`,
+        message: `Team "${team}" is being provisioned! Sign in to app.mctl.ai with your GitHub account — your workspace will be ready in ~2 minutes.`,
       }, 200, {}, origin);
     } else {
       return jsonResponse({
@@ -658,13 +658,13 @@ async function sendWelcomeEmail(env, { email, name, team, login, workflowSubmitt
                 </p>
                 <table cellpadding="0" cellspacing="0"><tr>
                   <td style="padding-right:10px">
-                    <a href="https://app.mctl.me/" style="display:inline-block;padding:10px 20px;border:1px solid #00f5ff;color:#00f5ff;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px">
-                      Portal — app.mctl.me
+                    <a href="https://app.mctl.ai/" style="display:inline-block;padding:10px 20px;border:1px solid #00f5ff;color:#00f5ff;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px">
+                      Portal — app.mctl.ai
                     </a>
                   </td>
                   <td>
-                    <a href="https://ops.mctl.me/" style="display:inline-block;padding:10px 20px;border:1px solid #00f5ff;color:#00f5ff;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px">
-                      ArgoCD — ops.mctl.me
+                    <a href="https://ops.mctl.ai/" style="display:inline-block;padding:10px 20px;border:1px solid #00f5ff;color:#00f5ff;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px">
+                      ArgoCD — ops.mctl.ai
                     </a>
                   </td>
                 </tr></table>
@@ -698,7 +698,7 @@ async function sendWelcomeEmail(env, { email, name, team, login, workflowSubmitt
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'MCTL <noreply@mctl.me>',
+      from: 'MCTL <noreply@mctl.ai>',
       to: [email],
       subject: `Your team "${team}" is being provisioned — sign in to get started`,
       html,
