@@ -57,7 +57,7 @@ export default {
 
     // GitHub OAuth: initiate login
     if (request.method === 'GET' && path === '/api/github/login') {
-      return handleGitHubLogin(env);
+      return handleGitHubLogin(env, url);
     }
 
     // GitHub OAuth: callback
@@ -194,25 +194,31 @@ async function hmacVerify(data, signature, secret) {
 
 // ─── GitHub OAuth: Login ─────────────────────────────────────────────────────
 
-async function handleGitHubLogin(env) {
+async function handleGitHubLogin(env, url) {
+  const forMcp = url && url.searchParams.get('for') === 'mcp';
+
   const stateBytes = new Uint8Array(16);
   crypto.getRandomValues(stateBytes);
   const state = Array.from(stateBytes).map(b => b.toString(16).padStart(2, '0')).join('');
   const stateSig = await hmacSign(state, env.GITHUB_OAUTH_HMAC_KEY);
 
+  // MCP needs read:org to validate team membership in mctl-api
+  const scope = forMcp ? 'read:org read:user user:email' : 'read:user user:email';
+
   const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
   githubAuthUrl.searchParams.set('client_id', env.GITHUB_CLIENT_ID);
   githubAuthUrl.searchParams.set('redirect_uri', CALLBACK_URL);
-  githubAuthUrl.searchParams.set('scope', 'read:user user:email');
+  githubAuthUrl.searchParams.set('scope', scope);
   githubAuthUrl.searchParams.set('state', state);
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      'Location': githubAuthUrl.toString(),
-      'Set-Cookie': `__gh_state=${state}.${stateSig}; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`,
-    },
-  });
+  const headers = new Headers();
+  headers.set('Location', githubAuthUrl.toString());
+  headers.append('Set-Cookie', `__gh_state=${state}.${stateSig}; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
+  if (forMcp) {
+    headers.append('Set-Cookie', `__gh_flow=mcp; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
+  }
+
+  return new Response(null, { status: 302, headers });
 }
 
 // ─── GitHub OAuth: Callback ──────────────────────────────────────────────────
@@ -271,6 +277,29 @@ async function handleGitHubCallback(url, request, env) {
 
   const primaryEmail = emails.find(e => e.primary && e.verified);
   const email = primaryEmail ? primaryEmail.email : (user.email || '');
+
+  const clearState = '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
+  const clearFlow  = '__gh_flow=;  HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
+
+  // ── MCP flow: redirect to /mcp with token in URL fragment ───────────────
+  // Fragment is never sent to the server — token stays client-side only.
+  if (cookies['__gh_flow'] === 'mcp') {
+    const mcpPayload = {
+      login:      user.login,
+      name:       user.name || '',
+      avatar_url: user.avatar_url || '',
+      token:      accessToken,
+    };
+    const encoded = btoa(JSON.stringify(mcpPayload))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const headers = new Headers();
+    headers.set('Location', `${LANDING_URL}/mcp/#auth=${encoded}`);
+    headers.append('Set-Cookie', clearState);
+    headers.append('Set-Cookie', clearFlow);
+    return new Response(null, { status: 302, headers });
+  }
+
+  // ── Normal landing flow ──────────────────────────────────────────────────
   const sig = await hmacSign(user.login, env.GITHUB_OAUTH_HMAC_KEY);
 
   const userData = {
@@ -285,13 +314,11 @@ async function handleGitHubCallback(url, request, env) {
   const encoded = btoa(JSON.stringify(userData))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      'Location': `${LANDING_URL}/?auth=${encoded}#request-access`,
-      'Set-Cookie': '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
-    },
-  });
+  const headers = new Headers();
+  headers.set('Location', `${LANDING_URL}/?auth=${encoded}#request-access`);
+  headers.append('Set-Cookie', clearState);
+  headers.append('Set-Cookie', clearFlow);
+  return new Response(null, { status: 302, headers });
 }
 
 function redirectWithError(errorCode) {
