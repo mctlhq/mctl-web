@@ -17,7 +17,9 @@
  */
 
 const BASE_DOMAIN = 'mctl.ai';
-const REDIRECT_DOMAINS = new Set(['mctl.me', 'mctl.ru']);
+// Domains that redirect to *.mctl.ai (root + all subdomains)
+const REDIRECT_SUFFIXES = ['.mctl.me', '.mctl.ru'];
+const REDIRECT_ROOTS   = new Set(['mctl.me', 'mctl.ru']);
 const ALLOWED_ORIGINS = new Set(['https://mctl.ai']);
 const LANDING_URL = `https://${BASE_DOMAIN}`;
 // NOTE: after deploying, update GitHub OAuth App callback URL to https://mctl.ai/api/github/callback
@@ -39,12 +41,17 @@ export default {
     const path = url.pathname;
     const origin = request.headers.get('Origin') || '';
 
-    // ── Redirect mctl.me and mctl.ru to mctl.ai ───────────────────────────
-    if (REDIRECT_DOMAINS.has(url.hostname)) {
-      return new Response(null, {
-        status: 301,
-        headers: { 'Location': `https://mctl.ai${url.pathname}${url.search}` },
-      });
+    // ── Redirect *.mctl.me and *.mctl.ru to *.mctl.ai ────────────────────
+    // Root: mctl.me → mctl.ai, mctl.ru → mctl.ai
+    // Subdomains: app.mctl.me → app.mctl.ai, ops.mctl.me → ops.mctl.ai, etc.
+    const host = url.hostname;
+    if (REDIRECT_ROOTS.has(host)) {
+      return Response.redirect(`https://mctl.ai${url.pathname}${url.search}`, 301);
+    }
+    const redirectSuffix = REDIRECT_SUFFIXES.find(s => host.endsWith(s));
+    if (redirectSuffix) {
+      const sub = host.slice(0, -redirectSuffix.length);
+      return Response.redirect(`https://${sub}.mctl.ai${url.pathname}${url.search}`, 301);
     }
 
     // CORS preflight

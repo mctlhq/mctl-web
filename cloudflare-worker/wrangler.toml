@@ -7,11 +7,15 @@ compatibility_date = "2024-01-01"
 # TELEGRAM_CHAT_ID = "your-chat-id-here"
 
 # Routes:
-#   mctl.ai/api/*  — primary API endpoint
-#   mctl.me/*      — redirect all traffic to mctl.ai
-#   mctl.ru/*      — redirect all traffic to mctl.ai
+#   mctl.ai/api/*      — primary API endpoint
+#   mctl.me/*          — redirect root domain to mctl.ai
+#   *.mctl.me/*        — redirect subdomains to *.mctl.ai
+#   mctl.ru/*          — redirect root domain to mctl.ai
+#   *.mctl.ru/*        — redirect subdomains to *.mctl.ai
 routes = [
-  { pattern = "mctl.ai/api/*", zone_name = "mctl.ai" },
-  { pattern = "mctl.me/*",     zone_name = "mctl.me" },
-  { pattern = "mctl.ru/*",     zone_name = "mctl.ru" }
+  { pattern = "mctl.ai/api/*",  zone_name = "mctl.ai" },
+  { pattern = "mctl.me/*",      zone_name = "mctl.me" },
+  { pattern = "*.mctl.me/*",    zone_name = "mctl.me" },
+  { pattern = "mctl.ru/*",      zone_name = "mctl.ru" },
+  { pattern = "*.mctl.ru/*",    zone_name = "mctl.ru" }
 ]
