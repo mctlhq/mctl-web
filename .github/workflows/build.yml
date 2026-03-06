@@ -1,9 +1,6 @@
 name: build
 
 on:
-  push:
-    branches: [main]
-    paths-ignore: ['cloudflare-worker/**']
   pull_request:
     branches: [main]
     paths-ignore: ['cloudflare-worker/**']
@@ -24,33 +21,29 @@ jobs:
         with:
           images: ghcr.io/mctlhq/mctl-web
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix=sha-
-            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GHCR
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          # GITHUB_TOKEN only works for packages linked to this repo.
-          # mctl-web package was previously linked to mctl-core, so we use
-          # GITOPS_TOKEN (has write:packages org-wide) until package is relinked.
-          password: ${{ secrets.GITOPS_TOKEN }}
-
-      - name: Build and push
-        if: github.event_name != 'pull_request'
+      - name: Build (PR validation — no push)
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
+          push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: APP_VERSION=${{ steps.meta.outputs.version }}
+          build-args: APP_VERSION=pr-${{ github.event.pull_request.number }}
+
+      - name: Notify Telegram on failure
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ❌ *mctl-web PR build failed*
+            PR: `${{ github.head_ref }}` → `${{ github.base_ref }}`
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
