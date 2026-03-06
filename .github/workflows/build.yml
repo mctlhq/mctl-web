@@ -39,7 +39,10 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # GITHUB_TOKEN only works for packages linked to this repo.
+          # mctl-web package was previously linked to mctl-core, so we use
+          # GITOPS_TOKEN (has write:packages org-wide) until package is relinked.
+          password: ${{ secrets.GITOPS_TOKEN }}
 
       - name: Build and push
         if: github.event_name != 'pull_request'
