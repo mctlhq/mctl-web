@@ -158,6 +158,7 @@ window.MCTL_TRANSLATIONS = {
         'pricing.enterprise.cta':   'Contact Us',
 
         // ─── Contact ───────────────────────────────────────────────────────
+        'contact.tag':               'Contact',
         'contact.title':             'Get in Touch',
         'contact.intro':             'Questions about MCTL? Need a custom solution? Our team is here to help.',
         'contact.label.name':        'Name',
@@ -349,6 +350,7 @@ window.MCTL_TRANSLATIONS = {
         'pricing.enterprise.cta':   'Написать нам',
 
         // ─── Contact ───────────────────────────────────────────────────────
+        'contact.tag':                 'Контакты',
         'contact.title':               'Напишите нам',
         'contact.intro':               'Вопросы про MCTL? Нужно нестандартное решение? Мы на связи.',
         'contact.label.name':          'Имя',
