@@ -308,6 +308,7 @@
 
 /* How It Works */
 .how-it-works { padding: var(--section-py) 0 calc(var(--section-py) * 0.8) 0; background: var(--color-bg-secondary); }
+.how-it-works .section-title { margin-bottom: 5.5rem; }
 .workflow-steps { max-width: 800px; margin: 0 auto 2rem; position: relative; }
 .workflow-arrow { display: none; }
 
