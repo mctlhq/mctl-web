@@ -596,6 +596,7 @@
                             <button class="client-tab-btn" role="tab" data-tab="vscode" onclick="switchTab('vscode')">VS Code</button>
                             <button class="client-tab-btn" role="tab" data-tab="windsurf" onclick="switchTab('windsurf')">Windsurf</button>
                             <button class="client-tab-btn" role="tab" data-tab="gemini" onclick="switchTab('gemini')">Gemini CLI</button>
+                            <button class="client-tab-btn" role="tab" data-tab="copilot" onclick="switchTab('copilot')">Copilot CLI</button>
                             <button class="client-tab-btn" role="tab" data-tab="other" onclick="switchTab('other')">Other</button>
                         </div>
 
@@ -655,6 +656,18 @@
                                 <pre class="code-block-mcp" id="config-gemini"></pre>
                                 <button class="copy-config-btn" onclick="copyConfig('gemini')">copy</button>
                             </div>
+                        </div>
+
+                        <!-- Copilot CLI -->
+                        <div class="client-tab-content" id="tab-copilot">
+                            <div class="config-path">
+                                Add to <code>~/.config/github-copilot/mcp.json</code>
+                            </div>
+                            <div class="code-block-wrapper">
+                                <pre class="code-block-mcp" id="config-copilot"></pre>
+                                <button class="copy-config-btn" onclick="copyConfig('copilot')">copy</button>
+                            </div>
+                            <p class="config-note">Requires <code>gh copilot</code> extension. Run <code>gh extension install github/gh-copilot</code> if not installed. Restart the CLI after saving.</p>
                         </div>
 
                         <!-- Other / Generic -->
@@ -890,6 +903,16 @@
             mcpServers: {
                 mctl: {
                     httpUrl: MCP_ENDPOINT,
+                    headers: { Authorization: 'Bearer ' + t }
+                }
+            }
+        }, null, 2),
+
+        copilot: (t) => JSON.stringify({
+            mcpServers: {
+                mctl: {
+                    type: 'http',
+                    url: MCP_ENDPOINT,
                     headers: { Authorization: 'Bearer ' + t }
                 }
             }
