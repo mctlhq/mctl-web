@@ -380,6 +380,8 @@
   background: var(--color-bg-secondary);
 }
 
+.pricing .section-title { margin-bottom: 5.5rem; }
+
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
