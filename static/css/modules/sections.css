@@ -327,6 +327,43 @@
   transform: translateX(10px);
 }
 
+/* Horizontal layout on wide screens */
+@media (min-width: 1024px) {
+  .workflow-steps {
+    max-width: 1200px;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: nowrap;
+  }
+  .workflow-step {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem 1.5rem;
+  }
+  .workflow-step .step-content h3 { font-size: 1.25rem; }
+  .workflow-step .step-content p { margin-bottom: 1rem; }
+  .workflow-step .code-block { font-size: 0.75rem; padding: 0.75rem; }
+  .workflow-step:hover { transform: translateY(-6px); }
+  .workflow-arrow {
+    flex-shrink: 0;
+    align-self: center;
+    margin: 0 0.5rem;
+    font-size: 0;
+  }
+  .workflow-arrow::before {
+    content: '→';
+    font-size: 1.5rem;
+    color: var(--color-accent);
+    opacity: 0.5;
+  }
+}
+
 .step-number {
   flex-shrink: 0;
   width: 70px;
