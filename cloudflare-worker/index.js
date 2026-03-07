@@ -223,8 +223,7 @@ async function handleGitHubLogin(env, url, origin) {
   const state = Array.from(stateBytes).map(b => b.toString(16).padStart(2, '0')).join('');
   const stateSig = await hmacSign(state, env.GITHUB_OAUTH_HMAC_KEY);
 
-  // MCP needs read:org to validate team membership in mctl-api
-  const scope = forMcp ? 'read:org read:user user:email' : 'read:user user:email';
+  const scope = 'read:user user:email';
 
   const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
   githubAuthUrl.searchParams.set('client_id', env.GITHUB_CLIENT_ID);
@@ -305,11 +304,14 @@ async function handleGitHubCallback(url, request, env) {
   // ── MCP flow: redirect to /mcp with token in URL fragment ───────────────
   // Fragment is never sent to the server — token stays client-side only.
   if (cookies['__gh_flow'] === 'mcp') {
+    const sig = await hmacSign(user.login, env.GITHUB_OAUTH_HMAC_KEY);
     const mcpPayload = {
       login:      user.login,
       name:       user.name || '',
       avatar_url: user.avatar_url || '',
+      html_url:   user.html_url || '',
       token:      accessToken,
+      sig,
     };
     const encoded = btoa(JSON.stringify(mcpPayload))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');

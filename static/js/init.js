@@ -54,5 +54,8 @@
 
     document.addEventListener('DOMContentLoaded', revealAnimations);
 
+    // Restore auth from localStorage (cross-page sync or page reload).
+    // checkOAuthReturn() will override if there's a fresh OAuth in the URL.
+    App.Auth.restoreFromStorage();
     App.Auth.checkOAuthReturn();
 })();

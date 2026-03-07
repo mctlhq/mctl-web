@@ -1,6 +1,26 @@
 /* jshint esversion: 8 */
 'use strict';
 
+const _AUTH_KEY = 'mctl_auth';
+const _AUTH_TTL = 8 * 60 * 60 * 1000;
+
+function _saveAuthStorage(extra) {
+    try {
+        const cur = _loadAuthStorage() || {};
+        localStorage.setItem(_AUTH_KEY, JSON.stringify({ ...cur, ...extra, exp: Date.now() + _AUTH_TTL }));
+    } catch (e) {}
+}
+function _loadAuthStorage() {
+    try {
+        const d = JSON.parse(localStorage.getItem(_AUTH_KEY) || 'null');
+        if (!d || Date.now() > d.exp) { localStorage.removeItem(_AUTH_KEY); return null; }
+        return d;
+    } catch (e) { return null; }
+}
+function _clearAuthStorage() {
+    try { localStorage.removeItem(_AUTH_KEY); } catch (e) {}
+}
+
 App.Auth = {
     checkOAuthReturn: function() {
         const hash      = window.location.hash;
@@ -28,6 +48,14 @@ App.Auth = {
             const base64 = authData.replace(/-/g, '+').replace(/_/g, '/');
             const json   = atob(base64);
             App.State.githubUser = JSON.parse(json);
+            _saveAuthStorage({
+                login:      App.State.githubUser.login,
+                name:       App.State.githubUser.name || App.State.githubUser.login,
+                email:      App.State.githubUser.email || '',
+                avatar_url: App.State.githubUser.avatar_url || '',
+                html_url:   App.State.githubUser.html_url || '',
+                sig:        App.State.githubUser.sig || '',
+            });
             this.showGitHubProfile(App.State.githubUser);
             this.prefillForm(App.State.githubUser);
         } catch (e) {
@@ -60,8 +88,17 @@ App.Auth = {
         });
     },
 
+    restoreFromStorage: function() {
+        const saved = _loadAuthStorage();
+        if (!saved || !saved.login || !saved.sig) return;
+        App.State.githubUser = saved;
+        this.showGitHubProfile(saved);
+        this.prefillForm(saved);
+    },
+
     logout: function() {
         App.State.githubUser    = null;
+        _clearAuthStorage();
         App.State.teamAvailable = false;
         App.DOM.githubAuthSection.style.display  = '';
         App.DOM.githubProfileSection.style.display = 'none';
