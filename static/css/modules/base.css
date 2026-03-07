@@ -27,7 +27,7 @@ body {
 }
 
 @media (min-width: 1440px) {
-  :root { --section-py: 9rem; }
+  :root { --section-py: 7rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

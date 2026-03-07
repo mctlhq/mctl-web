@@ -2,13 +2,12 @@
 
 /* Hero */
 .hero {
-  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   background: var(--color-bg);
-  padding: 8rem 0 5rem;
+  padding: 8rem 0 6rem;
   overflow: hidden;
 }
 
@@ -33,7 +32,7 @@
 }
 
 .hero-content h1 {
-  font-size: clamp(2.5rem, 4vw, 4rem);
+  font-size: clamp(2.5rem, 4.5vw, 4.25rem);
   font-weight: 800;
   text-align: center;
   color: #fff;
@@ -590,13 +589,3 @@
   .feature-card { padding: 2.25rem; }
 }
 
-@media (max-height: 1050px) and (min-width: 769px) {
-  :root { --section-py: 5rem; }
-  .hero { min-height: auto; padding: 5rem 0 3rem; }
-  .hero-content h1 { font-size: clamp(2.2rem, 3.5vw, 3.25rem); }
-}
-
-@media (max-height: 900px) and (min-width: 769px) {
-  .hero { padding: 4rem 0 2.5rem; }
-  .hero-content h1 { font-size: clamp(2rem, 3vw, 2.75rem); }
-}
