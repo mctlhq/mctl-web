@@ -589,3 +589,23 @@
   .feature-card { padding: 2.25rem; }
 }
 
+/* Default / standard Mac (~1280–1512px) */
+@media (min-width: 1280px) and (max-width: 1512px) {
+  .hero-content { max-width: 1000px; }
+  .problems-grid { gap: 1.25rem; }
+  .audience-grid { gap: 1.75rem; }
+}
+
+/* More Space on Mac (1680px+) — wider layout */
+@media (min-width: 1680px) {
+  .hero-content { max-width: 1200px; }
+  .hero { padding: 7rem 0 5rem; }
+  .diagram-container { gap: 1.5rem; margin-top: 5rem; }
+  .diagram-box { width: 240px; padding: 2.75rem 2.25rem; }
+  .connector-line { height: 2px; }
+  .diagram-connector { max-width: 120px; }
+  .problems-grid { gap: 1.75rem; }
+  .pricing-grid { max-width: 1200px; gap: 2.25rem; }
+  .tech-logos { gap: 4.5rem; }
+}
+

@@ -1,5 +1,10 @@
 .container { max-width: 1320px; width: 100%; margin: 0 auto; padding: 0 2rem; box-sizing: border-box; }
 
+/* More Space (Mac): use more horizontal space */
+@media (min-width: 1680px) {
+  .container { max-width: 1480px; padding: 0 2.5rem; }
+}
+
 /* ===== NAVIGATION ===== */
 .navbar {
   position: fixed;

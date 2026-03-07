@@ -26,8 +26,18 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Default / standard Mac resolution (~1440px) */
+@media (min-width: 1280px) and (max-width: 1512px) {
+  :root { --section-py: 7.5rem; }
+}
+
 @media (min-width: 1440px) {
   :root { --section-py: 7rem; }
+}
+
+/* More Space on Mac — wider viewport (1680px+) */
+@media (min-width: 1680px) {
+  :root { --section-py: 6.5rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
