@@ -307,8 +307,9 @@
 }
 
 /* How It Works */
-.how-it-works { padding: var(--section-py) 0; background: var(--color-bg-secondary); }
-.workflow-steps { max-width: 800px; margin: 0 auto; position: relative; }
+.how-it-works { padding: var(--section-py) 0 calc(var(--section-py) * 0.8) 0; background: var(--color-bg-secondary); }
+.workflow-steps { max-width: 800px; margin: 0 auto 2rem; position: relative; }
+.workflow-arrow { display: none; }
 
 .workflow-step {
   display: flex;
@@ -335,7 +336,7 @@
     flex-direction: row;
     align-items: stretch;
     justify-content: center;
-    gap: 0;
+    gap: 1.5rem;
     flex-wrap: nowrap;
   }
   .workflow-step {
@@ -350,18 +351,6 @@
   .workflow-step .step-content p { margin-bottom: 1rem; }
   .workflow-step .code-block { font-size: 0.75rem; padding: 0.75rem; }
   .workflow-step:hover { transform: translateY(-6px); }
-  .workflow-arrow {
-    flex-shrink: 0;
-    align-self: center;
-    margin: 0 0.5rem;
-    font-size: 0;
-  }
-  .workflow-arrow::before {
-    content: '→';
-    font-size: 1.5rem;
-    color: var(--color-accent);
-    opacity: 0.5;
-  }
 }
 
 .step-number {
@@ -383,12 +372,11 @@
 .step-content h3 { font-size: 1.75rem; margin-bottom: 1rem; color: #fff; }
 .step-content p { color: var(--color-text-muted); margin-bottom: 1.5rem; line-height: 1.7; }
 
-.workflow-arrow { text-align: center; font-size: 2.5rem; color: var(--color-accent); margin: 2rem 0; opacity: 0.5; }
 
 /* Pricing */
 .pricing {
   padding: var(--section-py) 0;
-  background: var(--color-bg);
+  background: var(--color-bg-secondary);
 }
 
 .pricing-grid {
@@ -527,7 +515,7 @@
 /* Contact / Request Access */
 .contact {
   padding: var(--section-py) 0;
-  background: var(--color-bg);
+  background: var(--color-bg-secondary);
   text-align: center;
 }
 
