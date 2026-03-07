@@ -613,6 +613,14 @@
   .workflow-step { padding: 1.5rem 1rem; }
 }
 
+/* Short viewport (e.g. Mac Default 1512×982) — reduce large title margins */
+@media (max-height: 1000px) {
+  .how-it-works .section-title { margin-bottom: 2.5rem; }
+  .pricing .section-title { margin-bottom: 2.5rem; }
+  .hero { padding: 4rem 0 4rem; }
+  .section-title { margin-bottom: 2.5rem; }
+}
+
 @media (min-width: 1440px) {
   .features-grid { column-gap: 2.5rem; }
   .feature-card { padding: 2.25rem; }

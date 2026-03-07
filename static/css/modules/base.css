@@ -40,6 +40,11 @@ body {
   :root { --section-py: 6.5rem; }
 }
 
+/* Short viewport (e.g. Mac Default 1512×982) — compact vertical scale */
+@media (max-height: 1000px) {
+  :root { --section-py: 4rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
