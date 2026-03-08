@@ -9,7 +9,7 @@
   --color-success: #3fb950;
   --color-glass-border: rgba(0, 245, 255, 0.2);
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-  --section-py: 8rem;
+  --section-py: clamp(5rem, 6vw, 8rem);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -26,23 +26,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Default / standard Mac resolution (~1440px) */
-@media (min-width: 1280px) and (max-width: 1512px) {
-  :root { --section-py: 7.5rem; }
-}
-
-@media (min-width: 1440px) {
-  :root { --section-py: 7rem; }
-}
-
-/* More Space on Mac — wider viewport (1680px+) */
-@media (min-width: 1680px) {
-  :root { --section-py: 6.5rem; }
-}
-
 /* Short viewport (e.g. Mac Default 1512×982) — compact vertical scale */
-@media (max-height: 1000px) {
-  :root { --section-py: 4rem; }
+@media (max-height: 900px) {
+  :root { --section-py: clamp(3rem, 4vh, 5rem); }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -107,7 +107,7 @@
   border: 1px solid var(--color-glass-border);
   padding: 2.5rem 2rem;
   border-radius: 16px;
-  width: 220px;
+  width: clamp(200px, 15vw, 260px);
   position: relative;
   transition: all 0.3s ease;
 }
@@ -185,7 +185,7 @@
 /* Features */
 .features { padding: var(--section-py) 0; background: var(--color-bg-secondary); }
 
-.features-grid { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: auto auto auto 1fr; gap: 0 2rem; }
+.features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); grid-template-rows: auto auto auto 1fr; gap: clamp(1.5rem, 2vw, 2.5rem); }
 
 .feature-card {
   background: var(--color-bg);
@@ -558,7 +558,7 @@
 @media (max-width: 1100px) {
   .hero-content h1 { font-size: 3.5rem; }
   .subtitle { font-size: 1.2rem; }
-  .features-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: none; gap: 2rem; }
+  .features-grid { grid-template-rows: none; }
   .feature-card { grid-row: auto; display: flex; flex-direction: column; }
   .problems-grid { grid-template-columns: repeat(3, 1fr); }
   .audience-grid { grid-template-columns: repeat(2, 1fr); }
@@ -567,24 +567,23 @@
 }
 
 @media (max-width: 900px) {
-  .features-grid { grid-template-columns: repeat(2, 1fr); }
   .problems-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
-  .hero { min-height: auto; padding: 6rem 0 3rem; }
+  .hero { min-height: auto; padding: 7rem 0 3.5rem; }
   .hero-content h1 { font-size: 2.2rem; }
   .subtitle { font-size: 0.95rem; line-height: 1.5; margin-bottom: 2rem; }
-  
+
   .problems { padding: 4rem 0; }
-  .problems-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .problems-grid { grid-template-columns: 1fr; gap: 1.25rem; }
 
   .diagram-container { flex-direction: column; gap: 2rem; }
   .diagram-connector { transform: rotate(90deg); height: 40px; min-width: auto; max-width: none; width: 2px; }
   .diagram-box { width: 100%; max-width: 300px; transform: none !important; }
 
   .features { padding: 4rem 0; }
-  .features-grid { grid-template-columns: 1fr; grid-template-rows: none; gap: 1.5rem; }
+  .features-grid { grid-template-columns: 1fr; grid-template-rows: none; }
   .feature-card { padding: 2rem 1.5rem; grid-row: auto; display: flex; flex-direction: column; }
 
   .audience { padding: 4rem 0; }
@@ -613,16 +612,12 @@
   .workflow-step { padding: 1.5rem 1rem; }
 }
 
-/* Short viewport (e.g. Mac Default 1512×982) — reduce large title margins */
+/* Short viewport (e.g. Mac Default 1512×982) — reduce hero padding */
 @media (max-height: 1000px) {
-  .how-it-works .section-title { margin-bottom: 2.5rem; }
-  .pricing .section-title { margin-bottom: 2.5rem; }
   .hero { padding: 4rem 0 4rem; }
-  .section-title { margin-bottom: 2.5rem; }
 }
 
 @media (min-width: 1440px) {
-  .features-grid { column-gap: 2.5rem; }
   .feature-card { padding: 2.25rem; }
 }
 
@@ -638,7 +633,7 @@
   .hero-content { max-width: 1200px; }
   .hero { padding: 7rem 0 5rem; }
   .diagram-container { gap: 1.5rem; margin-top: 5rem; }
-  .diagram-box { width: 240px; padding: 2.75rem 2.25rem; }
+  .diagram-box { padding: 2.75rem 2.25rem; }
   .connector-line { height: 2px; }
   .diagram-connector { max-width: 120px; }
   .problems-grid { gap: 1.75rem; }

@@ -29,7 +29,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="css/style.css?v=21">
+    <link rel="stylesheet" href="css/style.css?v=22">
     <script src="js/translations.js?v=1"></script>
     <script src="js/i18n.js?v=1"></script>
 </head>
@@ -66,7 +66,7 @@
                 <p class="subtitle" data-i18n-html="hero.subtitle">
                     <span class="logo-m">M</span><span class="highlight-ctl">CTL</span> gives growing product teams self-service Kubernetes
                     with GitOps, secrets, and team isolation built in.<br>
-                    No tickets. No waiting. Production-ready from day one.
+                    Deploy via portal, CLI, or ask your AI. Production-ready from day one.
                 </p>
                 <div class="cta-buttons">
                     <a href="#request-access" class="btn btn-primary" data-i18n="hero.cta">
@@ -264,7 +264,7 @@
                     </div>
                     <h3 data-i18n="features.card1.title">Production-Ready Platform</h3>
                     <code class="feature-code" data-i18n="features.card1.code">infrastructure out of the box</code>
-                    <p data-i18n="features.card1.desc">Pre-integrated Kubernetes platform. Scale without rebuilding infrastructure from scratch.</p>
+                    <p data-i18n="features.card1.desc">Pre-integrated Kubernetes with team isolation, RBAC, and resource quotas. Scale without rebuilding infrastructure from scratch.</p>
                 </div>
                 <div class="feature-card reveal">
                     <div class="feature-icon">
@@ -292,11 +292,11 @@
                 </div>
                 <div class="feature-card reveal">
                     <div class="feature-icon">
-                        <img src="img/icon-cloud.svg" alt="Team Isolation" width="56" height="56">
+                        <img src="img/icon-mctl.svg" alt="AI-Native Operations" width="56" height="56">
                     </div>
-                    <h3 data-i18n="features.card5.title">Team Isolation</h3>
-                    <code class="feature-code" data-i18n="features.card5.code">namespace · rbac · network</code>
-                    <p data-i18n="features.card5.desc">Each team gets an isolated namespace with RBAC, network policies, and resource quotas. Secure by design.</p>
+                    <h3 data-i18n="features.card5.title">AI-Native Operations</h3>
+                    <code class="feature-code" data-i18n="features.card5.code">23 MCP tools · 7 AI clients</code>
+                    <p data-i18n="features.card5.desc">Deploy, rollback, preview, and monitor via natural language. Connect Claude, Cursor, VS Code, or any MCP client.</p>
                 </div>
             </div>
         </div>
@@ -382,9 +382,10 @@
                 <div class="workflow-step reveal">
                     <div class="step-number">3</div>
                     <div class="step-content">
-                        <h3 data-i18n="how.step3.title">Push and Deploy</h3>
-                        <p data-i18n="how.step3.desc">Push your code. The platform builds, tests, and deploys to Kubernetes automatically via GitOps.</p>
-                        <pre class="code-block" data-i18n="how.step3.code">git push → Build → Deploy → Live ✓</pre>
+                        <h3 data-i18n="how.step3.title">Push, Ask AI, or Both</h3>
+                        <p data-i18n="how.step3.desc">Push your code and GitOps deploys automatically. Or ask your AI to deploy, rollback, or preview — via MCP tools.</p>
+                        <pre class="code-block" data-i18n="how.step3.code">git push → Build → Deploy → Live ✓
+"deploy my-app to staging" → AI → Live ✓</pre>
                     </div>
                 </div>
             </div>
@@ -407,6 +408,7 @@
                         <li data-i18n="pricing.starter.f3">Standard templates</li>
                         <li data-i18n="pricing.starter.f4">Shared infrastructure</li>
                         <li data-i18n="pricing.starter.f5">Community support</li>
+                        <li data-i18n="pricing.starter.f6">Community MCP access</li>
                     </ul>
                     <a href="#request-access" class="btn btn-outline btn-block" data-i18n="pricing.starter.cta">Request Access</a>
                 </div>
@@ -421,6 +423,7 @@
                         <li data-i18n="pricing.pro.f3">Dedicated namespaces</li>
                         <li data-i18n="pricing.pro.f4">Priority support</li>
                         <li data-i18n="pricing.pro.f5">SLA guarantee</li>
+                        <li data-i18n="pricing.pro.f6">Full MCP toolset (23 tools)</li>
                     </ul>
                     <a href="#contact" class="btn btn-primary btn-block" data-i18n="pricing.pro.cta">Talk to Sales</a>
                 </div>
@@ -434,6 +437,7 @@
                         <li data-i18n="pricing.enterprise.f3">Custom integrations</li>
                         <li data-i18n="pricing.enterprise.f4">Dedicated support engineer</li>
                         <li data-i18n="pricing.enterprise.f5">Enterprise SLA</li>
+                        <li data-i18n="pricing.enterprise.f6">Custom MCP integrations</li>
                     </ul>
                     <a href="#contact" class="btn btn-outline btn-block" data-i18n="pricing.enterprise.cta">Contact Us</a>
                 </div>

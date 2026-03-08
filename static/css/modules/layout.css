@@ -1,8 +1,12 @@
-.container { max-width: 1320px; width: 100%; margin: 0 auto; padding: 0 2rem; box-sizing: border-box; }
+.container { max-width: min(1320px, calc(100vw - 4rem)); width: 100%; margin: 0 auto; padding: 0 2rem; box-sizing: border-box; }
+
+@media (min-width: 1440px) {
+  .container { max-width: min(1400px, calc(100vw - 4rem)); }
+}
 
 /* More Space (Mac): use more horizontal space */
 @media (min-width: 1680px) {
-  .container { max-width: 1480px; padding: 0 2.5rem; }
+  .container { max-width: min(1480px, calc(100vw - 5rem)); padding: 0 2.5rem; }
 }
 
 /* ===== NAVIGATION ===== */
