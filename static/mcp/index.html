@@ -650,7 +650,13 @@
             border-radius: 12px;
             padding: 1.25rem 1.375rem;
         }
-        .benefit-icon { font-size: 1.35rem; margin-bottom: 0.75rem; }
+        .benefit-icon {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 0.875rem;
+            color: var(--color-accent);
+            opacity: 0.85;
+        }
         .benefit-title {
             font-size: 0.88rem;
             color: #fff;
@@ -762,7 +768,7 @@
     <section id="connector" class="connector-section">
         <div class="container">
             <div class="connector-card">
-                <div class="connector-badge">✦ Recommended</div>
+                <div class="connector-badge">Recommended</div>
                 <h2>Claude.ai custom connector</h2>
                 <p class="connector-subtitle">The easiest way to use MCTL in Claude. No binary, no config file, no token management — just sign in with GitHub.</p>
 
@@ -817,22 +823,30 @@
             <h2 class="section-title">Platform tools, inside Claude</h2>
             <div class="benefits-grid">
                 <div class="benefit-card">
-                    <div class="benefit-icon">🔍</div>
+                    <div class="benefit-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="32" height="32" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="17" y1="17" x2="22" y2="22"/></svg>
+                    </div>
                     <div class="benefit-title">Inspect platform state</div>
                     <div class="benefit-desc">Query services, tenants, resource usage, logs, and workflow status — all via natural language.</div>
                 </div>
                 <div class="benefit-card">
-                    <div class="benefit-icon">🚀</div>
+                    <div class="benefit-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="32" height="32" aria-hidden="true"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                    </div>
                     <div class="benefit-title">Deploy and manage apps</div>
                     <div class="benefit-desc">Onboard, deploy, rollback, and preview services. Create team workspaces and provision databases.</div>
                 </div>
                 <div class="benefit-card">
-                    <div class="benefit-icon">🌐</div>
+                    <div class="benefit-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="32" height="32" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    </div>
                     <div class="benefit-title">Manage domains and scaling</div>
                     <div class="benefit-desc">Add custom domains with auto-TLS, configure autoscaling, and verify DNS — without touching the CLI.</div>
                 </div>
                 <div class="benefit-card">
-                    <div class="benefit-icon">📋</div>
+                    <div class="benefit-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="32" height="32" aria-hidden="true"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    </div>
                     <div class="benefit-title">Full audit trail</div>
                     <div class="benefit-desc">Every operation creates a git commit. Full traceable chain from "Claude was asked" to "pods running".</div>
                 </div>
@@ -844,7 +858,7 @@
     <section id="advanced" class="advanced-section">
         <div class="container">
             <div class="advanced-header">
-                <div class="advanced-badge">⚙ Advanced</div>
+                <div class="advanced-badge">Advanced</div>
                 <h2>Developer MCP clients</h2>
                 <p>For Cursor, VS Code, Claude Desktop, and other MCP-compatible tools. Requires a GitHub token for authentication.</p>
             </div>
