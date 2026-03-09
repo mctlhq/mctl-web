@@ -638,41 +638,26 @@
             padding: 2.5rem 0 3rem;
             background: var(--color-bg-secondary);
         }
-        .benefits-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
+        /* reuse .workflow-steps / .workflow-step from sections.css;
+           override only what's different for the icon variant */
+        .benefits-section .workflow-steps {
+            margin-bottom: 0;
         }
-        .benefit-card {
-            background: var(--color-terminal);
-            border: 1px solid var(--color-glass-border);
-            border-radius: 12px;
-            padding: 1.25rem 1.375rem;
-        }
-        .benefit-icon {
-            width: 32px;
-            height: 32px;
-            margin-bottom: 0.875rem;
-            color: var(--color-accent);
-            opacity: 0.85;
-        }
-        .benefit-title {
-            font-size: 0.88rem;
-            color: #fff;
-            font-weight: 600;
-            margin-bottom: 0.35rem;
-        }
-        .benefit-desc {
-            font-size: 0.78rem;
-            color: var(--color-text-muted);
-            line-height: 1.55;
+        .benefit-icon-wrap {
+            flex-shrink: 0;
+            width: 56px;
+            height: 56px;
+            background: var(--color-accent);
+            color: var(--color-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
         }
         @media (max-width: 640px) {
-            .benefits-grid { grid-template-columns: 1fr 1fr; }
-        }
-        @media (max-width: 420px) {
-            .benefits-grid { grid-template-columns: 1fr; }
+            .benefit-icon-wrap { width: 46px; height: 46px; }
+            .benefit-icon-wrap svg { width: 20px; height: 20px; }
         }
 
         /* ── Advanced section wrapper ─────────────────────────────────────── */
@@ -726,6 +711,21 @@
         }
         .claude-ai-tab-note a { color: var(--color-accent); text-decoration: none; }
         .claude-ai-tab-note a:hover { text-decoration: underline; }
+
+        /* ── Developer section mobile ─────────────────────────────────────── */
+        @media (max-width: 900px) {
+            .advanced-header { padding: 2rem 0 1.5rem; }
+            .connect-grid > div:first-child { order: 2; }
+            .connect-grid > div:last-child  { order: 1; }
+        }
+        @media (max-width: 640px) {
+            .advanced-header { padding: 1.5rem 0 1.25rem; }
+            .client-tab-btn { padding: 0.65rem 0.8rem; font-size: 0.75rem; }
+            .client-tab-content { padding: 1rem; }
+            .code-block-mcp { font-size: 0.75rem; padding: 0.8rem; }
+            .auth-card { padding: 1.25rem; }
+            .connect-section { padding: 0 0 2rem; }
+        }
     </style>
 </head>
 <body>
@@ -821,34 +821,42 @@
         <div class="container">
             <p class="section-tag">What you get</p>
             <h2 class="section-title">Platform tools, inside Claude</h2>
-            <div class="benefits-grid">
-                <div class="benefit-card">
-                    <div class="benefit-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="32" height="32" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="17" y1="17" x2="22" y2="22"/></svg>
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <div class="benefit-icon-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="17" y1="17" x2="22" y2="22"/></svg>
                     </div>
-                    <div class="benefit-title">Inspect platform state</div>
-                    <div class="benefit-desc">Query services, tenants, resource usage, logs, and workflow status — all via natural language.</div>
+                    <div class="step-content">
+                        <h3>Inspect platform state</h3>
+                        <p>Query services, tenants, resource usage, logs, and workflow status — all via natural language.</p>
+                    </div>
                 </div>
-                <div class="benefit-card">
-                    <div class="benefit-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="32" height="32" aria-hidden="true"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                <div class="workflow-step">
+                    <div class="benefit-icon-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
                     </div>
-                    <div class="benefit-title">Deploy and manage apps</div>
-                    <div class="benefit-desc">Onboard, deploy, rollback, and preview services. Create team workspaces and provision databases.</div>
+                    <div class="step-content">
+                        <h3>Deploy and manage apps</h3>
+                        <p>Onboard, deploy, rollback, and preview services. Create team workspaces and provision databases.</p>
+                    </div>
                 </div>
-                <div class="benefit-card">
-                    <div class="benefit-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="32" height="32" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <div class="workflow-step">
+                    <div class="benefit-icon-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                     </div>
-                    <div class="benefit-title">Manage domains and scaling</div>
-                    <div class="benefit-desc">Add custom domains with auto-TLS, configure autoscaling, and verify DNS — without touching the CLI.</div>
+                    <div class="step-content">
+                        <h3>Manage domains and scaling</h3>
+                        <p>Add custom domains with auto-TLS, configure autoscaling, and verify DNS — without touching the CLI.</p>
+                    </div>
                 </div>
-                <div class="benefit-card">
-                    <div class="benefit-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" width="32" height="32" aria-hidden="true"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <div class="workflow-step">
+                    <div class="benefit-icon-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24" aria-hidden="true"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
                     </div>
-                    <div class="benefit-title">Full audit trail</div>
-                    <div class="benefit-desc">Every operation creates a git commit. Full traceable chain from "Claude was asked" to "pods running".</div>
+                    <div class="step-content">
+                        <h3>Full audit trail</h3>
+                        <p>Every operation creates a git commit. Full traceable chain from "Claude was asked" to "pods running".</p>
+                    </div>
                 </div>
             </div>
         </div>
