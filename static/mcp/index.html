@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mctl MCP — Connect your AI to the platform</title>
-    <meta name="description" content="Connect Claude Desktop, Cursor, VS Code, or any MCP client to your Kubernetes platform. Remote MCP server with GitHub token auth.">
+    <title>mctl Connector — Add MCTL to Claude</title>
+    <meta name="description" content="Add MCTL to Claude as a connector. Connect your Kubernetes platform tools directly in Claude via a remote MCP server. No local install required.">
 
     <meta property="og:type" content="website">
-    <meta property="og:title" content="mctl MCP — Connect your AI to the platform">
-    <meta property="og:description" content="Connect Claude Desktop, Cursor, or any MCP client to your Kubernetes platform. Remote MCP server, no binary required.">
+    <meta property="og:title" content="mctl Connector — Add MCTL to Claude">
+    <meta property="og:description" content="Add MCTL to Claude as a connector. Connect your platform tools directly in Claude via a remote MCP server. No local install required.">
     <meta property="og:url" content="https://mctl.ai/mcp">
     <meta property="og:image" content="https://mctl.ai/img/og-image.svg">
 
@@ -468,6 +468,258 @@
 
         /* ── Nav active state ─────────────────────────────────────────────── */
         .nav-link-mcp { color: var(--color-accent) !important; }
+
+        /* ── Hero CTAs ────────────────────────────────────────────────────── */
+        .hero-ctas {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        @media (max-width: 480px) {
+            .hero-ctas .btn { width: 100%; justify-content: center; }
+        }
+
+        /* ── Connector section ────────────────────────────────────────────── */
+        .connector-section {
+            padding: 3rem 0 2.5rem;
+            background: var(--color-bg);
+        }
+        .connector-card {
+            max-width: 720px;
+            margin: 0 auto;
+            background: var(--color-terminal);
+            border: 1px solid rgba(0,245,255,0.25);
+            border-radius: 16px;
+            padding: 2rem 2.25rem;
+            box-shadow: 0 0 60px rgba(0,245,255,0.05);
+        }
+        .connector-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.8rem;
+            background: rgba(0,245,255,0.1);
+            border: 1px solid rgba(0,245,255,0.3);
+            border-radius: 20px;
+            font-size: 0.72rem;
+            color: var(--color-accent);
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 1.25rem;
+        }
+        .connector-card h2 {
+            font-size: clamp(1.25rem, 3vw, 1.65rem);
+            color: #fff;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .connector-card .connector-subtitle {
+            font-size: 0.88rem;
+            color: var(--color-text-muted);
+            margin-bottom: 1.75rem;
+            line-height: 1.6;
+        }
+        .connector-steps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.875rem;
+            margin-bottom: 1.75rem;
+        }
+        .connector-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.875rem;
+        }
+        .connector-step-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(0,245,255,0.08);
+            border: 1px solid rgba(0,245,255,0.25);
+            color: var(--color-accent);
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .connector-step-text {
+            font-size: 0.88rem;
+            color: var(--color-text-muted);
+            line-height: 1.55;
+        }
+        .connector-step-text strong { color: #fff; }
+        .connector-values {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .connector-value-row {
+            display: flex;
+            align-items: center;
+            background: var(--color-bg);
+            border: 1px solid var(--color-glass-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .connector-value-label {
+            padding: 0.65rem 1rem;
+            font-size: 0.72rem;
+            color: var(--color-text-muted);
+            min-width: 148px;
+            flex-shrink: 0;
+            border-right: 1px solid var(--color-glass-border);
+            letter-spacing: 0.2px;
+        }
+        .connector-value-text {
+            padding: 0.65rem 1rem;
+            font-size: 0.875rem;
+            color: var(--color-accent);
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .connector-value-text.muted {
+            color: var(--color-text-muted);
+            font-style: italic;
+            font-size: 0.82rem;
+        }
+        .connector-copy-btn {
+            padding: 0.65rem 0.9rem;
+            background: rgba(0,245,255,0.06);
+            border: none;
+            border-left: 1px solid var(--color-glass-border);
+            color: var(--color-text-muted);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .connector-copy-btn:hover { background: rgba(0,245,255,0.15); color: var(--color-accent); }
+        .connector-copy-btn.copied { color: var(--color-success); }
+        .connector-auth-note {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.75rem 1rem;
+            background: rgba(63,185,80,0.06);
+            border: 1px solid rgba(63,185,80,0.18);
+            border-radius: 8px;
+            font-size: 0.82rem;
+            color: var(--color-text-muted);
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+        .connector-auth-note strong { color: #3fb950; }
+        @media (max-width: 640px) {
+            .connector-card { padding: 1.25rem 1.125rem; }
+            .connector-value-row { flex-wrap: wrap; }
+            .connector-value-label {
+                min-width: 0;
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--color-glass-border);
+                padding: 0.5rem 0.875rem 0.4rem;
+            }
+            .connector-value-text { padding: 0.5rem 0.875rem; }
+            .connector-copy-btn { border-left: none; border-top: 1px solid var(--color-glass-border); width: 100%; justify-content: center; text-align: center; }
+        }
+
+        /* ── Benefits section ─────────────────────────────────────────────── */
+        .benefits-section {
+            padding: 2.5rem 0 3rem;
+            background: var(--color-bg-secondary);
+        }
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .benefit-card {
+            background: var(--color-terminal);
+            border: 1px solid var(--color-glass-border);
+            border-radius: 12px;
+            padding: 1.25rem 1.375rem;
+        }
+        .benefit-icon { font-size: 1.35rem; margin-bottom: 0.75rem; }
+        .benefit-title {
+            font-size: 0.88rem;
+            color: #fff;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+        }
+        .benefit-desc {
+            font-size: 0.78rem;
+            color: var(--color-text-muted);
+            line-height: 1.55;
+        }
+        @media (max-width: 640px) {
+            .benefits-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 420px) {
+            .benefits-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── Advanced section wrapper ─────────────────────────────────────── */
+        .advanced-section {
+            background: var(--color-bg);
+        }
+        .advanced-section .connect-section {
+            background: var(--color-bg);
+            padding-top: 0;
+        }
+        .advanced-header {
+            text-align: center;
+            padding: 3rem 0 2rem;
+        }
+        .advanced-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.8rem;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            font-size: 0.72rem;
+            color: var(--color-text-muted);
+            font-weight: 600;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+        .advanced-header h2 {
+            font-size: clamp(1.35rem, 3vw, 1.9rem);
+            color: #fff;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .advanced-header p {
+            font-size: 0.88rem;
+            color: var(--color-text-muted);
+            max-width: 520px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        .claude-ai-tab-note {
+            background: rgba(0,245,255,0.05);
+            border: 1px solid rgba(0,245,255,0.15);
+            border-radius: 6px;
+            padding: 0.6rem 0.9rem;
+            font-size: 0.78rem;
+            color: var(--color-text-muted);
+            margin-bottom: 1rem;
+        }
+        .claude-ai-tab-note a { color: var(--color-accent); text-decoration: none; }
+        .claude-ai-tab-note a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -496,15 +748,107 @@
     <section class="mcp-hero">
         <div class="mcp-hero-glow"></div>
         <div class="container">
-            <p class="section-tag">Remote MCP Server</p>
-            <h1><span class="logo-m">M</span>CTL MCP</h1>
-            <p class="subtitle">Connect Claude, Cursor, or any MCP client to your Kubernetes platform. No binary required.</p>
-            <div class="endpoint-box">
-                <span class="endpoint-url" id="endpoint-url">https://api.mctl.ai/mcp</span>
-                <button class="endpoint-copy-btn" id="copy-endpoint-btn" onclick="copyEndpoint()">Copy endpoint</button>
+            <p class="section-tag">Claude Connector</p>
+            <h1>Add <span class="logo-m">M</span>CTL to Claude</h1>
+            <p class="subtitle">Connect your platform tools directly in Claude via a remote MCP server. No local install required.</p>
+            <div class="hero-ctas">
+                <a href="#connector" class="btn btn-primary">Add to Claude →</a>
+                <a href="#advanced" class="btn btn-outline">Advanced MCP setup</a>
             </div>
         </div>
     </section>
+
+    <!-- Connector: Recommended Setup -->
+    <section id="connector" class="connector-section">
+        <div class="container">
+            <div class="connector-card">
+                <div class="connector-badge">✦ Recommended</div>
+                <h2>Claude.ai custom connector</h2>
+                <p class="connector-subtitle">The easiest way to use MCTL in Claude. No binary, no config file, no token management — just sign in with GitHub.</p>
+
+                <div class="connector-steps-list">
+                    <div class="connector-step">
+                        <div class="connector-step-num">1</div>
+                        <div class="connector-step-text">Open <strong>Claude.ai</strong> → Settings → <strong>Connectors</strong> → <strong>Add custom connector</strong></div>
+                    </div>
+                    <div class="connector-step">
+                        <div class="connector-step-num">2</div>
+                        <div class="connector-step-text">Paste the values below and leave <strong>Client Secret</strong> empty</div>
+                    </div>
+                    <div class="connector-step">
+                        <div class="connector-step-num">3</div>
+                        <div class="connector-step-text">Click <strong>Connect</strong> — you'll be redirected to GitHub to sign in, then returned to Claude automatically</div>
+                    </div>
+                </div>
+
+                <div class="connector-values">
+                    <div class="connector-value-row">
+                        <span class="connector-value-label">Connector URL</span>
+                        <span class="connector-value-text" id="cv-url">https://api.mctl.ai/mcp</span>
+                        <button class="connector-copy-btn" onclick="connectorCopy('cv-url', this)">copy</button>
+                    </div>
+                    <div class="connector-value-row">
+                        <span class="connector-value-label">OAuth Client ID</span>
+                        <span class="connector-value-text" id="cv-clientid">mctl-connector</span>
+                        <button class="connector-copy-btn" onclick="connectorCopy('cv-clientid', this)">copy</button>
+                    </div>
+                    <div class="connector-value-row">
+                        <span class="connector-value-label">Client Secret</span>
+                        <span class="connector-value-text muted">Leave empty</span>
+                    </div>
+                </div>
+
+                <div class="connector-auth-note">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1a4 4 0 0 1 4 4v1h1a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1V5a4 4 0 0 1 4-4zm0 1.5A2.5 2.5 0 0 0 5.5 5v1h5V5A2.5 2.5 0 0 0 8 2.5z" fill="#3fb950"/></svg>
+                    Auth: <strong>GitHub sign-in via OAuth / PKCE</strong> — no password or token needed
+                </div>
+
+                <p style="font-size:0.78rem;color:var(--color-text-muted);line-height:1.55">
+                    Access requires membership in a team workspace. Not added yet? <a href="https://mctl.ai/#request-access" style="color:var(--color-accent)">Request access</a> from your platform admin.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits: What you get -->
+    <section class="benefits-section">
+        <div class="container">
+            <p class="section-tag">What you get</p>
+            <h2 class="section-title">Platform tools, inside Claude</h2>
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">🔍</div>
+                    <div class="benefit-title">Inspect platform state</div>
+                    <div class="benefit-desc">Query services, tenants, resource usage, logs, and workflow status — all via natural language.</div>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">🚀</div>
+                    <div class="benefit-title">Deploy and manage apps</div>
+                    <div class="benefit-desc">Onboard, deploy, rollback, and preview services. Create team workspaces and provision databases.</div>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">🌐</div>
+                    <div class="benefit-title">Manage domains and scaling</div>
+                    <div class="benefit-desc">Add custom domains with auto-TLS, configure autoscaling, and verify DNS — without touching the CLI.</div>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">📋</div>
+                    <div class="benefit-title">Full audit trail</div>
+                    <div class="benefit-desc">Every operation creates a git commit. Full traceable chain from "Claude was asked" to "pods running".</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Advanced: Developer MCP clients -->
+    <section id="advanced" class="advanced-section">
+        <div class="container">
+            <div class="advanced-header">
+                <div class="advanced-badge">⚙ Advanced</div>
+                <h2>Developer MCP clients</h2>
+                <p>For Cursor, VS Code, Claude Desktop, and other MCP-compatible tools. Requires a GitHub token for authentication.</p>
+            </div>
+        </div>
 
     <!-- Connect: Auth + Config Tabs -->
     <section class="connect-section">
@@ -513,10 +857,9 @@
 
                 <!-- Left: Auth card -->
                 <div>
-                    <p class="section-tag section-tag-left">Step 1</p>
                     <div class="auth-card">
                         <h3>Get your token</h3>
-                        <p>Authenticate with GitHub to generate a pre-filled config for your AI client.</p>
+                        <p>Authenticate with GitHub to get a pre-filled config for your developer client.</p>
                         <p class="auth-hint" style="margin-bottom:1rem">
                             Access requires membership in a team workspace.<br>
                             Not added yet? <a href="https://mctl.ai/#request-access" style="color:var(--color-accent)">Request access</a> from your platform admin.
@@ -574,9 +917,7 @@
                     </div>
                 </div>
 
-                <!-- Right: Config panel -->
                 <div>
-                    <p class="section-tag section-tag-left">Step 2 — Pick your client</p>
                     <div class="config-panel">
                         <div class="client-tabs-nav" role="tablist">
                             <button class="client-tab-btn active" role="tab" data-tab="claude" onclick="switchTab('claude')">Claude Desktop</button>
@@ -603,6 +944,9 @@
 
                         <!-- Claude.ai (web) -->
                         <div class="client-tab-content" id="tab-claude-ai">
+                            <div class="claude-ai-tab-note">
+                                ↑ For Claude.ai, use the <a href="#connector">recommended connector setup</a> above — it's faster and requires no token.
+                            </div>
                             <div class="config-path">
                                 <strong>Claude.ai → Settings → Connectors → Add custom connector</strong>
                             </div>
@@ -699,6 +1043,7 @@
                 </div>
             </div>
         </div>
+    </section>
     </section>
 
     <!-- Available Tools -->
@@ -893,8 +1238,12 @@
                     <div class="faq-a">Write operations submit Argo Workflows. Each workflow produces a git commit to the GitOps repo. ArgoCD picks up the commit and syncs the cluster. Full traceable chain from "AI was asked" to "pods running".</div>
                 </div>
                 <div class="faq-item">
+                    <div class="faq-q">How does auth work for the Claude.ai connector?</div>
+                    <div class="faq-a">When you add the connector in Claude.ai, it redirects you to GitHub's OAuth page. You authorize the mctl app with <code>read:user</code> and <code>user:email</code> scopes. GitHub returns you to Claude automatically — no token copying, no config files. Your access is scoped to your team workspaces.</div>
+                </div>
+                <div class="faq-item">
                     <div class="faq-q">Do I need to install anything?</div>
-                    <div class="faq-a">No binary required. The server runs at <code>https://api.mctl.ai/mcp</code>. Add the config to your AI client, restart it, and you're connected.</div>
+                    <div class="faq-a">No. For Claude.ai, add the connector in Settings — no binary, no config file required. For developer clients (Cursor, VS Code, etc.), add the MCP server config pointing to <code>https://api.mctl.ai/mcp</code> with a GitHub token.</div>
                 </div>
                 <div class="faq-item">
                     <div class="faq-q">What GitHub token scope is needed?</div>
@@ -913,7 +1262,7 @@
                 </div>
                 <div class="footer-links">
                     <a href="/#features">Platform</a>
-                    <a href="/mcp/">MCP</a>
+                    <a href="/mcp/">Connector</a>
                     <a href="/#pricing">Pricing</a>
                     <a href="/#contact">Contact</a>
                 </div>
@@ -1147,6 +1496,12 @@
 
     function copyEndpoint() {
         copyText(MCP_ENDPOINT, document.getElementById('copy-endpoint-btn'), 'copied!');
+    }
+
+    function connectorCopy(elemId, btn) {
+        const el = document.getElementById(elemId);
+        if (!el) return;
+        copyText(el.textContent.trim(), btn, 'copied!');
     }
 
     function copyToken() {
