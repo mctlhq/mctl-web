@@ -11,8 +11,8 @@
  * - GITHUB_CLIENT_ID: GitHub OAuth App client ID
  * - GITHUB_CLIENT_SECRET: GitHub OAuth App client secret
  * - GITHUB_OAUTH_HMAC_KEY: random 32+ char string for signing auth data
- * - BACKSTAGE_API_TOKEN: Shared secret for signing landing-page JWT tokens (HMAC-SHA256).
- *     Also used as static bearer fallback (BACKSTAGE_LANDING_TOKEN).
+ * - BACKSTAGE_LANDING_TOKEN: Shared secret for signing landing-page JWT tokens (HMAC-SHA256).
+ *     Must match the BACKSTAGE_LANDING_TOKEN env var in the Backstage pod.
  * - RESEND_API_KEY: Resend.com API key for sending welcome emails
  */
 
@@ -377,13 +377,13 @@ async function handleCheckTeam(url, env, origin) {
     return jsonResponse({ available: false, error: 'Invalid team name format' }, 400, {}, origin);
   }
 
-  if (!env.BACKSTAGE_API_TOKEN) {
-    console.error('check-team: BACKSTAGE_API_TOKEN is not set');
+  if (!env.BACKSTAGE_LANDING_TOKEN) {
+    console.error('check-team: BACKSTAGE_LANDING_TOKEN is not set');
     return jsonResponse({ error: 'Server misconfiguration' }, 500, {}, origin);
   }
 
   try {
-    const jwt = await createLandingJwt(env.BACKSTAGE_API_TOKEN);
+    const jwt = await createLandingJwt(env.BACKSTAGE_LANDING_TOKEN);
     const res = await backstageAPI(
       `/api/tenant-management/tenants/${encodeURIComponent(name)}`,
       jwt,
@@ -432,7 +432,7 @@ async function handleFormSubmit(request, env, origin) {
     }
 
     // ── Check if tenant already exists ─────────────────────────────────────
-    const jwt = await createLandingJwt(env.BACKSTAGE_API_TOKEN);
+    const jwt = await createLandingJwt(env.BACKSTAGE_LANDING_TOKEN);
     if (!UNLIMITED_USERS.includes(login)) {
       try {
         const existsRes = await backstageAPI(
