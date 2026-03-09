@@ -580,6 +580,7 @@
                     <div class="config-panel">
                         <div class="client-tabs-nav" role="tablist">
                             <button class="client-tab-btn active" role="tab" data-tab="claude" onclick="switchTab('claude')">Claude Desktop</button>
+                            <button class="client-tab-btn" role="tab" data-tab="claude-ai" onclick="switchTab('claude-ai')">Claude.ai</button>
                             <button class="client-tab-btn" role="tab" data-tab="cursor" onclick="switchTab('cursor')">Cursor</button>
                             <button class="client-tab-btn" role="tab" data-tab="vscode" onclick="switchTab('vscode')">VS Code</button>
                             <button class="client-tab-btn" role="tab" data-tab="windsurf" onclick="switchTab('windsurf')">Windsurf</button>
@@ -598,6 +599,30 @@
                                 <button class="copy-config-btn" onclick="copyConfig('claude')">copy</button>
                             </div>
                             <p class="config-note">Restart Claude Desktop after saving. It will connect and expose 23 platform tools.</p>
+                        </div>
+
+                        <!-- Claude.ai (web) -->
+                        <div class="client-tab-content" id="tab-claude-ai">
+                            <div class="config-path">
+                                <strong>Claude.ai → Settings → Connectors → Add custom connector</strong>
+                            </div>
+                            <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px;">
+                                <div class="token-row">
+                                    <span class="token-label">Remote MCP server URL</span>
+                                    <span class="token-value" style="font-family:monospace">https://api.mctl.ai/mcp</span>
+                                </div>
+                                <div class="token-row">
+                                    <span class="token-label">OAuth Client ID</span>
+                                    <span class="token-value" style="font-family:monospace">mctl-connector</span>
+                                </div>
+                                <div class="token-row">
+                                    <span class="token-label">OAuth Client Secret</span>
+                                    <span class="token-value" style="color:var(--color-text-muted)">(leave empty — PKCE)</span>
+                                </div>
+                            </div>
+                            <p class="config-note" style="margin-top:16px;">
+                                After adding, Claude.ai will redirect you to GitHub to authorize. You'll be returned to Claude automatically. Access is scoped to your team workspaces.
+                            </p>
                         </div>
 
                         <!-- Cursor -->
