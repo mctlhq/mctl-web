@@ -377,6 +377,11 @@ async function handleCheckTeam(url, env, origin) {
     return jsonResponse({ available: false, error: 'Invalid team name format' }, 400, {}, origin);
   }
 
+  if (!env.BACKSTAGE_API_TOKEN) {
+    console.error('check-team: BACKSTAGE_API_TOKEN is not set');
+    return jsonResponse({ error: 'Server misconfiguration' }, 500, {}, origin);
+  }
+
   try {
     const jwt = await createLandingJwt(env.BACKSTAGE_API_TOKEN);
     const res = await backstageAPI(
@@ -389,9 +394,11 @@ async function handleCheckTeam(url, env, origin) {
     if (res.ok) {
       return jsonResponse({ available: false, message: 'Team name is already taken' }, 200, {}, origin);
     }
+    const body = await res.text().catch(() => '');
+    console.error(`check-team: Backstage returned ${res.status} for "${name}": ${body}`);
     return jsonResponse({ error: 'Failed to check team availability' }, 500, {}, origin);
   } catch (e) {
-    console.error('Check team error:', e);
+    console.error('check-team: unexpected error:', e?.message ?? e);
     return jsonResponse({ error: 'Failed to check team availability' }, 500, {}, origin);
   }
 }
