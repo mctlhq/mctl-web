@@ -718,11 +718,23 @@
             .connect-grid > div:first-child { order: 2; }
             .connect-grid > div:last-child  { order: 1; }
         }
+        /* Overflow containment — white-space:pre in code blocks expands the page */
+        .config-panel,
+        .code-block-wrapper,
+        .client-tab-content { max-width: 100%; overflow: hidden; }
+        .code-block-mcp { overflow-x: auto; max-width: 100%; }
+        .config-path {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
         @media (max-width: 640px) {
+            .advanced-section { overflow-x: hidden; }
             .advanced-header { padding: 1.5rem 0 1.25rem; }
-            .client-tab-btn { padding: 0.65rem 0.8rem; font-size: 0.75rem; }
+            .client-tab-btn { padding: 0.65rem 0.75rem; font-size: 0.73rem; }
             .client-tab-content { padding: 1rem; }
-            .code-block-mcp { font-size: 0.75rem; padding: 0.8rem; }
+            .code-block-mcp { font-size: 0.73rem; padding: 0.75rem; }
             .auth-card { padding: 1.25rem; }
             .connect-section { padding: 0 0 2rem; }
         }
