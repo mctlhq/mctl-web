@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCTL Docs — Platform Documentation</title>
+    <meta name="description" content="Everything you need to understand, evaluate, and start using mctl. Self-service Kubernetes platform with GitOps, Vault, RBAC, and MCP tools.">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="MCTL Docs — Platform Documentation">
+    <meta property="og:description" content="Everything you need to understand, evaluate, and start using mctl. Self-service Kubernetes platform with GitOps, Vault, RBAC, and MCP tools.">
+    <meta property="og:url" content="https://mctl.ai/docs">
+    <meta property="og:image" content="https://mctl.ai/img/og-image.svg">
+
+    <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.svg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/style.css?v=22">
+
+    <style>
+        /* ── Docs page additions ─────────────────────────────────────────── */
+
+        .nav-link-docs { color: var(--color-accent) !important; }
+
+        .docs-hero {
+            padding: var(--section-py) 0 2.5rem;
+            text-align: center;
+            background: var(--color-bg-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+        .docs-hero-glow {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(0,245,255,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .docs-hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        .docs-hero .subtitle {
+            font-size: 1.1rem;
+            color: var(--color-text-muted);
+            margin-bottom: 0;
+            max-width: 580px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .docs-section {
+            padding: var(--section-py) 0;
+        }
+        .docs-section-alt {
+            background: var(--color-bg-secondary);
+        }
+        .docs-section-default {
+            background: var(--color-bg);
+        }
+
+        .docs-text {
+            max-width: 760px;
+            margin: 0 auto;
+            color: var(--color-text-muted);
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+        .docs-text p {
+            margin-bottom: 1rem;
+        }
+
+        /* Component cards */
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .component-card {
+            background: var(--color-terminal);
+            border: 1px solid var(--color-glass-border);
+            padding: 2rem 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .component-card:hover {
+            border-color: var(--color-accent);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(0,245,255,0.1);
+        }
+        .component-name {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--color-accent);
+            background: rgba(0,245,255,0.07);
+            padding: 0.35rem 0.65rem;
+            border-radius: 4px;
+            border: 1px solid rgba(0,245,255,0.1);
+            display: inline-block;
+            margin-bottom: 0.75rem;
+        }
+        .component-card h3 {
+            font-size: 1.1rem;
+            color: #fff;
+            margin-bottom: 0.75rem;
+        }
+        .component-card p {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            line-height: 1.7;
+        }
+
+        /* Interface cards */
+        .interface-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+        .interface-card {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-glass-border);
+            padding: 2rem 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .interface-card:hover {
+            border-color: var(--color-accent);
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+        .interface-card h3 {
+            font-size: 1.1rem;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+        .interface-card .interface-url {
+            font-size: 0.78rem;
+            color: var(--color-accent);
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+        .interface-card p {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            line-height: 1.6;
+        }
+
+        /* Docs flow diagram */
+        .docs-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        .docs-diagram .diagram-box {
+            width: clamp(130px, 12vw, 180px);
+            padding: 1.5rem 1rem;
+        }
+        .docs-diagram .diagram-box h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        .docs-diagram .diagram-box p {
+            font-size: 0.75rem;
+        }
+        .docs-diagram .diagram-connector {
+            flex: 0 0 auto;
+            min-width: 24px;
+            max-width: 50px;
+        }
+
+        .agent-callout {
+            max-width: 760px;
+            margin: 2rem auto 0;
+            background: var(--color-terminal);
+            border: 1px solid var(--color-glass-border);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+        }
+        .agent-callout h4 {
+            font-size: 1rem;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+        .agent-callout p {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            line-height: 1.7;
+        }
+
+        /* Quickstart role blocks */
+        .quickstart-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+        .quickstart-grid .workflow-step {
+            flex-direction: column;
+            text-align: center;
+            padding: 2rem 1.5rem;
+            margin-bottom: 0;
+        }
+        .quickstart-grid .step-content h3 { font-size: 1.25rem; }
+        .quickstart-grid .step-content p { margin-bottom: 0; }
+
+        @media (max-width: 1100px) {
+            .interface-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .docs-hero { padding: 7rem 0 2rem; }
+            .docs-hero h1 { font-size: 2.2rem; }
+            .docs-section { padding: 4rem 0; }
+            .interface-grid { grid-template-columns: 1fr; }
+            .quickstart-grid { grid-template-columns: 1fr; }
+            .docs-diagram { flex-direction: column; }
+            .docs-diagram .diagram-connector {
+                transform: rotate(90deg);
+                height: 24px;
+                min-width: auto;
+                max-width: none;
+                width: 2px;
+            }
+            .docs-diagram .diagram-box {
+                width: 100%;
+                max-width: 240px;
+            }
+            .agent-callout { padding: 1.25rem 1.5rem; }
+        }
+        @media (max-width: 380px) {
+            .docs-hero { padding: 6rem 0 1.5rem; }
+            .component-card { padding: 1.5rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container navbar-container">
+            <a href="/" class="logo">
+                <span class="logo-m">M</span>CTL
+            </a>
+            <div class="burger-menu" id="burger-menu" role="button" tabindex="0" aria-label="Toggle menu" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </div>
+            <div class="nav-links" id="nav-links">
+                <a href="/#features">Platform</a>
+                <a href="/#how-it-works">How It Works</a>
+                <a href="/#pricing">Pricing</a>
+                <a href="/mcp/">MCP</a>
+                <a href="/docs/" class="nav-link-docs">Docs</a>
+                <a href="/#contact">Contact</a>
+                <a href="/#request-access" class="nav-cta">Request Access</a>
+            </div>
+        </div>
+        <div class="nav-overlay" id="nav-overlay"></div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="docs-hero">
+        <div class="docs-hero-glow"></div>
+        <div class="container">
+            <h1>Platform Documentation</h1>
+            <p class="subtitle">Everything you need to understand, evaluate, and start using mctl</p>
+        </div>
+    </section>
+
+    <!-- What is mctl? -->
+    <section class="docs-section docs-section-default">
+        <div class="container">
+            <p class="section-tag">Overview</p>
+            <h2 class="section-title">What is mctl?</h2>
+            <div class="docs-text">
+                <p>
+                    mctl is a self-service Kubernetes platform that automates the full delivery lifecycle
+                    for product teams. It combines GitOps (ArgoCD), secrets management (HashiCorp Vault),
+                    team isolation (RBAC, namespaces, network policies), and AI-native tooling (MCP server)
+                    into a single control plane.
+                </p>
+                <p>
+                    Instead of assembling and maintaining these pieces yourself, mctl provides them
+                    pre-integrated and production-ready. Teams get isolated workspaces, pick from a
+                    service catalog, and deploy via git push, a developer portal, REST API, or natural
+                    language through any MCP-compatible AI client.
+                </p>
+                <p>
+                    Everything is automated end-to-end: from namespace provisioning and RBAC setup to
+                    CI/CD pipelines, TLS certificates, database provisioning, and domain management.
+                    No kubectl, no manual YAML, no tickets.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Who is it for? -->
+    <section class="docs-section docs-section-alt">
+        <div class="container">
+            <p class="section-tag">Use Cases</p>
+            <h2 class="section-title">Who is it for?</h2>
+            <div class="audience-grid">
+                <div class="audience-card reveal">
+                    <h3>Startups (5-50 engineers)</h3>
+                    <p>
+                        You have multiple teams shipping features but no dedicated DevOps hire.
+                        mctl gives every team its own isolated namespace with secrets, TLS, and CI/CD
+                        from day one -- so engineers deploy themselves instead of waiting on infrastructure.
+                    </p>
+                </div>
+                <div class="audience-card reveal">
+                    <h3>B2B SaaS Companies</h3>
+                    <p>
+                        You need per-customer or per-environment isolation with consistent security
+                        and governance. mctl provisions tenants with their own namespaces, resource
+                        quotas, and network policies. Onboard a new customer environment in minutes, not days.
+                    </p>
+                </div>
+                <div class="audience-card reveal">
+                    <h3>Platform Teams</h3>
+                    <p>
+                        Already building an internal developer platform? mctl provides the foundation:
+                        GitOps engine, service catalog, secrets integration, and self-service workflows.
+                        Skip 6 months of integration work and build your customizations on top.
+                    </p>
+                </div>
+                <div class="audience-card reveal">
+                    <h3>AI-first Teams</h3>
+                    <p>
+                        You want infrastructure managed through natural language. mctl exposes
+                        23 MCP tools that let Claude, Cursor, VS Code Copilot, or any MCP client
+                        deploy services, manage previews, provision databases, and monitor resources
+                        through conversation.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="docs-section docs-section-default">
+        <div class="container">
+            <p class="section-tag">Architecture</p>
+            <h2 class="section-title">How it works</h2>
+            <div class="docs-diagram">
+                <div class="diagram-box">
+                    <h4>Developer / AI</h4>
+                    <p>Portal, API, MCP</p>
+                </div>
+                <div class="diagram-connector">
+                    <div class="connector-line"></div>
+                    <div class="connector-arrow"></div>
+                </div>
+                <div class="diagram-box highlight-box">
+                    <h4>mctl-api</h4>
+                    <p>Control Plane</p>
+                    <div class="box-glow"></div>
+                </div>
+                <div class="diagram-connector">
+                    <div class="connector-line"></div>
+                    <div class="connector-arrow"></div>
+                </div>
+                <div class="diagram-box">
+                    <h4>Argo Workflows</h4>
+                    <p>Task Execution</p>
+                </div>
+                <div class="diagram-connector">
+                    <div class="connector-line"></div>
+                    <div class="connector-arrow"></div>
+                </div>
+                <div class="diagram-box">
+                    <h4>mctl-gitops</h4>
+                    <p>Source of Truth</p>
+                </div>
+                <div class="diagram-connector">
+                    <div class="connector-line"></div>
+                    <div class="connector-arrow"></div>
+                </div>
+                <div class="diagram-box">
+                    <h4>ArgoCD &rarr; K8s</h4>
+                    <p>Reconcile &amp; Deploy</p>
+                </div>
+            </div>
+            <div class="docs-text">
+                <p>
+                    Every action -- whether triggered by a git push, a portal click, an API call,
+                    or an AI prompt -- flows through mctl-api, which orchestrates Argo Workflows
+                    to make changes in the mctl-gitops repository. ArgoCD watches the repo and
+                    reconciles the cluster state. This means every change is a git commit, every
+                    deploy is traceable, and rollbacks are a one-line revert.
+                </p>
+            </div>
+            <div class="agent-callout">
+                <h4>mctl-agent: self-healing loop</h4>
+                <p>
+                    A separate component watches the cluster for anomalies (crash loops, resource
+                    pressure, misconfiguration). When it detects an issue, it diagnoses the root
+                    cause using Claude API and opens a pull request to mctl-gitops with the fix.
+                    The change goes through the same GitOps pipeline -- reviewed, merged, deployed.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Platform components -->
+    <section class="docs-section docs-section-alt">
+        <div class="container">
+            <p class="section-tag">Components</p>
+            <h2 class="section-title">Platform components</h2>
+            <div class="component-grid">
+                <div class="component-card reveal">
+                    <span class="component-name">mctl-api</span>
+                    <h3>Control Plane</h3>
+                    <p>
+                        Go REST API and MCP server. Receives commands from the portal, CLI, AI clients,
+                        or direct HTTP calls. Authenticates via GitHub OAuth or Dex SSO. Routes operations
+                        to Argo Workflows for execution. Exposes 23 MCP tools for AI-driven management.
+                    </p>
+                </div>
+                <div class="component-card reveal">
+                    <span class="component-name">mctl-gitops</span>
+                    <h3>Source of Truth</h3>
+                    <p>
+                        The GitOps repository. Contains Helm charts, ArgoCD application definitions,
+                        Kubernetes manifests, and tenant configurations. Every platform change is a git
+                        commit here. ArgoCD watches this repo and reconciles cluster state continuously.
+                    </p>
+                </div>
+                <div class="component-card reveal">
+                    <span class="component-name">mctl-portal</span>
+                    <h3>Developer Portal</h3>
+                    <p>
+                        Backstage-based developer portal. Provides a service catalog, software templates,
+                        deploy UI, and team management. Developers browse available templates, configure
+                        services, and track deployments through a web interface.
+                    </p>
+                </div>
+                <div class="component-card reveal">
+                    <span class="component-name">mctl-agent</span>
+                    <h3>Self-Healing</h3>
+                    <p>
+                        Watches the cluster for issues: crash loops, OOM kills, failed probes,
+                        resource exhaustion. Diagnoses problems using Claude API, then opens pull
+                        requests to mctl-gitops with targeted fixes. Humans review, merge, ArgoCD deploys.
+                    </p>
+                </div>
+                <div class="component-card reveal">
+                    <span class="component-name">mctl-web</span>
+                    <h3>Public Site</h3>
+                    <p>
+                        The public-facing website (mctl.ai) and MCP connector page. nginx serves
+                        static assets; a Cloudflare Worker handles GitHub OAuth flows, contact form
+                        submissions, and Telegram notifications.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Four ways to interact -->
+    <section class="docs-section docs-section-default">
+        <div class="container">
+            <p class="section-tag">Interfaces</p>
+            <h2 class="section-title">Four ways to interact</h2>
+            <div class="interface-grid">
+                <div class="interface-card reveal">
+                    <h3>Portal</h3>
+                    <span class="interface-url">app.mctl.ai</span>
+                    <p>
+                        Web UI built on Backstage. Browse the service catalog, create services from
+                        templates, view deploy history, manage team members, and check logs.
+                    </p>
+                </div>
+                <div class="interface-card reveal">
+                    <h3>AI / MCP</h3>
+                    <span class="interface-url">api.mctl.ai/mcp</span>
+                    <p>
+                        Natural language interface via MCP protocol. Connect Claude, Cursor, VS Code,
+                        Copilot, or any MCP client. Deploy, rollback, preview, provision databases --
+                        all through conversation.
+                    </p>
+                </div>
+                <div class="interface-card reveal">
+                    <h3>REST API</h3>
+                    <span class="interface-url">api.mctl.ai</span>
+                    <p>
+                        Direct HTTP access to every platform operation. Use from CI/CD pipelines,
+                        scripts, or custom tooling. Authenticate with GitHub token or Dex JWT.
+                    </p>
+                </div>
+                <div class="interface-card reveal">
+                    <h3>GitOps</h3>
+                    <span class="interface-url">push to repo</span>
+                    <p>
+                        Push code to your service repo. CI builds the image, updates the GitOps
+                        repo, and ArgoCD syncs to the cluster. Zero-touch delivery from commit to production.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Getting started -->
+    <section class="docs-section docs-section-alt">
+        <div class="container">
+            <p class="section-tag">Quick Start</p>
+            <h2 class="section-title">Getting started</h2>
+            <div class="quickstart-grid">
+                <div class="workflow-step reveal">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Developer</h3>
+                        <p>
+                            Sign in with GitHub at mctl.ai. Pick a template from the service catalog.
+                            Configure your service (name, database, domain). Deploy -- your namespace,
+                            CI/CD pipeline, and TLS certificate are provisioned automatically.
+                        </p>
+                    </div>
+                </div>
+                <div class="workflow-step reveal">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Platform Operator</h3>
+                        <p>
+                            Create a tenant via the API or portal. Assign namespaces, set resource quotas,
+                            configure network policies. Manage services and environments through the REST
+                            API or ArgoCD directly.
+                        </p>
+                    </div>
+                </div>
+                <div class="workflow-step reveal">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>AI User</h3>
+                        <p>
+                            Go to <a href="/mcp/" style="color:var(--color-accent)">mctl.ai/mcp</a>,
+                            click "Add to Claude", sign in with GitHub. Start prompting: "deploy my-app
+                            to staging", "show service status", "create a preview for PR #42".
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <span class="logo"><span class="logo-m">M</span>CTL</span>
+                </div>
+                <div class="footer-links">
+                    <a href="/#features">Platform</a>
+                    <a href="/docs/">Docs</a>
+                    <a href="/mcp/">Connector</a>
+                    <a href="/#pricing">Pricing</a>
+                    <a href="/#contact">Contact</a>
+                </div>
+                <div class="footer-copy">&copy; 2026 MCTL. All rights reserved.</div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    'use strict';
+    /* ── Burger menu (standalone, no App dependency) ─────────────────── */
+    (function() {
+        var burger = document.getElementById('burger-menu');
+        var navLinks = document.getElementById('nav-links');
+        var overlay = document.getElementById('nav-overlay');
+
+        function toggle() {
+            burger.classList.toggle('active');
+            navLinks.classList.toggle('active');
+            overlay.classList.toggle('active');
+            var isOpen = navLinks.classList.contains('active');
+            document.body.style.overflow = isOpen ? 'hidden' : '';
+            burger.setAttribute('aria-expanded', isOpen);
+        }
+
+        function close() {
+            burger.classList.remove('active');
+            navLinks.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+            burger.setAttribute('aria-expanded', 'false');
+        }
+
+        if (burger) {
+            burger.addEventListener('click', toggle);
+            burger.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+            });
+        }
+        if (overlay) overlay.addEventListener('click', close);
+        document.querySelectorAll('.nav-links a').forEach(function(a) {
+            a.addEventListener('click', close);
+        });
+
+        /* Scroll reveal */
+        var reveals = document.querySelectorAll('.reveal');
+        if (reveals.length && 'IntersectionObserver' in window) {
+            var io = new IntersectionObserver(function(entries) {
+                entries.forEach(function(e) {
+                    if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+                });
+            }, { threshold: 0.15 });
+            reveals.forEach(function(el) { io.observe(el); });
+        }
+    })();
+    </script>
+</body>
+</html>
