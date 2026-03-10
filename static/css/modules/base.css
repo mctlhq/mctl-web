@@ -1,0 +1,41 @@
+:root {
+  --color-bg: #050816;
+  --color-bg-secondary: #0d111d;
+  --color-terminal: rgba(13, 17, 23, 0.85);
+  --color-text: #e6edf3;
+  --color-text-muted: #9ca3af;
+  --color-accent: #00f5ff;
+  --color-error: #f85149;
+  --color-success: #3fb950;
+  --color-glass-border: rgba(0, 245, 255, 0.2);
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  --section-py: clamp(5rem, 6vw, 8rem);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: auto; overflow-x: hidden; }
+
+body {
+  font-family: var(--font-mono);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Short viewport (e.g. Mac Default 1512×982) — compact vertical scale */
+@media (max-height: 900px) {
+  :root { --section-py: clamp(3rem, 4vh, 5rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

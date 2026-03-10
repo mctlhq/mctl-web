@@ -1,0 +1,9 @@
+.DS_Store
+node_modules/
+.env
+*.log
+.wrangler/
+dist/
+.idea/
+*.jpeg
+*.jpg
