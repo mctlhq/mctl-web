@@ -1,4 +1,4 @@
-# Cloudflare Worker для формы mctl.me
+# Cloudflare Worker для формы mctl.ai
 
 Принимает POST запросы с формы и отправляет в Telegram.
 
@@ -8,7 +8,7 @@
 
 1. Открой `@BotFather` в Telegram
 2. Отправь `/newbot`
-3. Введи имя: `mctl.me Access Bot`
+3. Введи имя: `mctl.ai Access Bot`
 4. Введи username: `mctlme_access_bot`
 5. Получи **TELEGRAM_BOT_TOKEN**
 
@@ -70,11 +70,11 @@ curl -X POST https://mctl-landing-form.<your-subdomain>.workers.dev \
 
 ## Custom Domain (опционально)
 
-Если хочешь использовать `mctl.me/api/submit`:
+Если хочешь использовать `mctl.ai/api/submit`:
 
 1. В Cloudflare Dashboard → Workers → mctl-landing-form
 2. Settings → Triggers → Add Route
-3. Route: `mctl.me/api/*`
-4. Zone: `mctl.me`
+3. Route: `mctl.ai/api/*`
+4. Zone: `mctl.ai`
 
-Тогда форма будет отправлять на `https://mctl.me/api/submit`
+Тогда форма будет отправлять на `https://mctl.ai/api/submit`
