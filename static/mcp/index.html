@@ -11,8 +11,6 @@
     <meta property="og:description" content="Add MCTL to Claude as a connector. Connect your platform tools directly in Claude via a remote MCP server. No local install required.">
     <meta property="og:url" content="https://mctl.ai/mcp">
     <meta property="og:image" content="https://mctl.ai/img/og-image.svg">
-    <!-- MCP API base URL — forks: change this to your API endpoint -->
-    <meta name="mctl-api-base" content="https://api.mctl.ai">
 
     <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
     <link rel="apple-touch-icon" href="/img/apple-touch-icon.svg">
@@ -805,7 +803,7 @@
                 <div class="connector-values">
                     <div class="connector-value-row">
                         <span class="connector-value-label">Connector URL</span>
-                        <span class="connector-value-text mcp-endpoint-display" id="cv-url">https://api.mctl.ai/mcp</span>
+                        <span class="connector-value-text" id="cv-url">https://api.mctl.ai/mcp</span>
                         <button class="connector-copy-btn" onclick="connectorCopy('cv-url', this)">copy</button>
                     </div>
                     <div class="connector-value-row">
@@ -825,7 +823,7 @@
                 </div>
 
                 <p style="font-size:0.78rem;color:var(--color-text-muted);line-height:1.55">
-                    Access requires membership in a team workspace. Not added yet? <a href="/#request-access" style="color:var(--color-accent)">Request access</a> from your platform admin.
+                    Access requires membership in a team workspace. Not added yet? <a href="https://mctl.ai/#request-access" style="color:var(--color-accent)">Request access</a> from your platform admin.
                 </p>
             </div>
         </div>
@@ -899,7 +897,7 @@
                         <p>Authenticate with GitHub to get a pre-filled config for your developer client.</p>
                         <p class="auth-hint" style="margin-bottom:1rem">
                             Access requires membership in a team workspace.<br>
-                            Not added yet? <a href="/#request-access" style="color:var(--color-accent)">Request access</a> from your platform admin.
+                            Not added yet? <a href="https://mctl.ai/#request-access" style="color:var(--color-accent)">Request access</a> from your platform admin.
                         </p>
 
                         <!-- Unauthenticated state -->
@@ -990,7 +988,7 @@
                             <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px;">
                                 <div class="token-row">
                                     <span class="token-label">Remote MCP server URL</span>
-                                    <span class="token-value mcp-endpoint-display" style="font-family:monospace">https://api.mctl.ai/mcp</span>
+                                    <span class="token-value" style="font-family:monospace">https://api.mctl.ai/mcp</span>
                                 </div>
                                 <div class="token-row">
                                     <span class="token-label">OAuth Client ID</span>
@@ -1280,7 +1278,7 @@
                 </div>
                 <div class="faq-item">
                     <div class="faq-q">Do I need to install anything?</div>
-                    <div class="faq-a">No. For Claude.ai, add the connector in Settings — no binary, no config file required. For developer clients (Cursor, VS Code, etc.), add the MCP server config pointing to <code class="mcp-endpoint-display">https://api.mctl.ai/mcp</code> with a GitHub token.</div>
+                    <div class="faq-a">No. For Claude.ai, add the connector in Settings — no binary, no config file required. For developer clients (Cursor, VS Code, etc.), add the MCP server config pointing to <code>https://api.mctl.ai/mcp</code> with a GitHub token.</div>
                 </div>
                 <div class="faq-item">
                     <div class="faq-q">What GitHub token scope is needed?</div>
@@ -1312,10 +1310,7 @@
     /* ── MCP Page Logic ──────────────────────────────────────────────────── */
     'use strict';
 
-    const MCP_API_BASE = document.querySelector('meta[name="mctl-api-base"]')?.content || 'https://api.mctl.ai';
-    const MCP_ENDPOINT = MCP_API_BASE + '/mcp';
-    // Update all static endpoint displays to match the configured base URL
-    document.querySelectorAll('.mcp-endpoint-display').forEach(el => { el.textContent = MCP_ENDPOINT; });
+    const MCP_ENDPOINT = 'https://api.mctl.ai/mcp';
     const TOKEN_PLACEHOLDER = 'YOUR_GITHUB_TOKEN';
     const AUTH_KEY = 'mctl_auth';
     const AUTH_TTL = 8 * 60 * 60 * 1000; // 8 hours

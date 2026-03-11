@@ -16,22 +16,17 @@
  * - RESEND_API_KEY: Resend.com API key for sending welcome emails
  */
 
-// All org-specific values are read from Worker env bindings (wrangler.toml [vars] or dashboard).
-// This allows forks to configure their own domain, org, and Backstage URL without code changes.
-function getConfig(env) {
-  const baseDomain = env.BASE_DOMAIN || 'mctl.ai';
-  return {
-    baseDomain,
-    redirectSuffixes: ['.mctl.me', '.mctl.ru'],
-    redirectRoots: new Set(['mctl.me', 'mctl.ru']),
-    allowedOrigins: new Set([`https://${baseDomain}`]),
-    landingUrl: `https://${baseDomain}`,
-    callbackUrl: `https://${baseDomain}/api/github/callback`,
-    githubOrg: env.GITHUB_ORG || 'mctlhq',
-    backstageAppUrl: env.BACKSTAGE_APP_URL || `https://app.${baseDomain}`,
-    unlimitedUsers: (env.UNLIMITED_USERS || '').split(',').map(s => s.trim()).filter(Boolean),
-  };
-}
+const BASE_DOMAIN = 'mctl.ai';
+// Domains that redirect to *.mctl.ai (root + all subdomains)
+const REDIRECT_SUFFIXES = ['.mctl.me', '.mctl.ru'];
+const REDIRECT_ROOTS   = new Set(['mctl.me', 'mctl.ru']);
+const ALLOWED_ORIGINS = new Set(['https://mctl.ai']);
+const LANDING_URL = `https://${BASE_DOMAIN}`;
+// NOTE: after deploying, update GitHub OAuth App callback URL to https://mctl.ai/api/github/callback
+const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
+const GITHUB_ORG = 'mctlhq';
+const BACKSTAGE_APP_URL = 'https://app.mctl.ai';
+const UNLIMITED_USERS = ['mashkovd'];
 
 // Rate limit: max requests per IP per window (seconds)
 const RATE_LIMITS = {
@@ -42,7 +37,6 @@ const RATE_LIMITS = {
 
 export default {
   async fetch(request, env) {
-    const cfg = getConfig(env);
     const url = new URL(request.url);
     const path = url.pathname;
     const origin = request.headers.get('Origin') || '';
@@ -51,18 +45,18 @@ export default {
     // Root: mctl.me → mctl.ai, mctl.ru → mctl.ai
     // Subdomains: app.mctl.me → app.mctl.ai, ops.mctl.me → ops.mctl.ai, etc.
     const host = url.hostname;
-    if (cfg.redirectRoots.has(host)) {
-      return Response.redirect(`https://${cfg.baseDomain}${url.pathname}${url.search}`, 301);
+    if (REDIRECT_ROOTS.has(host)) {
+      return Response.redirect(`https://mctl.ai${url.pathname}${url.search}`, 301);
     }
-    const redirectSuffix = cfg.redirectSuffixes.find(s => host.endsWith(s));
+    const redirectSuffix = REDIRECT_SUFFIXES.find(s => host.endsWith(s));
     if (redirectSuffix) {
       const sub = host.slice(0, -redirectSuffix.length);
-      return Response.redirect(`https://${sub}.${cfg.baseDomain}${url.pathname}${url.search}`, 301);
+      return Response.redirect(`https://${sub}.mctl.ai${url.pathname}${url.search}`, 301);
     }
 
     // CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders(cfg, origin) });
+      return new Response(null, { headers: corsHeaders(origin) });
     }
 
     // Rate limiting for sensitive endpoints
@@ -75,7 +69,6 @@ export default {
           { error: 'Too many requests. Please try again later.' },
           429,
           { 'Retry-After': String(limit.windowSec) },
-          cfg,
           origin,
         );
       }
@@ -83,27 +76,27 @@ export default {
 
     // GitHub OAuth: initiate login
     if (request.method === 'GET' && path === '/api/github/login') {
-      return handleGitHubLogin(cfg, env, url, origin);
+      return handleGitHubLogin(env, url, origin);
     }
 
     // GitHub OAuth: callback
     if (request.method === 'GET' && path === '/api/github/callback') {
-      return handleGitHubCallback(cfg, url, request, env);
+      return handleGitHubCallback(url, request, env);
     }
 
     // Check team availability (proxies to Backstage tenant API)
     if (request.method === 'GET' && path === '/api/github/check-team') {
-      return handleCheckTeam(cfg, url, env, origin);
+      return handleCheckTeam(url, env, origin);
     }
 
     // Form submission
     if (request.method === 'POST' && path === '/api/submit') {
-      return handleFormSubmit(cfg, request, env, origin);
+      return handleFormSubmit(request, env, origin);
     }
 
     // Contact form submission
     if (request.method === 'POST' && path === '/api/contact') {
-      return handleContactForm(request, env, cfg, origin);
+      return handleContactForm(request, env, origin);
     }
 
     return new Response('Not Found', { status: 404 });
@@ -137,8 +130,8 @@ async function checkRateLimit(ip, path, maxRequests, windowSec) {
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
 
-function corsHeaders(cfg, origin = '') {
-  const allowedOrigin = cfg.allowedOrigins.has(origin) ? origin : `https://${cfg.baseDomain}`;
+function corsHeaders(origin = '') {
+  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://mctl.ai';
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -147,10 +140,10 @@ function corsHeaders(cfg, origin = '') {
   };
 }
 
-function jsonResponse(body, status = 200, extraHeaders = {}, cfg, origin = '') {
+function jsonResponse(body, status = 200, extraHeaders = {}, origin = '') {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders(cfg, origin), 'Content-Type': 'application/json', ...extraHeaders },
+    headers: { ...corsHeaders(origin), 'Content-Type': 'application/json', ...extraHeaders },
   });
 }
 
@@ -170,8 +163,8 @@ function githubAPI(path, token, options = {}) {
 
 // ─── Backstage tenant API helper ─────────────────────────────────────────────
 
-function backstageAPI(cfg, path, token, options = {}) {
-  return fetch(`${cfg.backstageAppUrl}${path}`, {
+function backstageAPI(path, token, options = {}) {
+  return fetch(`${BACKSTAGE_APP_URL}${path}`, {
     ...options,
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -222,7 +215,7 @@ async function hmacVerify(data, signature, secret) {
 
 // ─── GitHub OAuth: Login ─────────────────────────────────────────────────────
 
-async function handleGitHubLogin(cfg, env, url, origin) {
+async function handleGitHubLogin(env, url, origin) {
   const forMcp = url && url.searchParams.get('for') === 'mcp';
 
   const stateBytes = new Uint8Array(16);
@@ -234,7 +227,7 @@ async function handleGitHubLogin(cfg, env, url, origin) {
 
   const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
   githubAuthUrl.searchParams.set('client_id', env.GITHUB_CLIENT_ID);
-  githubAuthUrl.searchParams.set('redirect_uri', cfg.callbackUrl);
+  githubAuthUrl.searchParams.set('redirect_uri', CALLBACK_URL);
   githubAuthUrl.searchParams.set('scope', scope);
   githubAuthUrl.searchParams.set('state', state);
 
@@ -250,22 +243,22 @@ async function handleGitHubLogin(cfg, env, url, origin) {
 
 // ─── GitHub OAuth: Callback ──────────────────────────────────────────────────
 
-async function handleGitHubCallback(cfg, url, request, env) {
+async function handleGitHubCallback(url, request, env) {
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
   const error = url.searchParams.get('error');
 
-  if (error) return redirectWithError(cfg, 'ACCESS_DENIED');
-  if (!code || !state) return redirectWithError(cfg, 'MISSING_PARAMS');
+  if (error) return redirectWithError('ACCESS_DENIED');
+  if (!code || !state) return redirectWithError('MISSING_PARAMS');
 
   // Validate state from cookie
   const cookies = parseCookies(request.headers.get('Cookie') || '');
   const stateCookie = cookies['__gh_state'];
-  if (!stateCookie) return redirectWithError(cfg, 'INVALID_STATE');
+  if (!stateCookie) return redirectWithError('INVALID_STATE');
 
   const [cookieState, cookieSig] = stateCookie.split('.');
   if (cookieState !== state || !await hmacVerify(cookieState, cookieSig, env.GITHUB_OAUTH_HMAC_KEY)) {
-    return redirectWithError(cfg, 'INVALID_STATE');
+    return redirectWithError('INVALID_STATE');
   }
 
   // Exchange code for access token
@@ -278,14 +271,14 @@ async function handleGitHubCallback(cfg, url, request, env) {
         client_id: env.GITHUB_CLIENT_ID,
         client_secret: env.GITHUB_CLIENT_SECRET,
         code,
-        redirect_uri: cfg.callbackUrl,
+        redirect_uri: CALLBACK_URL,
       }),
     });
     const tokenData = await tokenResponse.json();
-    if (tokenData.error) return redirectWithError(cfg, 'TOKEN_EXCHANGE');
+    if (tokenData.error) return redirectWithError('TOKEN_EXCHANGE');
     accessToken = tokenData.access_token;
   } catch (e) {
-    return redirectWithError(cfg, 'TOKEN_EXCHANGE');
+    return redirectWithError('TOKEN_EXCHANGE');
   }
 
   // Fetch user profile and emails
@@ -295,11 +288,11 @@ async function handleGitHubCallback(cfg, url, request, env) {
       githubAPI('/user', accessToken),
       githubAPI('/user/emails', accessToken),
     ]);
-    if (!userRes.ok || !emailsRes.ok) return redirectWithError(cfg, 'PROFILE_FETCH');
+    if (!userRes.ok || !emailsRes.ok) return redirectWithError('PROFILE_FETCH');
     user = await userRes.json();
     emails = await emailsRes.json();
   } catch (e) {
-    return redirectWithError(cfg, 'PROFILE_FETCH');
+    return redirectWithError('PROFILE_FETCH');
   }
 
   const primaryEmail = emails.find(e => e.primary && e.verified);
@@ -323,7 +316,7 @@ async function handleGitHubCallback(cfg, url, request, env) {
     const encoded = btoa(JSON.stringify(mcpPayload))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     const headers = new Headers();
-    headers.set('Location', `${cfg.landingUrl}/mcp/#auth=${encoded}`);
+    headers.set('Location', `${LANDING_URL}/mcp/#auth=${encoded}`);
     headers.append('Set-Cookie', clearState);
     headers.append('Set-Cookie', clearFlow);
     return new Response(null, { status: 302, headers });
@@ -345,17 +338,17 @@ async function handleGitHubCallback(cfg, url, request, env) {
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
   const headers = new Headers();
-  headers.set('Location', `${cfg.landingUrl}/?auth=${encoded}#request-access`);
+  headers.set('Location', `${LANDING_URL}/?auth=${encoded}#request-access`);
   headers.append('Set-Cookie', clearState);
   headers.append('Set-Cookie', clearFlow);
   return new Response(null, { status: 302, headers });
 }
 
-function redirectWithError(cfg, errorCode) {
+function redirectWithError(errorCode) {
   return new Response(null, {
     status: 302,
     headers: {
-      'Location': `${cfg.landingUrl}/?auth_error=${errorCode}#request-access`,
+      'Location': `${LANDING_URL}/?auth_error=${errorCode}#request-access`,
       'Set-Cookie': '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
     },
   });
@@ -373,78 +366,76 @@ function parseCookies(cookieHeader) {
 // ─── Check Team Availability ─────────────────────────────────────────────────
 // Checks Backstage tenant API — the single source of truth for provisioned tenants.
 
-async function handleCheckTeam(cfg, url, env, origin) {
+async function handleCheckTeam(url, env, origin) {
   const name = url.searchParams.get('name');
   if (!name) {
-    return jsonResponse({ error: 'Missing team name' }, 400, {}, cfg, origin);
+    return jsonResponse({ error: 'Missing team name' }, 400, {}, origin);
   }
 
   const teamNameRegex = /^[a-z0-9][a-z0-9-]{0,62}$/;
   if (!teamNameRegex.test(name)) {
-    return jsonResponse({ available: false, error: 'Invalid team name format' }, 400, {}, cfg, origin);
+    return jsonResponse({ available: false, error: 'Invalid team name format' }, 400, {}, origin);
   }
 
   if (!env.BACKSTAGE_LANDING_TOKEN) {
     console.error('check-team: BACKSTAGE_LANDING_TOKEN is not set');
-    return jsonResponse({ error: 'Server misconfiguration' }, 500, {}, cfg, origin);
+    return jsonResponse({ error: 'Server misconfiguration' }, 500, {}, origin);
   }
 
   try {
     const jwt = await createLandingJwt(env.BACKSTAGE_LANDING_TOKEN);
     const res = await backstageAPI(
-      cfg,
       `/api/tenant-management/tenants/${encodeURIComponent(name)}`,
       jwt,
     );
     if (res.status === 404) {
-      return jsonResponse({ available: true }, 200, {}, cfg, origin);
+      return jsonResponse({ available: true }, 200, {}, origin);
     }
     if (res.ok) {
-      return jsonResponse({ available: false, message: 'Team name is already taken' }, 200, {}, cfg, origin);
+      return jsonResponse({ available: false, message: 'Team name is already taken' }, 200, {}, origin);
     }
     const body = await res.text().catch(() => '');
     console.error(`check-team: Backstage returned ${res.status} for "${name}": ${body}`);
-    return jsonResponse({ error: 'Failed to check team availability' }, 500, {}, cfg, origin);
+    return jsonResponse({ error: 'Failed to check team availability' }, 500, {}, origin);
   } catch (e) {
     console.error('check-team: unexpected error:', e?.message ?? e);
-    return jsonResponse({ error: 'Failed to check team availability' }, 500, {}, cfg, origin);
+    return jsonResponse({ error: 'Failed to check team availability' }, 500, {}, origin);
   }
 }
 
 // ─── Form Submit ─────────────────────────────────────────────────────────────
 
-async function handleFormSubmit(cfg, request, env, origin) {
+async function handleFormSubmit(request, env, origin) {
   try {
     const data = await request.json();
     const { github_auth, team, usecase } = data;
 
     // ── Validate GitHub auth (HMAC signature) ───────────────────────────────
     if (!github_auth || !github_auth.login || !github_auth.sig) {
-      return jsonResponse({ success: false, message: 'GitHub authentication required' }, 401, {}, cfg, origin);
+      return jsonResponse({ success: false, message: 'GitHub authentication required' }, 401, {}, origin);
     }
 
     const validSig = await hmacVerify(github_auth.login, github_auth.sig, env.GITHUB_OAUTH_HMAC_KEY);
     if (!validSig) {
-      return jsonResponse({ success: false, message: 'Invalid authentication signature' }, 403, {}, cfg, origin);
+      return jsonResponse({ success: false, message: 'Invalid authentication signature' }, 403, {}, origin);
     }
 
     const { login, name, email, html_url } = github_auth;
 
     if (!team) {
-      return jsonResponse({ success: false, message: 'Missing team name' }, 400, {}, cfg, origin);
+      return jsonResponse({ success: false, message: 'Missing team name' }, 400, {}, origin);
     }
 
     const teamNameRegex = /^[a-z0-9][a-z0-9-]{0,62}$/;
     if (!teamNameRegex.test(team)) {
-      return jsonResponse({ success: false, message: 'Invalid team name format' }, 400, {}, cfg, origin);
+      return jsonResponse({ success: false, message: 'Invalid team name format' }, 400, {}, origin);
     }
 
     // ── Check if tenant already exists ─────────────────────────────────────
     const jwt = await createLandingJwt(env.BACKSTAGE_LANDING_TOKEN);
-    if (!cfg.unlimitedUsers.includes(login)) {
+    if (!UNLIMITED_USERS.includes(login)) {
       try {
         const existsRes = await backstageAPI(
-          cfg,
           `/api/tenant-management/tenants/${encodeURIComponent(team)}`,
           jwt,
         );
@@ -452,7 +443,7 @@ async function handleFormSubmit(cfg, request, env, origin) {
           return jsonResponse({
             success: false,
             message: `Team "${team}" is already provisioned on the platform.`,
-          }, 409, {}, cfg, origin);
+          }, 409, {}, origin);
         }
       } catch (e) {
         console.warn('Tenant existence check failed, continuing:', e.message);
@@ -465,7 +456,6 @@ async function handleFormSubmit(cfg, request, env, origin) {
     let workflowError = null;
     try {
       const tenantRes = await backstageAPI(
-        cfg,
         '/api/tenant-management/tenants',
         jwt,
         {
@@ -532,7 +522,7 @@ async function handleFormSubmit(cfg, request, env, origin) {
     // ── Send welcome email ───────────────────────────────────────────────────
     if (workflowSubmitted && email) {
       try {
-        await sendWelcomeEmail(cfg, env, { email, name: name || login, team, login, workflowSubmitted });
+        await sendWelcomeEmail(env, { email, name: name || login, team, login, workflowSubmitted });
       } catch (e) {
         console.error('Welcome email error:', e);
       }
@@ -542,39 +532,39 @@ async function handleFormSubmit(cfg, request, env, origin) {
     if (workflowSubmitted) {
       return jsonResponse({
         success: true,
-        message: `Team "${team}" is being provisioned! Sign in to ${cfg.backstageAppUrl} with your GitHub account — your workspace will be ready in ~2 minutes.`,
-      }, 200, {}, cfg, origin);
+        message: `Team "${team}" is being provisioned! Sign in to app.mctl.ai with your GitHub account — your workspace will be ready in ~2 minutes.`,
+      }, 200, {}, origin);
     } else {
       return jsonResponse({
         success: false,
         message: `Failed to submit provisioning request: ${workflowError}`,
-      }, 500, {}, cfg, origin);
+      }, 500, {}, origin);
     }
 
   } catch (error) {
     console.error('Error:', error);
-    return jsonResponse({ success: false, message: 'Failed to submit request. Please try again.' }, 500, {}, cfg, origin);
+    return jsonResponse({ success: false, message: 'Failed to submit request. Please try again.' }, 500, {}, origin);
   }
 }
 
 // ─── Contact Form ────────────────────────────────────────────────────────────
 
-async function handleContactForm(request, env, cfg, origin) {
+async function handleContactForm(request, env, origin) {
   try {
     const data = await request.json();
     const { name, email, message } = data;
 
     // Basic validation
     if (!name || !email || !message) {
-      return jsonResponse({ success: false, message: 'All fields are required' }, 400, {}, cfg, origin);
+      return jsonResponse({ success: false, message: 'All fields are required' }, 400, {}, origin);
     }
 
     if (!email.includes('@') || email.length < 5) {
-      return jsonResponse({ success: false, message: 'Invalid email address' }, 400, {}, cfg, origin);
+      return jsonResponse({ success: false, message: 'Invalid email address' }, 400, {}, origin);
     }
 
     if (message.length < 10) {
-      return jsonResponse({ success: false, message: 'Message is too short' }, 400, {}, cfg, origin);
+      return jsonResponse({ success: false, message: 'Message is too short' }, 400, {}, origin);
     }
 
     // Build Telegram message
@@ -604,17 +594,17 @@ async function handleContactForm(request, env, cfg, origin) {
 
     if (!telegramRes.ok) {
       console.error('Telegram error:', await telegramRes.text());
-      return jsonResponse({ success: false, message: 'Failed to send message. Please try again.' }, 500, {}, cfg, origin);
+      return jsonResponse({ success: false, message: 'Failed to send message. Please try again.' }, 500, {}, origin);
     }
 
     return jsonResponse({
       success: true,
       message: 'Message sent successfully! We will get back to you soon.',
-    }, 200, {}, cfg, origin);
+    }, 200, {}, origin);
 
   } catch (error) {
     console.error('Contact form error:', error);
-    return jsonResponse({ success: false, message: 'Failed to send message. Please try again.' }, 500, {}, cfg, origin);
+    return jsonResponse({ success: false, message: 'Failed to send message. Please try again.' }, 500, {}, origin);
   }
 }
 
@@ -631,11 +621,7 @@ function escHtml(text) {
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-async function sendWelcomeEmail(cfg, env, { email, name, team, login, workflowSubmitted }) {
-  const portalUrl = cfg.backstageAppUrl;
-  const opsUrl = `https://ops.${cfg.baseDomain}/`;
-  const contactUrl = `${cfg.landingUrl}/#contact`;
-
+async function sendWelcomeEmail(env, { email, name, team, login, workflowSubmitted }) {
   const html = `
 <!DOCTYPE html>
 <html>
@@ -688,13 +674,13 @@ async function sendWelcomeEmail(cfg, env, { email, name, team, login, workflowSu
                 </p>
                 <table cellpadding="0" cellspacing="0"><tr>
                   <td style="padding-right:10px">
-                    <a href="${portalUrl}" style="display:inline-block;padding:10px 20px;border:1px solid #00f5ff;color:#00f5ff;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px">
-                      Portal — app.${escHtml(cfg.baseDomain)}
+                    <a href="https://app.mctl.ai/" style="display:inline-block;padding:10px 20px;border:1px solid #00f5ff;color:#00f5ff;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px">
+                      Portal — app.mctl.ai
                     </a>
                   </td>
                   <td>
-                    <a href="${opsUrl}" style="display:inline-block;padding:10px 20px;border:1px solid #00f5ff;color:#00f5ff;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px">
-                      ArgoCD — ops.${escHtml(cfg.baseDomain)}
+                    <a href="https://ops.mctl.ai/" style="display:inline-block;padding:10px 20px;border:1px solid #00f5ff;color:#00f5ff;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px">
+                      ArgoCD — ops.mctl.ai
                     </a>
                   </td>
                 </tr></table>
@@ -705,14 +691,14 @@ async function sendWelcomeEmail(cfg, env, { email, name, team, login, workflowSu
           <div style="border-top:1px solid rgba(0,245,255,0.1);padding-top:20px">
             <p style="color:#8b949e;font-size:13px;margin:0;line-height:1.5">
               Questions? Reply to this email or reach us at
-              <a href="${contactUrl}" style="color:#00f5ff;text-decoration:none">${escHtml(cfg.baseDomain)}/contact</a>
+              <a href="https://mctl.ai/#contact" style="color:#00f5ff;text-decoration:none">mctl.ai/contact</a>
             </p>
           </div>
         </td></tr>
 
         <!-- Footer -->
         <tr><td style="padding:20px 40px;border-top:1px solid rgba(0,245,255,0.1)">
-          <p style="color:#484f58;font-size:12px;margin:0">&copy; 2025 MCTL. All rights reserved.</p>
+          <p style="color:#484f58;font-size:12px;margin:0">© 2025 MCTL. All rights reserved.</p>
         </td></tr>
 
       </table>

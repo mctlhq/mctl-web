@@ -2,18 +2,9 @@ name = "mctl-landing-form"
 main = "index.js"
 compatibility_date = "2024-01-01"
 
-# Org-specific configuration — fork-friendly, change these for your deployment.
-# Can also be overridden via Cloudflare dashboard environment variables.
-[vars]
-BASE_DOMAIN = "mctl.ai"
-GITHUB_ORG = "mctlhq"
-BACKSTAGE_APP_URL = "https://app.mctl.ai"
-# Comma-separated GitHub usernames exempt from tenant-exists check
-UNLIMITED_USERS = ""
-
-# Secrets (set via `wrangler secret put` — never commit these)
-# TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, GITHUB_CLIENT_ID,
-# GITHUB_CLIENT_SECRET, GITHUB_OAUTH_HMAC_KEY, BACKSTAGE_LANDING_TOKEN, RESEND_API_KEY
+# Environment variables (set via Cloudflare dashboard or wrangler secret)
+# TELEGRAM_BOT_TOKEN = "your-bot-token-here"
+# TELEGRAM_CHAT_ID = "your-chat-id-here"
 
 # Routes:
 #   mctl.ai/api/*      — primary API endpoint
