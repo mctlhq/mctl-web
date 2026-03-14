@@ -1,3 +1,8 @@
+@use 'layout';
+@use 'components';
+@use 'sections';
+@use 'utilities';
+
 :root {
   --color-bg: #050816;
   --color-bg-secondary: #0d111d;
@@ -10,15 +15,18 @@
   --color-glass-border: rgba(0, 245, 255, 0.2);
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   --container-width: 1400px;
+  --section-py: clamp(5rem, 6vw, 8rem);
 }
 
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
-html, body {
-  margin: 0;
-  padding: 0;
+html {
+  scroll-behavior: auto;
+  overflow-x: hidden;
 }
 
 body {
@@ -41,4 +49,17 @@ ul {
   list-style: none;
   padding: 0;
   margin: 0;
+}
+
+@media (max-height: 900px) {
+  :root { --section-py: clamp(3rem, 4vh, 5rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
