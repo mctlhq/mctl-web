@@ -369,6 +369,7 @@ onMounted(() => {
                   Permissions requested: <strong style="color:var(--color-text-secondary)">read your username and avatar</strong> (<code>read:user</code>) and
                   <strong style="color:var(--color-text-secondary)">verified email</strong> (<code>user:email</code>).<br>
                   No access to your code, repositories, or organizations.
+                  See our <NuxtLink to="/privacy" style="color:var(--color-accent)">Privacy Policy</NuxtLink>.
                 </p>
 
                 <div class="auth-divider">or</div>

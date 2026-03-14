@@ -35,6 +35,7 @@ async function scrollTo(sectionId: string) {
           <a href="#" @click.prevent="scrollTo('features')">{{ t('footer.platform') }}</a>
           <a href="#" @click.prevent="scrollTo('pricing')">{{ t('footer.pricing') }}</a>
           <a href="#" @click.prevent="scrollTo('contact')">{{ t('footer.contact') }}</a>
+          <NuxtLink to="/privacy">Privacy Policy</NuxtLink>
         </div>
         <div class="footer-copy" v-html="t('footer.copyright')" />
       </div>
