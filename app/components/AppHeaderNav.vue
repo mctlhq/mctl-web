@@ -1,16 +1,17 @@
 <script setup lang="ts">
 const { t } = useI18n()
+const route = useRoute()
 
 defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
 const navItems = computed(() => [
-  { label: t('nav.platform'), href: '#features' },
-  { label: t('nav.how_it_works'), href: '#how-it-works' },
-  { label: t('nav.pricing'), href: '#pricing' },
-  { label: 'MCP', href: '/mcp/', accent: true },
-  { label: 'Docs', href: '/docs/' },
-  { label: t('nav.contact'), href: '#contact' },
+  { label: t('nav.platform'), href: '/#features' },
+  { label: t('nav.how_it_works'), href: '/#how-it-works' },
+  { label: t('nav.pricing'), href: '/#pricing' },
+  { label: 'MCP', href: '/mcp/', accent: route.path.startsWith('/mcp') },
+  { label: 'Docs', href: '/docs/', accent: route.path.startsWith('/docs') },
+  { label: t('nav.contact'), href: '/#contact' },
 ])
 </script>
 
