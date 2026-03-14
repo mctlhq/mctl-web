@@ -2,6 +2,11 @@
 
 Public website (mctl.ai) + Cloudflare Worker for OAuth and form handling.
 
+## Workflow
+- **All changes go through a branch** — for any fix, feature, or refactor: create a `feat/` or `fix/` branch, make changes there, then merge to `main`
+- **After merging, create a new semver tag and push it** — this triggers the CI/CD deploy pipeline
+- Tag format: `MAJOR.MINOR.PATCH` (no `v` prefix)
+
 ## Stack
 - Static HTML/CSS/JS, no frameworks
 - nginx serves static files
