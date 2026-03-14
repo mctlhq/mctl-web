@@ -1431,6 +1431,10 @@ onMounted(() => {
   .tools-table td:first-child { display: none; }
 }
 
+@media (max-width: 768px) {
+  .mcp-hero { padding: 7rem 0 2rem; }
+}
+
 @media (max-width: 480px) {
   .hero-ctas .btn { width: 100%; justify-content: center; }
 }

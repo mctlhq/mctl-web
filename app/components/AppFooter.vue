@@ -3,15 +3,21 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
+function scrollToId(sectionId: string) {
+  const el = document.getElementById(sectionId)
+  if (!el) return
+  const navHeight = (document.querySelector('.navbar') as HTMLElement)?.offsetHeight ?? 70
+  const top = el.getBoundingClientRect().top + window.scrollY - navHeight - 8
+  window.scrollTo({ top, behavior: 'smooth' })
+}
+
 async function scrollTo(sectionId: string) {
   if (route.path === '/') {
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' })
+    scrollToId(sectionId)
   } else {
     await router.push('/')
     await nextTick()
-    setTimeout(() => {
-      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
+    setTimeout(() => scrollToId(sectionId), 120)
   }
 }
 </script>

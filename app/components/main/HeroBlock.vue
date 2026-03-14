@@ -1,5 +1,13 @@
 <script setup lang="ts">
 const { t } = useI18n()
+
+function scrollToAccess() {
+  const el = document.getElementById('request-access')
+  if (!el) return
+  const navHeight = (document.querySelector('.navbar') as HTMLElement)?.offsetHeight ?? 70
+  const top = el.getBoundingClientRect().top + window.scrollY - navHeight - 8
+  window.scrollTo({ top, behavior: 'smooth' })
+}
 </script>
 
 <template>
@@ -10,7 +18,7 @@ const { t } = useI18n()
         <h1>{{ t('hero.title') }}</h1>
         <p class="subtitle" v-html="t('hero.subtitle')" />
         <div class="cta-buttons">
-          <a href="#request-access" class="btn btn-primary">
+          <a href="#" class="btn btn-primary" @click.prevent="scrollToAccess">
             {{ t('hero.cta') }}
           </a>
         </div>

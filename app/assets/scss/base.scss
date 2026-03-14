@@ -52,7 +52,7 @@ ul {
 }
 
 @media (max-height: 900px) {
-  :root { --section-py: clamp(3rem, 4vh, 5rem); }
+  :root { --section-py: clamp(5rem, 4vh, 7rem); }
 }
 
 @media (prefers-reduced-motion: reduce) {
