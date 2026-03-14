@@ -81,6 +81,18 @@
   color: var(--color-bg) !important;
 }
 
+.nav-github {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  transition: color 0.3s ease;
+  line-height: 0;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
 // Footer
 .footer {
   padding: 3rem 0;
