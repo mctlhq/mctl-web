@@ -1,0 +1,20 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#050816"/>
+
+  <!-- Glow effect -->
+  <circle cx="600" cy="315" r="400" fill="#00f5ff" opacity="0.05"/>
+
+  <!-- Logo M -->
+  <text x="600" y="280" font-family="Arial, sans-serif" font-size="180" font-weight="bold" fill="#00f5ff" text-anchor="middle">M</text>
+  <text x="600" y="280" font-family="Arial, sans-serif" font-size="180" font-weight="bold" fill="none" stroke="#00f5ff" stroke-width="2" text-anchor="middle">M</text>
+
+  <!-- Title -->
+  <text x="600" y="380" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#e6edf3" text-anchor="middle">Modern Control Layer</text>
+
+  <!-- Subtitle -->
+  <text x="600" y="440" font-family="Arial, sans-serif" font-size="32" fill="#9ca3af" text-anchor="middle">Platform Engineering as a Service</text>
+
+  <!-- Border -->
+  <rect x="2" y="2" width="1196" height="626" rx="12" stroke="#00f5ff" stroke-width="2" fill="none" opacity="0.3"/>
+</svg>

@@ -1,20 +1,20 @@
+<script setup lang="ts">
+const { t } = useI18n()
+</script>
+
 <template>
-  <section class="hero-block">
-    <div class="hero-block__wrapper">
-      <h1>
-        Kubernetes без DevOps-инженеров в штате
-      </h1>
+  <section class="hero">
+    <div class="hero-glow" />
+    <div class="container">
+      <div class="hero-content">
+        <h1>{{ t('hero.title') }}</h1>
+        <p class="subtitle" v-html="t('hero.subtitle')" />
+        <div class="cta-buttons">
+          <a href="#request-access" class="btn btn-primary">
+            {{ t('hero.cta') }}
+          </a>
+        </div>
+      </div>
     </div>
   </section>
 </template>
-
-<style lang="scss" scoped>
-.hero-block {
-  text-align: center;
-
-  &__wrapper {
-    width: var(--container-width);
-    margin: 0 auto;
-  }
-}
-</style>
