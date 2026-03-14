@@ -453,7 +453,7 @@ onMounted(() => {
                     {{ copied['cfg-claude'] ? 'copied!' : 'copy' }}
                   </button>
                 </div>
-                <p class="config-note">Restart Claude Desktop after saving. It will connect and expose 20+ platform tools.</p>
+                <p class="config-note">Restart Claude Desktop after saving. It will connect and expose 30 platform tools.</p>
               </div>
 
               <!-- Claude.ai -->
@@ -580,7 +580,7 @@ onMounted(() => {
   <section class="tools-section">
     <div class="container">
       <p class="section-tag">Available Tools</p>
-      <h2 class="section-title">20+ platform tools</h2>
+      <h2 class="section-title">30 platform tools</h2>
       <div class="tools-scroll">
       <table class="tools-table">
         <thead>
@@ -591,27 +591,37 @@ onMounted(() => {
           </tr>
         </thead>
         <tbody>
+          <!-- Read tools (16) -->
+          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_whoami</td><td class="tool-desc">Check identity, team memberships, admin status</td></tr>
           <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_list_tenants</td><td class="tool-desc">List all team workspaces with quotas</td></tr>
           <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_get_tenant</td><td class="tool-desc">Get details for a specific tenant</td></tr>
           <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_list_services</td><td class="tool-desc">List services, optional team filter</td></tr>
           <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_get_service_status</td><td class="tool-desc">ArgoCD health + sync state</td></tr>
           <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_get_service_config</td><td class="tool-desc">Current image tag, host, env vars</td></tr>
-          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_get_workflow_status</td><td class="tool-desc">Status and logs of Argo Workflow run</td></tr>
+          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_get_service_logs</td><td class="tool-desc">Fetch service logs from Loki</td></tr>
           <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_get_resource_usage</td><td class="tool-desc">Live CPU/memory/pods from K8s ResourceQuota</td></tr>
-          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_list_recent_operations</td><td class="tool-desc">Recent platform operations</td></tr>
-          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_get_service_logs</td><td class="tool-desc">Stream service logs from Loki</td></tr>
+          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_get_workflow_status</td><td class="tool-desc">Status and logs of Argo Workflow run</td></tr>
+          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_list_workflows</td><td class="tool-desc">List recent Argo Workflow runs for a team</td></tr>
+          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_list_recent_operations</td><td class="tool-desc">Recent platform operations from audit log</td></tr>
+          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_list_repos</td><td class="tool-desc">List GitHub repos available to a team</td></tr>
+          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_list_previews</td><td class="tool-desc">List active preview environments for a team</td></tr>
           <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_list_domains</td><td class="tool-desc">List custom domains for a service</td></tr>
+          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_verify_domain</td><td class="tool-desc">Check DNS + TLS status of custom domain</td></tr>
+          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_list_operations</td><td class="tool-desc">List all available platform operations</td></tr>
+          <tr><td><span class="tool-badge read">read</span></td><td class="tool-name">mctl_get_operation</td><td class="tool-desc">Get detailed schema of a specific operation</td></tr>
+          <!-- Write tools (11) -->
           <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_deploy_service</td><td class="tool-desc">Onboard, deploy, or update-config a service</td></tr>
           <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_create_tenant</td><td class="tool-desc">Create workspace with namespace, quotas, Vault</td></tr>
           <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_provision_database</td><td class="tool-desc">PostgreSQL on shared CNPG cluster</td></tr>
           <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_rollback_service</td><td class="tool-desc">Roll back to a previous image tag</td></tr>
+          <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_scale_service</td><td class="tool-desc">Configure HPA autoscaling for a service</td></tr>
           <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_create_preview</td><td class="tool-desc">Deploy ephemeral preview environment</td></tr>
           <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_delete_preview</td><td class="tool-desc">Remove preview environment</td></tr>
           <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_add_custom_domain</td><td class="tool-desc">Add custom domain with auto-TLS</td></tr>
           <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_remove_custom_domain</td><td class="tool-desc">Remove custom domain</td></tr>
-          <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_verify_domain</td><td class="tool-desc">Check DNS + TLS status of custom domain</td></tr>
-          <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_scale_service</td><td class="tool-desc">Configure HPA autoscaling for a service</td></tr>
-          <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_sync_repos</td><td class="tool-desc">Sync repos from Backstage catalog</td></tr>
+          <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_sync_repos</td><td class="tool-desc">Discover and register GitHub repos for a team</td></tr>
+          <tr><td><span class="tool-badge write">write</span></td><td class="tool-name">mctl_grant_repo_access</td><td class="tool-desc">Generate GitHub App install URL for repo access</td></tr>
+          <!-- Destructive tools (2) -->
           <tr><td><span class="tool-badge destructive">destructive</span></td><td class="tool-name">mctl_retire_service</td><td class="tool-desc">Remove service from cluster</td></tr>
           <tr><td><span class="tool-badge destructive">destructive</span></td><td class="tool-name">mctl_delete_tenant</td><td class="tool-desc">Delete workspace (requires all services retired)</td></tr>
         </tbody>
@@ -751,7 +761,7 @@ onMounted(() => {
       <div class="faq-list">
         <div class="faq-item">
           <div class="faq-q">What can the AI do?</div>
-          <div class="faq-a">Read platform state (services, tenants, resource usage, workflow logs, service logs) and trigger operations: deploy services, rollback, create preview environments, manage custom domains, provision databases, and configure auto-scaling. 20+ tools, all via natural language.</div>
+          <div class="faq-a">Read platform state (services, tenants, resource usage, workflow logs, service logs) and trigger operations: deploy services, rollback, create preview environments, manage custom domains, provision databases, and configure auto-scaling. 30 tools, all via natural language.</div>
         </div>
         <div class="faq-item">
           <div class="faq-q">What can it NOT do?</div>
