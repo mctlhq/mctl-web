@@ -43,3 +43,14 @@ function closeMenu() {
     </div>
   </nav>
 </template>
+
+<style lang="scss" scoped>
+.app-header {
+  position: fixed;
+  width: 100%;
+  padding: 20px 0;
+  background: rgba(5, 8, 22, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-glass-border);
+}
+</style>

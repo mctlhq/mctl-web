@@ -1,30 +1,57 @@
 <script setup lang="ts">
 const { t } = useI18n()
-
-function scrollToAccess() {
-  const section = document.getElementById('request-access')
-  if (!section) return
-  const navHeight = (document.querySelector('.navbar') as HTMLElement)?.offsetHeight ?? 70
-  const tag = section.querySelector<HTMLElement>('.section-tag')
-  const target = tag ?? section
-  const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 16
-  window.scrollTo({ top, behavior: 'smooth' })
-}
 </script>
 
 <template>
-  <section class="hero">
-    <div class="hero-glow" />
-    <div class="container">
-      <div class="hero-content">
+  <section class="hero-block">
+    <div class="hero-block__glow"></div>
+    <BaseContainer>
+      <h1>
         <h1>{{ t('hero.title') }}</h1>
-        <p class="subtitle" v-html="t('hero.subtitle')" />
-        <div class="cta-buttons">
-          <a href="#" class="btn btn-primary" @click.prevent="scrollToAccess">
-            {{ t('hero.cta') }}
-          </a>
-        </div>
-      </div>
-    </div>
+      </h1>
+      <p class="hero-block__description">
+        <LogoDefault /> <h1>{{ t('hero.subtitle') }}</h1>
+      </p>
+      <BaseButton
+        size="lg"
+        @click="$router.push({ hash: '#request-access' })"
+      >
+        <h1>{{ t('hero.cta') }}</h1>
+      </BaseButton>
+    </BaseContainer>
   </section>
 </template>
+
+<style lang="scss" scoped>
+.hero-block {
+  position: relative;
+  padding: 60px 0;
+  text-align: center;
+
+  &__wrapper {
+    width: var(--container-width);
+    margin: 0 auto;
+  }
+
+  &__description {
+    max-width: 900px;
+    margin: 0 auto 48px;
+    text-align: center;
+    font-size: 24px;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  &__glow {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60vw;
+    height: 60vw;
+    background: radial-gradient(circle, rgba(0, 245, 255, 0.1) 0%, transparent 70%);
+    z-index: 0;
+    pointer-events: none;
+  }
+}
+</style>

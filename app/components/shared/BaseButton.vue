@@ -62,6 +62,10 @@ const { variant = 'primary', size = 'md' } = defineProps<BaseButtonProps>()
     &--md {
       padding: 8px 20px;
     }
+
+    &--lg {
+      padding: 14px 32px;
+    }
   }
 }
 </style>

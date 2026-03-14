@@ -51,6 +51,21 @@ ul {
   margin: 0;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: 68px;
+  font-weight: 800;
+  text-align: center;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
 @media (max-height: 900px) {
   :root { --section-py: clamp(5rem, 4vh, 7rem); }
 }
