@@ -948,7 +948,8 @@
 
                         <div class="auth-hint" id="auth-hint-bottom" style="display:none">
                             Token is validated server-side on every request.<br>
-                            Access scoped to your team memberships.
+                            Access scoped to your team memberships.<br>
+                            To revoke: GitHub &rarr; Settings &rarr; Applications &rarr; Authorized OAuth Apps &rarr; Revoke.
                         </div>
 
                         <div class="auth-error" id="auth-error"></div>
@@ -1322,19 +1323,21 @@
     function saveAuthStorage(extra) {
         try {
             const cur = loadAuthStorage() || {};
-            localStorage.setItem(AUTH_KEY, JSON.stringify({ ...cur, ...extra, exp: Date.now() + AUTH_TTL }));
+            sessionStorage.setItem(AUTH_KEY, JSON.stringify({ ...cur, ...extra, exp: Date.now() + AUTH_TTL }));
         } catch (e) {}
     }
     function loadAuthStorage() {
         try {
-            const d = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
-            if (!d || Date.now() > d.exp) { localStorage.removeItem(AUTH_KEY); return null; }
+            const d = JSON.parse(sessionStorage.getItem(AUTH_KEY) || 'null');
+            if (!d || Date.now() > d.exp) { sessionStorage.removeItem(AUTH_KEY); return null; }
             return d;
         } catch (e) { return null; }
     }
     function clearAuthStorage() {
-        try { localStorage.removeItem(AUTH_KEY); } catch (e) {}
+        try { sessionStorage.removeItem(AUTH_KEY); } catch (e) {}
     }
+    // Clean up tokens from old localStorage-based storage
+    try { localStorage.removeItem(AUTH_KEY); } catch (e) {}
 
     let state = {
         token: '',
@@ -1572,6 +1575,7 @@
             errEl.textContent = msgs[code] || 'GitHub auth failed. Please try again.';
             errEl.style.display = 'block';
             history.replaceState(null, '', location.pathname);
+            document.querySelector('.connect-section')?.scrollIntoView({ behavior: 'smooth' });
             return;
         }
 
@@ -1592,8 +1596,9 @@
                 errEl.style.display = 'block';
             }
             history.replaceState(null, '', location.pathname);
+            document.querySelector('.connect-section')?.scrollIntoView({ behavior: 'smooth' });
         } else {
-            // No fresh OAuth — try to restore from localStorage
+            // No fresh OAuth — try to restore from sessionStorage
             const saved = loadAuthStorage();
             if (saved && saved.token) {
                 setAuth(saved.token, saved.login || '', saved.name || '', saved.avatar_url || '');
