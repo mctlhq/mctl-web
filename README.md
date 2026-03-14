@@ -4,17 +4,18 @@ Landing page and MCP connector for the mctl.ai platform.
 
 ## What It Does
 
-mctl-web serves the public-facing website for mctl.ai — a landing page, documentation, and an MCP connector that lets users authenticate with GitHub and receive pre-filled client configurations. The static site runs in an nginx container while a Cloudflare Worker handles the serverless API (OAuth, form submissions, team checks).
+mctl-web serves the public-facing website for mctl.ai — a landing page, documentation, and an MCP connector that lets users authenticate with GitHub and receive pre-filled client configurations. The Nuxt 4 SPA runs in an nginx container while a Cloudflare Worker handles the serverless API (OAuth, form submissions, team checks).
 
 ## Architecture
 
 ```
                         ┌─────────────────────────────────┐
-                        │        Static Layer (nginx)      │
+                        │      Nuxt SPA Layer (nginx)      │
                         │                                  │
-  Browser ─(HTTPS)────► │  /           → index.html        │
-                        │  /mcp        → mcp/index.html    │
-                        │  /docs       → docs/index.html   │
+  Browser ─(HTTPS)────► │  /           → SPA (index.html)  │
+                        │  /mcp        → SPA (mcp page)    │
+                        │  /docs       → SPA (docs page)   │
+                        │  /_nuxt/*    → immutable assets   │
                         │  /healthz    → 200 OK            │
                         └─────────────────────────────────┘
 
@@ -33,61 +34,96 @@ mctl-web serves the public-facing website for mctl.ai — a landing page, docume
 
 | Category   | Details                                                        |
 | ---------- | -------------------------------------------------------------- |
-| Frontend   | Vanilla HTML / CSS / JS — no build step, no npm               |
-| Styling    | CSS variables, dark theme, JetBrains Mono, responsive clamp() |
-| i18n       | Custom JS with `data-i18n` attributes, multi-language          |
+| Frontend   | Nuxt 4 SPA (Vue 3, `<script setup>`, TypeScript)              |
+| Styling    | SCSS partials, CSS variables, dark theme, JetBrains Mono      |
+| i18n       | Custom composable (`useI18n`) — en/ru, domain-aware           |
 | Worker     | Cloudflare Worker (Node.js runtime via wrangler)               |
-| Server     | nginx Alpine (static files, security headers, caching)         |
-| Container  | Docker (nginx:alpine)                                          |
-| CI/CD      | GitHub Actions → GHCR → ArgoCD (static), wrangler (worker)    |
+| Server     | nginx Alpine (SPA fallback, security headers, caching)         |
+| Container  | Docker multi-stage: node:22-alpine builder → nginx:alpine      |
+| CI/CD      | GitHub Actions → GHCR → ArgoCD (site), wrangler (worker)      |
 | Registry   | ghcr.io/mctlhq/mctl-web                                       |
 
 ## Project Structure
 
 ```
 mctl-web/
-├── static/                     # All static assets (no build step)
-│   ├── index.html              # Landing page
-│   ├── mcp/index.html          # MCP connector page
-│   ├── docs/index.html         # Documentation page
-│   ├── css/
-│   │   ├── style.css           # Main entry (imports modules)
-│   │   └── modules/            # base, layout, components, sections, utilities
-│   ├── js/                     # 13 vanilla JS modules
-│   │   ├── app.js              # Global namespace
-│   │   ├── auth.js             # GitHub OAuth & token management
-│   │   ├── init.js             # Page initialization
-│   │   ├── i18n.js             # Internationalization engine
-│   │   ├── translations.js     # Multi-language data
-│   │   ├── access-form.js      # Access request handling
-│   │   ├── contact-form.js     # Contact form
-│   │   ├── nav.js              # Navigation
-│   │   ├── ui.js               # UI utilities
-│   │   ├── dom.js              # DOM helpers
-│   │   ├── state.js            # Global state
-│   │   ├── team-input.js       # Team availability check
-│   │   └── validators.js       # Form validation
-│   └── img/                    # Images & icons (17 files)
+├── app/
+│   ├── assets/scss/
+│   │   ├── base.scss               # CSS variables, resets, @use imports
+│   │   ├── _layout.scss            # navbar, footer, container, responsive
+│   │   ├── _components.scss        # buttons, forms, modals, code blocks
+│   │   ├── _sections.scss          # hero, features, pricing, how-it-works
+│   │   └── _utilities.scss         # reveal animation, focus-visible
+│   ├── composables/
+│   │   ├── useI18n.ts              # en/ru translations, locale switching
+│   │   ├── useAuth.ts              # GitHub OAuth state, localStorage (8h TTL)
+│   │   ├── useTeamValidation.ts    # team name regex + debounced availability check
+│   │   └── useApi.ts               # submit/contact form wrappers
+│   ├── plugins/
+│   │   └── directives.ts           # v-reveal (IntersectionObserver → .visible)
+│   ├── components/
+│   │   ├── AppHeader.vue           # fixed navbar, burger menu, scroll lock
+│   │   ├── AppHeaderNav.vue        # nav links with active state, GitHub icon
+│   │   ├── AppFooter.vue           # footer with links
+│   │   └── main/
+│   │       ├── HeroBlock.vue
+│   │       ├── RequestAccessForm.vue
+│   │       ├── SuccessModal.vue
+│   │       ├── WhySection.vue
+│   │       ├── OrchestrationDiagram.vue
+│   │       ├── FeaturesSection.vue
+│   │       ├── AudienceSection.vue
+│   │       ├── TechStackSection.vue
+│   │       ├── HowItWorksSection.vue
+│   │       ├── PricingSection.vue
+│   │       └── ContactSection.vue
+│   ├── layouts/
+│   │   └── default.vue             # AppHeader + slot + AppFooter
+│   └── pages/
+│       ├── index.vue               # landing page (assembles all sections)
+│       ├── docs/index.vue          # platform documentation
+│       └── mcp/index.vue           # MCP connector (auth + client configs)
+├── public/
+│   └── img/                        # SVG icons, og-image, favicon
+├── static/
+│   ├── css/                        # shared CSS (used by nothing now — legacy)
+│   └── img/                        # original images (public/img is canonical)
 ├── cloudflare-worker/
-│   ├── index.js                # Worker logic (OAuth, forms, proxy)
-│   ├── wrangler.toml           # Routes, env vars
-│   └── README.md               # Worker setup guide
-├── Dockerfile                  # nginx Alpine image
-├── nginx.conf                  # Security headers, routing, caching
+│   ├── index.js                    # Worker logic (OAuth, forms, proxy)
+│   ├── wrangler.toml               # Routes, env vars
+│   └── README.md                   # Worker setup guide
+├── nuxt.config.ts                  # ssr:false, prerender crawlLinks, head meta
+├── Dockerfile                      # multi-stage: node builder → nginx:alpine
+├── nginx.conf                      # SPA fallback, immutable /_nuxt/ cache, headers
 ├── .env.example
 └── .github/workflows/
-    ├── build.yml               # Docker build on tags/PRs
-    └── deploy.yml              # CF Worker deploy on main
+    ├── build.yml                   # Docker build on semver tags/PRs
+    └── deploy.yml                  # CF Worker deploy on main
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
+- Node.js 22+
 - Docker
 - [wrangler](https://developers.cloudflare.com/workers/wrangler/) (for worker development)
 
 ### Local Development
+
+```bash
+npm install
+npm run dev          # Nuxt dev server at http://localhost:3000
+```
+
+### Build and Preview
+
+```bash
+npm run generate     # static export to .output/public/
+npx serve .output/public
+```
+
+### Docker
 
 ```bash
 docker build -t mctl-web .
@@ -135,8 +171,9 @@ GitHub OAuth App settings — Homepage: `https://mctl.ai`, Callback: `https://mc
 
 ### nginx Configuration
 
+- SPA fallback: all routes served via `200.html` (Nuxt SPA entry)
+- `/_nuxt/` assets: immutable 1-year cache
 - Security headers: HSTS (1 year), strict CSP, X-Frame-Options
-- Caching: JS/CSS 60 s, images 30 d
 - Health endpoints: `/healthz`, `/readyz`
 
 ## Pages
@@ -145,11 +182,11 @@ GitHub OAuth App settings — Homepage: `https://mctl.ai`, Callback: `https://mc
 | ------- | ------------------------------------------------------------------------------ |
 | `/`     | Landing page — hero, features, pricing, access request form, contact form      |
 | `/mcp`  | MCP connector — GitHub OAuth sign-in, pre-filled client configs with real token |
-| `/docs` | Documentation and platform guides                                              |
+| `/docs` | Platform documentation — overview, architecture, components, quick start       |
 
 ## OAuth Flow
 
-The `/mcp` page uses GitHub OAuth to issue a personal token with `read:org` scope (required by `api.mctl.ai` to validate team membership). The token is returned in the URL fragment and never appears in server logs.
+The `/mcp` page uses GitHub OAuth to issue a personal token. The token is returned in the URL fragment and never appears in server logs.
 
 ```
 ┌──────────┐        ┌──────────────────┐        ┌──────────┐
@@ -203,18 +240,18 @@ No automated tests currently. Manual verification against production OAuth flow.
 
 | Workflow     | Trigger                                     | Action                                            |
 | ------------ | ------------------------------------------- | ------------------------------------------------- |
-| `build.yml`  | Semver tags (`v*.*.*`) + pull requests      | Docker build → GHCR push → GitOps update → Telegram |
+| `build.yml`  | Semver tags (`*.*.*`) + pull requests       | Docker build → GHCR push → GitOps update → Telegram |
 | `deploy.yml` | Push to `main` (cloudflare-worker/** changes) | Deploy CF Worker via `wrangler deploy`            |
 
 ## Deployment
 
-Static files are served from a Docker image (`nginx:alpine`) published to `ghcr.io/mctlhq/mctl-web`. The Cloudflare Worker handles all `/api/*` traffic. Domain: `mctl.ai`.
+The site is served from a Docker image (`nginx:alpine`) published to `ghcr.io/mctlhq/mctl-web`. The Nuxt SPA is generated with `npm run generate` and bundled into the image. The Cloudflare Worker handles all `/api/*` traffic. Domain: `mctl.ai`.
 
 ## Release Process
 
 ```bash
-git tag 1.2.1 && git push origin 1.2.1
-# → GitHub Actions builds ghcr.io/mctlhq/mctl-web:1.2.1
+git tag 4.1.0 && git push origin 4.1.0
+# → GitHub Actions builds ghcr.io/mctlhq/mctl-web:4.1.0
 # → CI commits new tag to mctl-gitops → ArgoCD deploys
 ```
 
