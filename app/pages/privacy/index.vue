@@ -149,7 +149,7 @@ useHead({
   font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 700;
   margin: 0.5rem 0;
-  color: var(--color-text-primary);
+  color: var(--color-text);
 }
 
 .privacy-hero .subtitle {
@@ -165,23 +165,23 @@ useHead({
 .privacy-content {
   max-width: 720px;
   margin: 0 auto;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   line-height: 1.75;
 }
 
 .privacy-content h2 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   margin: 2.5rem 0 0.75rem;
   padding-top: 0.5rem;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-glass-border);
 }
 
 .privacy-content h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text);
   margin: 1.5rem 0 0.5rem;
 }
 
@@ -191,6 +191,7 @@ useHead({
 }
 
 .privacy-content ul {
+  list-style: disc;
   margin: 0.75rem 0 0.75rem 1.25rem;
   font-size: 0.9rem;
 }
@@ -211,9 +212,9 @@ useHead({
 .privacy-content code {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.82em;
-  background: var(--color-surface);
+  background: var(--color-bg-secondary);
   padding: 0.1em 0.35em;
   border-radius: 3px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
 }
 </style>
