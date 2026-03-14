@@ -1,33 +1,56 @@
 <script setup lang="ts">
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
 
 defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
-const navItems = computed(() => [
-  { label: t('nav.platform'), href: '/#features' },
-  { label: t('nav.how_it_works'), href: '/#how-it-works' },
-  { label: t('nav.pricing'), href: '/#pricing' },
+async function scrollTo(sectionId: string) {
+  emit('close')
+  if (route.path === '/') {
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' })
+  } else {
+    await router.push('/')
+    await nextTick()
+    setTimeout(() => {
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
+  }
+}
+
+const sectionLinks = computed(() => [
+  { label: t('nav.platform'), section: 'features' },
+  { label: t('nav.how_it_works'), section: 'how-it-works' },
+  { label: t('nav.pricing'), section: 'pricing' },
+  { label: t('nav.contact'), section: 'contact' },
+])
+
+const pageLinks = computed(() => [
   { label: 'MCP', href: '/mcp/', accent: route.path.startsWith('/mcp') },
   { label: 'Docs', href: '/docs/', accent: route.path.startsWith('/docs') },
-  { label: t('nav.contact'), href: '/#contact' },
 ])
 </script>
 
 <template>
   <div class="nav-links" :class="{ active: open }">
     <a
-      v-for="item in navItems"
+      v-for="item in sectionLinks"
+      :key="item.section"
+      href="#"
+      @click.prevent="scrollTo(item.section)"
+    >
+      {{ item.label }}
+    </a>
+    <NuxtLink
+      v-for="item in pageLinks"
       :key="item.href"
-      :href="item.href"
-      :target="item.external ? '_blank' : undefined"
-      :rel="item.external ? 'noopener noreferrer' : undefined"
+      :to="item.href"
       :style="item.accent ? 'color: var(--color-accent)' : undefined"
       @click="emit('close')"
     >
       {{ item.label }}
-    </a>
+    </NuxtLink>
     <a
       href="https://github.com/mctlhq"
       target="_blank"
@@ -41,9 +64,9 @@ const navItems = computed(() => [
       </svg>
     </a>
     <a
-      href="#request-access"
+      href="#"
       class="nav-cta"
-      @click="emit('close')"
+      @click.prevent="scrollTo('request-access')"
     >
       {{ t('nav.request_access') }}
     </a>
