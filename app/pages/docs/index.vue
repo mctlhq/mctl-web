@@ -82,7 +82,7 @@ useHead({
           <h3>AI-first Teams</h3>
           <p>
             You want infrastructure managed through natural language. mctl exposes
-            23 MCP tools that let Claude, Cursor, VS Code Copilot, or any MCP client
+            20+ MCP tools that let Claude, Cursor, VS Code Copilot, or any MCP client
             deploy services, manage previews, provision databases, and monitor resources
             through conversation.
           </p>
@@ -168,7 +168,7 @@ useHead({
           <p>
             Go REST API and MCP server. Receives commands from the portal, CLI, AI clients,
             or direct HTTP calls. Authenticates via GitHub OAuth or Dex SSO. Routes operations
-            to Argo Workflows for execution. Exposes 23 MCP tools for AI-driven management.
+            to Argo Workflows for execution. Exposes 20+ MCP tools for AI-driven management.
           </p>
         </div>
         <div v-reveal class="component-card">

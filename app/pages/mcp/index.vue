@@ -452,7 +452,7 @@ onMounted(() => {
                     {{ copied['cfg-claude'] ? 'copied!' : 'copy' }}
                   </button>
                 </div>
-                <p class="config-note">Restart Claude Desktop after saving. It will connect and expose 23 platform tools.</p>
+                <p class="config-note">Restart Claude Desktop after saving. It will connect and expose 20+ platform tools.</p>
               </div>
 
               <!-- Claude.ai -->
@@ -579,7 +579,8 @@ onMounted(() => {
   <section class="tools-section">
     <div class="container">
       <p class="section-tag">Available Tools</p>
-      <h2 class="section-title">23 platform tools</h2>
+      <h2 class="section-title">20+ platform tools</h2>
+      <div class="tools-scroll">
       <table class="tools-table">
         <thead>
           <tr>
@@ -614,6 +615,7 @@ onMounted(() => {
           <tr><td><span class="tool-badge destructive">destructive</span></td><td class="tool-name">mctl_delete_tenant</td><td class="tool-desc">Delete workspace (requires all services retired)</td></tr>
         </tbody>
       </table>
+      </div>
       <p style="font-size:0.8rem;color:var(--color-text-muted);margin-top:1.5rem;text-align:center">
         Read tools return immediately with no side effects. Write tools submit Argo Workflows — use
         <span style="color:var(--color-accent)">mctl_get_workflow_status</span> to follow progress.
@@ -663,7 +665,7 @@ onMounted(() => {
       <div class="faq-list">
         <div class="faq-item">
           <div class="faq-q">What can the AI do?</div>
-          <div class="faq-a">Read platform state (services, tenants, resource usage, workflow logs, service logs) and trigger operations: deploy services, rollback, create preview environments, manage custom domains, provision databases, and configure auto-scaling. 23 tools, all via natural language.</div>
+          <div class="faq-a">Read platform state (services, tenants, resource usage, workflow logs, service logs) and trigger operations: deploy services, rollback, create preview environments, manage custom domains, provision databases, and configure auto-scaling. 20+ tools, all via natural language.</div>
         </div>
         <div class="faq-item">
           <div class="faq-q">What can it NOT do?</div>
@@ -1275,6 +1277,7 @@ onMounted(() => {
 .tools-section {
   padding: 2.5rem 0 3rem;
   background: var(--color-bg);
+  overflow: hidden;
 }
 
 .tools-section .section-title { margin-bottom: 2rem; }
@@ -1419,16 +1422,36 @@ onMounted(() => {
   .benefit-icon-wrap svg { width: 20px; height: 20px; }
   .advanced-section { overflow-x: hidden; }
   .advanced-header { padding: 1.5rem 0 1.25rem; }
-  .client-tab-btn { padding: 0.65rem 0.75rem; font-size: 0.73rem; }
-  .client-tab-content { padding: 1rem; }
-  .code-block-mcp { font-size: 0.73rem; padding: 0.75rem; }
+  /* Tabs: allow horizontal scroll, slightly smaller */
+  .client-tabs-nav { scrollbar-width: none; }
+  .client-tabs-nav::-webkit-scrollbar { display: none; }
+  .client-tab-btn { padding: 0.6rem 0.65rem; font-size: 0.7rem; letter-spacing: 0; }
+  .client-tab-content { padding: 0.875rem; }
+  .code-block-mcp { font-size: 0.72rem; padding: 0.75rem 0.875rem; }
+  .config-path { font-size: 0.68rem; }
+  .copy-config-btn { font-size: 0.65rem; padding: 0.25rem 0.5rem; }
   .auth-card { padding: 1.25rem; }
   .connect-section { padding: 0 0 2rem; }
+  /* Advanced header compact */
+  .advanced-header h2 { font-size: 1.35rem; }
+  .advanced-header p { font-size: 0.82rem; }
+}
+
+/* Tools table — scrollable on mobile */
+.tools-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
 }
 
 @media (max-width: 600px) {
   .tools-table th:first-child,
   .tools-table td:first-child { display: none; }
+  .tool-name { white-space: normal; word-break: break-all; font-size: 0.78rem; }
+  .tool-desc { font-size: 0.78rem; }
+  .tools-table td { padding: 0.625rem 0.75rem; }
+  .tools-table th { padding: 0.5rem 0.75rem 0.625rem; }
 }
 
 @media (max-width: 768px) {

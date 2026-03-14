@@ -95,7 +95,7 @@ const translations: Record<string, Record<string, string>> = {
     'features.card4.code': 'no tickets \u00b7 no waiting',
     'features.card4.desc': 'Pick from ready-made templates in the Service Catalog. Provision services, databases, and infra in minutes.',
     'features.card5.title': 'AI-Native Operations',
-    'features.card5.code': '23 MCP tools \u00b7 7 AI clients',
+    'features.card5.code': '20+ MCP tools \u00b7 7 AI clients',
     'features.card5.desc': 'Deploy, rollback, preview, and monitor via natural language. Connect Claude, Cursor, VS Code, or any MCP client.',
 
     // Audience
@@ -154,7 +154,7 @@ const translations: Record<string, Record<string, string>> = {
     'pricing.pro.f3': 'Dedicated namespaces',
     'pricing.pro.f4': 'Priority support',
     'pricing.pro.f5': 'SLA guarantee',
-    'pricing.pro.f6': 'Full MCP toolset (23 tools)',
+    'pricing.pro.f6': 'Full MCP toolset (20+ tools)',
     'pricing.pro.cta': 'Talk to Sales',
     'pricing.enterprise.title': 'Enterprise',
     'pricing.enterprise.price': 'Custom',
@@ -287,7 +287,7 @@ const translations: Record<string, Record<string, string>> = {
     'features.card4.code': '\u0431\u0435\u0437 \u0442\u0438\u043a\u0435\u0442\u043e\u0432 \u00b7 \u0431\u0435\u0437 \u043e\u0436\u0438\u0434\u0430\u043d\u0438\u044f',
     'features.card4.desc': '\u0413\u043e\u0442\u043e\u0432\u044b\u0435 \u0448\u0430\u0431\u043b\u043e\u043d\u044b \u0432 \u043a\u0430\u0442\u0430\u043b\u043e\u0433\u0435 \u0441\u0435\u0440\u0432\u0438\u0441\u043e\u0432. \u0421\u0435\u0440\u0432\u0438\u0441, \u0431\u0430\u0437\u0430 \u0434\u0430\u043d\u043d\u044b\u0445 \u0438\u043b\u0438 \u0438\u043d\u0444\u0440\u0430 \u2014 \u0440\u0430\u0437\u0432\u043e\u0440\u0430\u0447\u0438\u0432\u0430\u0435\u0442\u0441\u044f \u0437\u0430 \u043c\u0438\u043d\u0443\u0442\u044b.',
     'features.card5.title': 'AI-Native \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438',
-    'features.card5.code': '23 MCP tools \u00b7 7 AI \u043a\u043b\u0438\u0435\u043d\u0442\u043e\u0432',
+    'features.card5.code': '20+ MCP tools \u00b7 7 AI \u043a\u043b\u0438\u0435\u043d\u0442\u043e\u0432',
     'features.card5.desc': '\u0414\u0435\u043f\u043b\u043e\u0439, \u0440\u043e\u043b\u043b\u0431\u044d\u043a, \u043f\u0440\u0435\u0432\u044c\u044e \u0438 \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433 \u043d\u0430 \u0435\u0441\u0442\u0435\u0441\u0442\u0432\u0435\u043d\u043d\u043e\u043c \u044f\u0437\u044b\u043a\u0435. \u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u0435 Claude, Cursor, VS Code \u0438\u043b\u0438 \u043b\u044e\u0431\u043e\u0439 MCP-\u043a\u043b\u0438\u0435\u043d\u0442.',
 
     // Audience
