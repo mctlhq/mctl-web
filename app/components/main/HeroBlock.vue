@@ -2,10 +2,12 @@
 const { t } = useI18n()
 
 function scrollToAccess() {
-  const el = document.getElementById('request-access')
-  if (!el) return
+  const section = document.getElementById('request-access')
+  if (!section) return
   const navHeight = (document.querySelector('.navbar') as HTMLElement)?.offsetHeight ?? 70
-  const top = el.getBoundingClientRect().top + window.scrollY - navHeight - 8
+  const tag = section.querySelector<HTMLElement>('.section-tag')
+  const target = tag ?? section
+  const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 16
   window.scrollTo({ top, behavior: 'smooth' })
 }
 </script>

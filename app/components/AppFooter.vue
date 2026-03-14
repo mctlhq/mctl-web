@@ -4,10 +4,12 @@ const route = useRoute()
 const router = useRouter()
 
 function scrollToId(sectionId: string) {
-  const el = document.getElementById(sectionId)
-  if (!el) return
+  const section = document.getElementById(sectionId)
+  if (!section) return
   const navHeight = (document.querySelector('.navbar') as HTMLElement)?.offsetHeight ?? 70
-  const top = el.getBoundingClientRect().top + window.scrollY - navHeight - 8
+  const tag = section.querySelector<HTMLElement>('.section-tag')
+  const target = tag ?? section
+  const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 16
   window.scrollTo({ top, behavior: 'smooth' })
 }
 

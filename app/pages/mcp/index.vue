@@ -1455,7 +1455,7 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .mcp-hero { padding: 7rem 0 2rem; }
+  .mcp-hero { padding: 5rem 0 2rem; }
 }
 
 @media (max-width: 480px) {

@@ -7,10 +7,14 @@ defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
 function scrollToId(sectionId: string) {
-  const el = document.getElementById(sectionId)
-  if (!el) return
+  const section = document.getElementById(sectionId)
+  if (!section) return
   const navHeight = (document.querySelector('.navbar') as HTMLElement)?.offsetHeight ?? 70
-  const top = el.getBoundingClientRect().top + window.scrollY - navHeight - 8
+  // Scroll to the section-tag inside the section so it lands right below the navbar,
+  // matching the visual position of section-tags on /mcp and /docs page heroes
+  const tag = section.querySelector<HTMLElement>('.section-tag')
+  const target = tag ?? section
+  const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 16
   window.scrollTo({ top, behavior: 'smooth' })
 }
 
