@@ -66,6 +66,11 @@ h1 {
   line-height: 1.1;
 }
 
+h2 {
+  font-size: 48px;
+  font-weight: 800;
+}
+
 @media (max-height: 900px) {
   :root { --section-py: clamp(5rem, 4vh, 7rem); }
 }

@@ -21,10 +21,13 @@ const { variant = 'primary', size = 'md' } = defineProps<BaseButtonProps>()
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+
   font-family: inherit;
   font-size: inherit;
   font-weight: 500;
   color: #fff;
+
   background-color: var(--color-primary);
   border-width: 1px;
   border-style: solid;

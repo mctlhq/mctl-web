@@ -15,7 +15,8 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
-    "sass": "^1.98.0"
+    "sass": "^1.98.0",
+    "vite-svg-loader": "^5.1.1"
   },
   "overrides": {
     "serialize-javascript": ">=7.0.4"

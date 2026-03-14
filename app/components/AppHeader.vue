@@ -1,4 +1,6 @@
-<script setup lang="ts">
+<script lang="ts" setup>
+import GithubIcon from '@/assets/icons/github.svg';
+
 const { t } = useI18n()
 
 const menuOpen = ref(false)
@@ -15,24 +17,30 @@ function closeMenu() {
 </script>
 
 <template>
-  <nav class="navbar">
-    <div class="container navbar-container">
-      <NuxtLink to="/" class="logo">
-        <span class="logo-m">M</span>CTL
-      </NuxtLink>
-      <div
-        class="burger-menu"
-        :class="{ active: menuOpen }"
-        role="button"
-        tabindex="0"
-        :aria-label="t('nav.burger_label')"
-        :aria-expanded="menuOpen"
-        @click="toggleMenu"
-        @keydown.enter="toggleMenu"
-      >
-        <span />
-        <span />
-        <span />
+  <header class="app-header">
+    <div class="app-header__wrapper">
+      <div class="app-header__left">
+        <NuxtLink to="/" class="app-header__logo-wrapper">
+          <LogoDefault />
+        </NuxtLink>
+      </div>
+      <div class="app-header__right">
+        <AppHeaderNav />
+        <a
+          href="https://github.com/mctlhq"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="app-header__github"
+          aria-label="GitHub"
+        >
+          <GithubIcon />
+        </a>
+        <BaseButton
+          variant="secondary"
+          @click="$router.push({ hash: '#request-access' })"
+        >
+          Request access
+        </BaseButton>
       </div>
       <AppHeaderNav :open="menuOpen" @close="closeMenu" />
       <div
@@ -41,12 +49,13 @@ function closeMenu() {
         @click="closeMenu"
       />
     </div>
-  </nav>
+  </header>
 </template>
 
 <style lang="scss" scoped>
 .app-header {
   position: fixed;
+  z-index: 100;
   width: 100%;
   padding: 20px 0;
   background: rgba(5, 8, 22, 0.8);

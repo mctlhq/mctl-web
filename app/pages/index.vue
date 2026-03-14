@@ -5,6 +5,7 @@ const showSuccessModal = ref(false)
 <template>
   <article class="main-page">
     <HeroBlock />
+    <RequestAccess />
     <RequestAccessForm @success="showSuccessModal = true" />
     <SuccessModal v-model="showSuccessModal" />
     <WhySection />
