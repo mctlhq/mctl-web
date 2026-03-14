@@ -658,6 +658,91 @@ onMounted(() => {
     </div>
   </section>
 
+  <!-- Usage Examples -->
+  <section class="examples-section">
+    <div class="container">
+      <p class="section-tag">Examples</p>
+      <h2 class="section-title">What you can ask</h2>
+      <p class="section-sub">Real prompts you can type in Claude once the connector is active.</p>
+      <div class="examples-grid">
+        <div class="example-card">
+          <div class="example-number">01</div>
+          <h3>Check service health</h3>
+          <div class="example-prompt">"Show me the status of all services in the payments team"</div>
+          <div class="example-result">
+            <strong>What happens:</strong> Claude calls <code>mctl_list_services</code> and <code>mctl_get_service_status</code>
+            to list every service in the <code>team-payments</code> namespace with replica counts, image versions, and health status.
+          </div>
+        </div>
+        <div class="example-card">
+          <div class="example-number">02</div>
+          <h3>Deploy a new version</h3>
+          <div class="example-prompt">"Deploy checkout-api version 2.4.1 to staging"</div>
+          <div class="example-result">
+            <strong>What happens:</strong> Claude calls <code>mctl_deploy_service</code> which submits an Argo Workflow.
+            The workflow commits the new image tag to the GitOps repo, ArgoCD syncs, and Claude reports back with the
+            operation status and a link to the workflow run.
+          </div>
+        </div>
+        <div class="example-card">
+          <div class="example-number">03</div>
+          <h3>Investigate an incident</h3>
+          <div class="example-prompt">"Get the last 200 lines of logs from order-service and check recent workflows"</div>
+          <div class="example-result">
+            <strong>What happens:</strong> Claude calls <code>mctl_get_service_logs</code> to fetch logs from Loki and
+            <code>mctl_list_workflows</code> to find recent workflow runs. It correlates timestamps and surfaces errors,
+            helping you find the root cause without leaving the chat.
+          </div>
+        </div>
+        <div class="example-card">
+          <div class="example-number">04</div>
+          <h3>Create a preview environment</h3>
+          <div class="example-prompt">"Create a preview of invoice-api from branch feat/pdf-export"</div>
+          <div class="example-result">
+            <strong>What happens:</strong> Claude calls <code>mctl_create_preview</code> which spins up an isolated namespace
+            with the service built from the specified branch. Returns the preview URL and status so you can share it
+            with your team for review.
+          </div>
+        </div>
+        <div class="example-card">
+          <div class="example-number">05</div>
+          <h3>Scale and check resources</h3>
+          <div class="example-prompt">"Scale notification-service to 5 replicas and show me current resource usage for the platform team"</div>
+          <div class="example-result">
+            <strong>What happens:</strong> Claude calls <code>mctl_scale_service</code> to update the replica count, then
+            <code>mctl_get_resource_usage</code> to show CPU and memory usage across all services in the namespace.
+            You see the scaling operation result and a resource summary in one response.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Support -->
+  <section class="support-section">
+    <div class="container">
+      <p class="section-tag">Support</p>
+      <h2 class="section-title">Need help?</h2>
+      <div class="support-grid">
+        <div class="support-card">
+          <h3>Report an issue</h3>
+          <p>Found a bug or have a feature request? Open an issue on GitHub.</p>
+          <a href="https://github.com/mctlhq/mctl-api/issues" target="_blank" rel="noopener">GitHub Issues</a>
+        </div>
+        <div class="support-card">
+          <h3>Email support</h3>
+          <p>Questions about setup, access, or your account.</p>
+          <a href="mailto:support@mctl.ai">support@mctl.ai</a>
+        </div>
+        <div class="support-card">
+          <h3>Privacy</h3>
+          <p>Data requests, deletion, or privacy questions.</p>
+          <a href="mailto:privacy@mctl.ai">privacy@mctl.ai</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- FAQ -->
   <section class="faq-section">
     <div class="container">
@@ -1455,8 +1540,120 @@ onMounted(() => {
   .tools-table th { padding: 0.5rem 0.75rem 0.625rem; }
 }
 
+/* --- Examples --- */
+.examples-section {
+  padding: var(--section-py) 0;
+  background: var(--color-bg);
+}
+
+.examples-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.example-card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.example-number {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-bottom: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.example-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.75rem;
+}
+
+.example-prompt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--color-accent);
+  background: rgba(0, 245, 255, 0.05);
+  border: 1px solid rgba(0, 245, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  font-style: italic;
+}
+
+.example-result {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.example-result strong {
+  color: var(--color-text);
+}
+
+.example-result code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8em;
+  background: rgba(0, 245, 255, 0.08);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  color: var(--color-accent);
+}
+
+/* --- Support --- */
+.support-section {
+  padding: var(--section-py) 0;
+  background: var(--color-bg-secondary);
+}
+
+.support-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.support-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.support-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.support-card p {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+
+.support-card a {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.support-card a:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 768px) {
   .mcp-hero { padding: 5rem 0 2rem; }
+  .examples-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
