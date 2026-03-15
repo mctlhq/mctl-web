@@ -709,9 +709,9 @@ onMounted(() => {
           <h3>Create a preview environment</h3>
           <div class="example-prompt">"Create a preview of invoice-api from branch feat/pdf-export"</div>
           <div class="example-result">
-            <strong>What happens:</strong> Claude calls <code>mctl_create_preview</code> which spins up an isolated namespace
-            with the service built from the specified branch. Returns the preview URL and status so you can share it
-            with your team for review.
+            <strong>What happens:</strong> Claude calls <code>mctl_create_preview</code> which deploys an ephemeral copy
+            of the service in your team's namespace as a separate Helm release. Returns the preview URL
+            (<code>{app}-{id}.preview.mctl.ai</code>) so you can share it with your team for review. Clean up with <code>mctl_delete_preview</code>.
           </div>
         </div>
         <div class="example-card">
