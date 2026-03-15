@@ -1,8 +1,10 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="180" height="180" rx="40" fill="#050816"/>
-  <path d="M45 123V57L67.5 78.75L90 57L112.5 78.75L135 57V123" stroke="#00f5ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="67.5" cy="78.75" r="5" fill="#00f5ff"/>
-  <circle cx="90" cy="57" r="5" fill="#00f5ff"/>
-  <circle cx="112.5" cy="78.75" r="5" fill="#00f5ff"/>
-  <text x="90" y="115" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#00f5ff" text-anchor="middle">M</text>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Transparent Background -->
+  <path d="M256 60L435.263 158V354L256 452L76.7372 354V158L256 60Z" stroke="#00f5ff" stroke-width="24" stroke-linejoin="round"/>
+  <line x1="256" y1="60" x2="256" y2="158" stroke="#00f5ff" stroke-width="12" opacity="0.6"/>
+  <line x1="76.7372" y1="256" x2="180" y2="256" stroke="#00f5ff" stroke-width="12" opacity="0.6"/>
+  <line x1="435.263" y1="256" x2="332" y2="256" stroke="#00f5ff" stroke-width="12" opacity="0.6"/>
+  <circle cx="256" cy="256" r="90" stroke="#00f5ff" stroke-width="18" opacity="0.4"/>
+  <circle cx="256" cy="256" r="60" stroke="#00f5ff" stroke-width="20"/>
+  <circle cx="256" cy="256" r="28" fill="#00f5ff"/>
 </svg>
