@@ -724,6 +724,15 @@ onMounted(() => {
             You see the scaling operation result and a resource summary in one response.
           </div>
         </div>
+        <div class="example-card">
+          <div class="example-number">06</div>
+          <h3>Manage custom domains</h3>
+          <div class="example-prompt">"Add custom domain api.example.com to gateway-service and verify TLS"</div>
+          <div class="example-result">
+            <strong>What happens:</strong> Claude calls <code>mctl_add_custom_domain</code> to update the Ingress and 
+            <code>mctl_verify_domain</code> to check DNS propagation and Certificate status.
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -734,11 +743,6 @@ onMounted(() => {
       <p class="section-tag">Support</p>
       <h2 class="section-title">Need help?</h2>
       <div class="support-grid">
-        <div class="support-card">
-          <h3>Report an issue</h3>
-          <p>Found a bug or have a feature request? Open an issue on GitHub.</p>
-          <a href="https://github.com/mctlhq/mctl-api/issues" target="_blank" rel="noopener">GitHub Issues</a>
-        </div>
         <div class="support-card">
           <h3>Email support</h3>
           <p>Questions about setup, access, or your account.</p>
