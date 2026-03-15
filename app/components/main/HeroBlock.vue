@@ -5,18 +5,19 @@ const { t } = useI18n()
 <template>
   <section class="hero-block">
     <div class="hero-block__glow"></div>
-    <BaseContainer>
+    <BaseContainer size="md">
       <h1>
         <h1>{{ t('hero.title') }}</h1>
       </h1>
       <p class="hero-block__description">
-        <LogoDefault /> <h1>{{ t('hero.subtitle') }}</h1>
+        <LogoDefault /> даёт продуктовым командам Kubernetes с GitOps, секретами и изоляцией — прямо из коробки.<br>
+        Без билетов и ожидания. Готово к продакшену с первого дня.
       </p>
       <BaseButton
         size="lg"
         @click="$router.push({ hash: '#request-access' })"
       >
-        <h1>{{ t('hero.cta') }}</h1>
+        {{ t('hero.cta') }}
       </BaseButton>
     </BaseContainer>
   </section>

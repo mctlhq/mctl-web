@@ -2,15 +2,16 @@
 interface BaseButtonProps {
   variant?: 'primary' | 'secondary'
   size?: 'sm' | 'md' | 'lg'
+  block?: boolean
 }
 
-const { variant = 'primary', size = 'md' } = defineProps<BaseButtonProps>()
+const { variant = 'primary', size = 'md', block = false } = defineProps<BaseButtonProps>()
 </script>
 
 <template>
   <button
     class="base-button"
-    :class="`base-button--variant--${variant} base-button--size--${size}`"
+    :class="`base-button--variant--${variant} base-button--size--${size} ${block ? 'base-button--block' : ''}`"
   >
     <slot />
   </button>
@@ -69,6 +70,10 @@ const { variant = 'primary', size = 'md' } = defineProps<BaseButtonProps>()
     &--lg {
       padding: 14px 32px;
     }
+  }
+
+  &--block {
+    width: 100%;
   }
 }
 </style>
