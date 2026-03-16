@@ -30,7 +30,7 @@ const translations: Record<string, Record<string, string>> = {
 
     // Hero
     'hero.title': 'Kubernetes without building a platform team',
-    'hero.subtitle': '<span class="logo-m">M</span><span class="highlight-ctl">CTL</span> gives growing product teams self-service Kubernetes with GitOps, secrets, and team isolation built in.<br>No tickets. No waiting. Production-ready from day one.',
+    'hero.subtitle': 'gives growing product teams self-service Kubernetes with GitOps, secrets, and team isolation built in.<br>No tickets. No waiting. Production-ready from day one.',
     'hero.cta': 'Request Access',
 
     // Request Access Form

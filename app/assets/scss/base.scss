@@ -15,6 +15,7 @@
   --color-glass-border: rgba(0, 245, 255, 0.2);
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   --container-width: 1400px;
+  --container-width-md: 1200px;
   --section-py: clamp(5rem, 6vw, 8rem);
 }
 
@@ -49,6 +50,26 @@ ul {
   list-style: none;
   padding: 0;
   margin: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: 68px;
+  font-weight: 800;
+  text-align: center;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 48px;
+  font-weight: 800;
 }
 
 @media (max-height: 900px) {

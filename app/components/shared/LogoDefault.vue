@@ -7,6 +7,7 @@
 
 <style lang="scss" scoped>
 .logo-default {
+  display: inline-block;
   font-size: 24px;
   font-weight: 800;
   color: #fff;
