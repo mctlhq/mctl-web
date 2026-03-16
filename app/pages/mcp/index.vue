@@ -105,7 +105,7 @@ const configs = computed(() => {
     }, null, 2),
 
     gemini: JSON.stringify({
-      mcpServers: { mctl: { httpUrl: MCP_ENDPOINT, headers: { Authorization: 'Bearer ' + t } } }
+      mcpServers: { mctl: { httpUrl: MCP_ENDPOINT, headers: { Authorization: 'Bearer ' + t }, trust: true } }
     }, null, 2),
 
     copilot: JSON.stringify({
