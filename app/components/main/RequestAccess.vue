@@ -28,7 +28,7 @@ const loginWithGithub = () => {
           Requests read-only access: your username, avatar, and verified email.<br>
           No access to your code or repositories.
         </p>
-        <form action="">
+        <form>
           <BaseFormField
             id="team"
             label="Название команды"

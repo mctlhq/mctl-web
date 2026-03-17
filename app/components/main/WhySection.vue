@@ -11,21 +11,57 @@ const cards = [
 </script>
 
 <template>
-  <section class="problems" id="problems">
-    <div class="container">
-      <p class="section-tag">{{ t('why.tag') }}</p>
-      <h2 class="section-title">{{ t('why.title') }}</h2>
-      <div class="problems-grid">
-        <div
-          v-for="card in cards"
-          :key="card.titleKey"
-          v-reveal
-          class="problem-card"
-        >
+  <BaseSection
+    id="why-section"
+    class="why-section"
+    :tag="t('why.tag')"
+    :title="t('why.title')"
+  >
+    <ul class="why-section__cards">
+      <li
+        v-for="card in cards"
+        :key="card.titleKey"
+        class="why-section__cards-item"
+      >
+        <BaseCard class="why-section__card">
           <h3>{{ t(card.titleKey) }}</h3>
-          <p>{{ t(card.descKey) }}</p>
-        </div>
-      </div>
-    </div>
-  </section>
+          <p class="why-section__card-description">{{ t(card.descKey) }}</p>
+        </BaseCard>
+      </li>
+    </ul>
+  </BaseSection>
 </template>
+
+<style lang="scss" scoped>
+.why-section {
+  background: var(--color-bg-secondary);
+
+  &__cards {
+    display: flex;
+    gap: 28px;
+  }
+
+  &__cards-item {
+    flex: 1;
+  }
+
+  &__card {
+    height: 100%;
+    text-align: center;
+    cursor: default;
+    transition: all .3s ease;
+
+    &:hover {
+      border-color: var(--color-accent);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 245, 255, 0.1);
+    }
+  }
+
+  &__card-description {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+}
+</style>
