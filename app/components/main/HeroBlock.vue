@@ -7,7 +7,7 @@ const { t } = useI18n()
     <div class="hero-block__glow"></div>
     <BaseContainer size="md">
       <h1>
-        <h1>{{ t('hero.title') }}</h1>
+        {{ t('hero.title') }}
       </h1>
       <p class="hero-block__description">
         <LogoDefault /> даёт продуктовым командам Kubernetes с GitOps, секретами и изоляцией — прямо из коробки.<br>

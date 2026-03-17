@@ -9,7 +9,7 @@ const showSuccessModal = ref(false)
     <RequestAccessForm @success="showSuccessModal = true" />
     <SuccessModal v-model="showSuccessModal" />
     <WhySection />
-    <OrchestrationDiagram />
+    <OrchestrationSection />
     <FeaturesSection />
     <AudienceSection />
     <TechStackSection />
