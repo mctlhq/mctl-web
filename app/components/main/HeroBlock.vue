@@ -9,10 +9,7 @@ const { t } = useI18n()
       <h1>
         {{ t('hero.title') }}
       </h1>
-      <p class="hero-block__description">
-        <LogoDefault /> даёт продуктовым командам Kubernetes с GitOps, секретами и изоляцией — прямо из коробки.<br>
-        Без билетов и ожидания. Готово к продакшену с первого дня.
-      </p>
+      <p class="hero-block__description" v-html="t('hero.subtitle')" />
       <BaseButton
         size="lg"
         @click="$router.push({ hash: '#request-access' })"
