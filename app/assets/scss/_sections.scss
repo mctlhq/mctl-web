@@ -203,42 +203,6 @@
   flex-shrink: 0;
 }
 
-// Tech Stack
-.tech-stack {
-  padding: var(--section-py) 0;
-  background: var(--color-bg-secondary);
-  text-align: center;
-}
-
-.tech-logos {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 4rem;
-  flex-wrap: wrap;
-}
-
-.tech-logo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  text-decoration: none;
-  color: var(--color-accent);
-  font-size: 0.9rem;
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-  opacity: 0.7;
-}
-
-.tech-logo img { transition: all 0.4s ease; }
-
-.tech-logo:hover {
-  opacity: 1;
-  transform: translateY(-5px);
-}
-
-.tech-logo:hover img { transform: scale(1.15); }
-
 // Contact / Request Access
 .contact {
   padding: var(--section-py) 0;

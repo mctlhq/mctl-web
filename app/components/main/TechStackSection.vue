@@ -1,30 +1,79 @@
 <script setup lang="ts">
+import ArgocdIcon from '@/assets/icons/argocd.svg';
+import CatalogIcon from '@/assets/icons/catalog.svg';
+import VaultIcon from '@/assets/icons/vault.svg';
+import K3sIcon from '@/assets/icons/k3s.svg';
+
 const { t } = useI18n()
 
 const logos = [
-  { img: '/img/backstage-logo.svg', alt: 'Backstage', labelKey: 'tech.catalog' },
-  { img: '/img/argocd-logo.svg', alt: 'ArgoCD', labelKey: 'tech.gitops' },
-  { img: '/img/vault-logo.svg', alt: 'HashiCorp Vault', labelKey: 'tech.secrets' },
-  { img: '/img/k3s-logo.svg', alt: 'K3s', labelKey: 'tech.runtime' },
+  { icon: CatalogIcon, labelKey: 'tech.catalog' },
+  { icon: ArgocdIcon, labelKey: 'tech.gitops' },
+  { icon: VaultIcon, labelKey: 'tech.secrets' },
+  { icon: K3sIcon, labelKey: 'tech.runtime' },
 ]
 </script>
 
 <template>
-  <section class="tech-stack" id="ecosystem">
-    <div class="container">
-      <p class="section-tag">{{ t('tech.tag') }}</p>
-      <h2 class="section-title">{{ t('tech.title') }}</h2>
-      <p class="section-subtitle">{{ t('tech.subtitle') }}</p>
-      <div class="tech-logos">
-        <div
-          v-for="logo in logos"
-          :key="logo.alt"
-          class="tech-logo"
-        >
-          <img :src="logo.img" :alt="logo.alt" height="50" width="50">
-          <span>{{ t(logo.labelKey) }}</span>
-        </div>
-      </div>
-    </div>
-  </section>
+  <BaseSection
+    id="tech-stack"
+    class="tech-stack-section"
+    :tag="t('tech.tag')"
+    :title="t('tech.title')"
+  >
+    <p class="tech-stack-section__subtitle">{{ t('tech.subtitle') }}</p>
+    <ul class="tech-stack-section__list">
+      <li
+        v-for="item in logos"
+        :key="item.labelKey"
+        class="tech-stack-section__list-item"
+      >
+        <component
+          :is="item.icon"
+          class="tech-stack-section__icon"
+        />
+        <p class="tech-stack-section__label">{{ t(item.labelKey) }}</p>
+      </li>
+    </ul>
+  </BaseSection>
 </template>
+
+<style lang="scss" scoped>
+.tech-stack-section {
+  background-color: var(--color-bg-secondary);
+
+  &__subtitle {
+    text-align: center;
+    margin-bottom: 40px;
+    color: var(--color-text-muted);
+  }
+
+  &__list {
+    display: flex;
+    gap: 60px;
+    justify-content: center;
+  }
+
+  &__list-item {
+    color: var(--color-accent);
+    opacity: .7;
+    transition: all .3s ease;
+
+    &:hover {
+      opacity: 1;
+
+      .tech-stack-section__icon {
+        transform: translateY(-4px);
+      }
+    }
+  }
+
+  &__icon {
+    display: block;
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 16px;
+    transition: all .3s ease;
+  }
+}
+</style>

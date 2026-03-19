@@ -34,7 +34,7 @@ const cards = [
 
 <style lang="scss" scoped>
 .why-section {
-  background: var(--color-bg-secondary);
+  background-color: var(--color-bg-secondary);
 
   &__cards {
     display: flex;
