@@ -12,7 +12,7 @@ const showSuccessModal = ref(false)
     <FeaturesSection />
     <AudienceSection />
     <TechStackSection />
-    <HowItWorksSection />
+    <HowToStartSection />
     <PricingSection />
     <ContactSection />
   </article>

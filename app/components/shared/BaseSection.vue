@@ -2,6 +2,7 @@
 interface Props {
   tag?: string
   title?: string
+  containerSize?: 'md' | 'lg' | 'wide'
 }
 
 defineProps<Props>();
@@ -9,7 +10,7 @@ defineProps<Props>();
 
 <template>
   <section class="base-section">
-    <BaseContainer>
+    <BaseContainer :size="containerSize">
       <strong v-if="tag" class="base-section__tag">{{ tag }}</strong>
       <h2 v-if="title" class="base-section__title">
         {{ title }}
