@@ -52,4 +52,13 @@ export default defineNuxtConfig({
   vite: {
     plugins: [svgLoader()],
   },
+  runtimeConfig: {
+    // Private keys are only available on the server
+    apiSecret: '123',
+
+    // Public keys that are exposed to the client
+    public: {
+      baseUrlFront: import.meta.env.NUXT_PUBLIC_FRONT_BASE || '',
+    },
+  },
 });
