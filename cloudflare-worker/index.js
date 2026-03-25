@@ -20,7 +20,7 @@ const BASE_DOMAIN = 'mctl.ai';
 // Domains that redirect to *.mctl.ai (root + all subdomains)
 const REDIRECT_SUFFIXES = ['.mctl.me', '.mctl.ru'];
 const REDIRECT_ROOTS   = new Set(['mctl.me', 'mctl.ru']);
-const ALLOWED_ORIGINS = new Set(['https://mctl.ai']);
+const ALLOWED_ORIGINS = new Set(['https://mctl.ai', 'http://localhost:3000']);
 const LANDING_URL = `https://${BASE_DOMAIN}`;
 // NOTE: after deploying, update GitHub OAuth App callback URL to https://mctl.ai/api/github/callback
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
