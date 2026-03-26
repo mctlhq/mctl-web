@@ -1,16 +1,9 @@
-import { ref } from 'vue'
+import { ref } from 'vue';
+
+import type { GitHubUser } from '@/types';
 
 const AUTH_KEY = 'mctl_auth'
 const AUTH_TTL = 8 * 60 * 60 * 1000
-
-interface GitHubUser {
-  login: string
-  name: string
-  email: string
-  avatar_url: string
-  html_url: string
-  sig: string
-}
 
 function saveAuthStorage(data: Partial<GitHubUser>) {
   try {

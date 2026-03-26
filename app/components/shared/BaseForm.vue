@@ -1,15 +1,17 @@
 <script setup lang="ts">
+import BaseFormStatus from './BaseFormStatus.vue';
+
 interface Props {
   submitText?: string
   status?: { message: string; type: 'success' | 'error' } | null
   isLoading?: boolean
+  disabled?: boolean
 }
-
 defineProps<Props>();
 
 const emit = defineEmits<{
   submit: [event: SubmitEvent]
-}>()
+}>();
 
 function onSubmit(event: SubmitEvent) {
   emit('submit', event)
@@ -24,19 +26,17 @@ function onSubmit(event: SubmitEvent) {
         <BaseButton
           type="submit"
           block
-          :disabled="isLoading"
+          :disabled="disabled || isLoading"
         >
           {{ submitText || 'Submit' }}
         </BaseButton>
-        <div
+        <BaseFormStatus
           v-if="status"
+          :type="status.type"
           class="base-form__status"
-          :class="`base-form__status--type--${status.type}`"
-          role="alert"
-          aria-live="assertive"
         >
           {{ status.message }}
-        </div>
+        </BaseFormStatus>
       </slot>
     </footer>
   </form>
@@ -44,6 +44,10 @@ function onSubmit(event: SubmitEvent) {
 
 <style lang="scss" scoped>
 .base-form {
+  &__status {
+    margin-top: 16px;
+  }
+
   :deep(.base-form-field) {
     &:not(:last-child) {
       margin-bottom: 24px;
