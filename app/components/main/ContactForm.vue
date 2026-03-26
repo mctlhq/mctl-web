@@ -68,6 +68,10 @@ const onSubmit = handleSubmit((formData) => {
 
 <style lang="scss" scoped>
 .contact-form {
-  width: 600px;
+  width: 100%;
+
+  @media (min-width: 768px) {
+    width: 600px;
+  }
 }
 </style>

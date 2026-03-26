@@ -40,7 +40,12 @@ const cards = [
 
   &__list {
     display: flex;
+    flex-direction: column;
     gap: 28px;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+    }
   }
 
   &__list-item {

@@ -44,6 +44,7 @@ const footerLinks = computed(() => [
     display: flex;
     justify-content: center;
     gap: 32px;
+    flex-wrap: wrap;
     margin: 24px 0;
   }
 

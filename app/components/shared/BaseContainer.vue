@@ -16,31 +16,25 @@ const { size = 'lg' } = defineProps<BaseContainerProps>();
 .base-container {
   width: 100%;
   margin: 0 auto;
-  padding: 0 2rem;
-  box-sizing: border-box;
-
-  &--size {
-    &--md {
-      max-width: var(--container-width-md);
-    }
-    &--lg {
-      max-width: var(--container-width);
-    }
-    &--wide {
-      max-width: 100%;
-    }
-  }
+  padding: 0 20px;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 1400px) {
   .base-container {
-    padding: 0 1.5rem;
-  }
-}
-
-@media (max-width: 380px) {
-  .base-container {
-    padding: 0 0.75rem;
+    &--size {
+      &--md {
+        width: var(--container-width-md);
+        padding: 0;
+      }
+      &--lg {
+        width: var(--container-width);
+        padding: 0;
+      }
+      &--wide {
+        width: 100%;
+        padding: 0 20px;
+      }
+    }
   }
 }
 </style>

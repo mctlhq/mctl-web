@@ -34,9 +34,13 @@ const { t } = useI18n()
     max-width: 900px;
     margin: 0 auto 48px;
     text-align: center;
-    font-size: clamp(1rem, 2vw, 1.5rem);
+    font-size: 18px;
     color: var(--color-text-muted);
     line-height: 1.6;
+
+    @media (min-width: 768px) {
+      font-size: 24px;
+    }
   }
 
   &__glow {

@@ -38,7 +38,12 @@ const cards = [
 
   &__cards {
     display: flex;
+    flex-direction: column;
     gap: 28px;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+    }
   }
 
   &__cards-item {

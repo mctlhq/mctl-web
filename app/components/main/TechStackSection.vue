@@ -52,9 +52,11 @@ const logos = [
     display: flex;
     gap: 60px;
     justify-content: center;
+    flex-wrap: wrap;
   }
 
   &__list-item {
+    flex: 1;
     color: var(--color-accent);
     opacity: .7;
     transition: all .3s ease;
@@ -74,6 +76,10 @@ const logos = [
     height: 50px;
     margin: 0 auto 16px;
     transition: all .3s ease;
+  }
+
+  &__label {
+    text-align: center;
   }
 }
 </style>

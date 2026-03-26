@@ -42,8 +42,12 @@ async function init() {
   text-align: center;
 
   &__card {
-    width: 600px;
+    width: 100%;
     margin: 32px auto 0;
+
+    @media (min-width: 768px) {
+      width: 600px;
+    }
   }
 
   &__subtitle {

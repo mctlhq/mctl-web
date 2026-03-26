@@ -1,37 +1,15 @@
 <script setup lang="ts">
 const { t } = useI18n()
 const route = useRoute()
-const router = useRouter()
 
 defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
-function scrollToId(sectionId: string) {
-  const section = document.getElementById(sectionId)
-  if (!section) return
-  const navHeight = (document.querySelector('.navbar') as HTMLElement)?.offsetHeight ?? 70
-  const tag = section.querySelector<HTMLElement>('.section-tag')
-  const target = tag ?? section
-  const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 16
-  window.scrollTo({ top, behavior: 'smooth' })
-}
-
-async function scrollTo(sectionId: string) {
-  emit('close')
-  if (route.path === '/') {
-    scrollToId(sectionId)
-  } else {
-    await router.push('/')
-    await nextTick()
-    setTimeout(() => scrollToId(sectionId), 120)
-  }
-}
-
 const sectionLinks = computed(() => [
-  { label: t('nav.platform'), section: 'features' },
-  { label: t('nav.how_it_works'), section: 'how-it-works' },
-  { label: t('nav.pricing'), section: 'pricing' },
-  { label: t('nav.contact'), section: 'contact' },
+  { label: t('nav.platform'), section: '#features' },
+  { label: t('nav.how_it_works'), section: '#how-it-works' },
+  { label: t('nav.pricing'), section: '#pricing' },
+  { label: t('nav.contact'), section: '#contact' },
 ])
 
 const pageLinks = computed(() => [
@@ -40,12 +18,12 @@ const pageLinks = computed(() => [
 </script>
 
 <template>
-  <div class="nav-links" :class="{ active: open }">
+  <div class="app-header-nav">
     <a
       v-for="item in sectionLinks"
       :key="item.section"
-      href="#"
-      @click.prevent="scrollTo(item.section)"
+      :href="item.section"
+      class="app-header-nav__link"
     >
       {{ item.label }}
     </a>
@@ -55,6 +33,7 @@ const pageLinks = computed(() => [
       :href="item.href"
       target="_blank"
       rel="noopener noreferrer"
+      class="app-header-nav__link"
       @click="emit('close')"
     >
       {{ item.label }}
@@ -72,11 +51,30 @@ const pageLinks = computed(() => [
       </svg>
     </a>
     <a
-      href="#"
+      href="#request-access"
       class="nav-cta"
-      @click.prevent="scrollTo('request-access')"
     >
       {{ t('nav.request_access') }}
     </a>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.app-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+
+  &__link {
+    text-decoration: none;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: color 0.3s ease;
+
+    &:hover {
+      color: var(--color-accent);
+    }
+  }
+}
+</style>
