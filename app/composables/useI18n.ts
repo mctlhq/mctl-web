@@ -53,6 +53,7 @@ const translations: Record<string, Record<string, string>> = {
     'modal.step2': 'Sign in with your GitHub account to access:',
     'modal.portal': 'Portal \u2014 app.mctl.ai',
     'modal.argocd': 'ArgoCD \u2014 ops.mctl.ai',
+    'modal.workflows': 'Workflows \u2014 workflows.mctl.ai',
     'modal.close': 'Got it',
 
     // Why MCTL
@@ -245,6 +246,7 @@ const translations: Record<string, Record<string, string>> = {
     'modal.step2': '\u0412\u043e\u0439\u0434\u0438\u0442\u0435 \u0447\u0435\u0440\u0435\u0437 GitHub, \u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043f\u0430\u0441\u0442\u044c \u0432:',
     'modal.portal': '\u041f\u043e\u0440\u0442\u0430\u043b \u2014 app.mctl.ai',
     'modal.argocd': 'ArgoCD \u2014 ops.mctl.ai',
+    'modal.workflows': 'Workflows \u2014 workflows.mctl.ai',
     'modal.close': '\u041f\u043e\u043d\u044f\u0442\u043d\u043e',
 
     // Why MCTL

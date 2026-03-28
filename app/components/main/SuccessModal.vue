@@ -32,6 +32,9 @@ const show = defineModel<boolean>({ default: false })
                 <a href="https://ops.mctl.ai/" target="_blank" rel="noopener" class="btn btn-outline">
                   {{ t('modal.argocd') }}
                 </a>
+                <a href="https://workflows.mctl.ai/" target="_blank" rel="noopener" class="btn btn-outline">
+                  {{ t('modal.workflows') }}
+                </a>
               </div>
             </div>
           </div>
