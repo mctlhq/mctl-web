@@ -26,16 +26,15 @@ const { t } = useI18n()
   padding: 60px 0;
   text-align: center;
 
-  &__wrapper {
-    width: var(--container-width);
-    margin: 0 auto;
+  h1 {
+    font-size: clamp(2.5rem, 4.5vw, 4.25rem);
   }
 
   &__description {
     max-width: 900px;
     margin: 0 auto 48px;
     text-align: center;
-    font-size: 24px;
+    font-size: clamp(1rem, 2vw, 1.5rem);
     color: var(--color-text-muted);
     line-height: 1.6;
   }

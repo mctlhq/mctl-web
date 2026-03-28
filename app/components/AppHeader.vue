@@ -15,46 +15,31 @@ function closeMenu() {
 </script>
 
 <template>
-  <header class="app-header">
-    <BaseContainer class="app-header__container">
-      <div class="app-header__left">
-        <NuxtLink to="/" class="app-header__logo-wrapper">
-          <LogoDefault />
-        </NuxtLink>
+  <nav class="navbar">
+    <div class="container navbar-container">
+      <NuxtLink to="/" class="logo">
+        <LogoDefault />
+      </NuxtLink>
+      <div
+        class="burger-menu"
+        :class="{ active: menuOpen }"
+        role="button"
+        tabindex="0"
+        :aria-label="t('nav.burger_label')"
+        :aria-expanded="menuOpen"
+        @click="toggleMenu"
+        @keydown.enter="toggleMenu"
+      >
+        <span />
+        <span />
+        <span />
       </div>
-      <div class="app-header__right">
-        <AppHeaderNav :open="menuOpen" @close="closeMenu" />
-        <BaseButton
-          variant="secondary"
-          @click="$router.push({ hash: '#request-access' })"
-        >
-          {{ t('nav.request_access') }}
-        </BaseButton>
-      </div>
-    </BaseContainer>
-  </header>
+      <AppHeaderNav :open="menuOpen" @close="closeMenu" />
+      <div
+        class="nav-overlay"
+        :class="{ active: menuOpen }"
+        @click="closeMenu"
+      />
+    </div>
+  </nav>
 </template>
-
-<style lang="scss" scoped>
-.app-header {
-  position: fixed;
-  z-index: 100;
-  width: 100%;
-  padding: 20px 0;
-  background: rgba(5, 8, 22, 0.8);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--color-glass-border);
-
-  &__container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  &__right {
-    display: flex;
-    align-items: center;
-    gap: 40px;
-  }
-}
-</style>

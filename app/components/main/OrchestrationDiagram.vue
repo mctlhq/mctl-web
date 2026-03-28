@@ -111,4 +111,25 @@ const { t } = useI18n();
     transform: rotate(45deg);
   }
 }
+
+@media (max-width: 768px) {
+  .orchestration-diagram {
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+
+    &__box {
+      width: 100%;
+      max-width: 300px;
+    }
+  }
+
+  .diagram-connector {
+    transform: rotate(90deg);
+    height: 40px;
+    min-width: auto;
+    max-width: none;
+    width: 2px;
+  }
+}
 </style>

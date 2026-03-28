@@ -111,4 +111,29 @@ const features = [
     color: var(--color-text-muted);
   }
 }
+
+@media (max-width: 1100px) {
+  .features__list {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: none;
+  }
+
+  .features__list-item {
+    grid-row: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .features__card {
+    grid-row: auto;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .features__list {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

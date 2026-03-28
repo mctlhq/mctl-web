@@ -64,7 +64,8 @@ const loginWithGithub = () => {
   text-align: center;
 
   &__card {
-    width: 600px;
+    width: 100%;
+    max-width: 600px;
     margin: 32px auto 0;
   }
 

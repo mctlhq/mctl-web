@@ -64,4 +64,25 @@ const cards = [
     line-height: 1.6;
   }
 }
+
+@media (max-width: 900px) {
+  .why-section__cards {
+    flex-wrap: wrap;
+  }
+
+  .why-section__cards-item {
+    flex: 1 1 calc(50% - 14px);
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .why-section__cards {
+    flex-direction: column;
+  }
+
+  .why-section__cards-item {
+    flex: 1 1 100%;
+  }
+}
 </style>

@@ -14,19 +14,33 @@ const { size = 'lg' } = defineProps<BaseContainerProps>();
 
 <style lang="scss" scoped>
 .base-container {
+  width: 100%;
   margin: 0 auto;
+  padding: 0 2rem;
+  box-sizing: border-box;
 
   &--size {
     &--md {
-      width: var(--container-width-md);
+      max-width: var(--container-width-md);
     }
     &--lg {
-      width: var(--container-width);
+      max-width: var(--container-width);
     }
     &--wide {
-      width: 100%;
-      padding: 0 20px;
+      max-width: 100%;
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .base-container {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .base-container {
+    padding: 0 0.75rem;
   }
 }
 </style>
