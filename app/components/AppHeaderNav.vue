@@ -37,8 +37,7 @@ const sectionLinks = computed(() => [
 ])
 
 const pageLinks = computed(() => [
-  { label: 'MCP', href: '/mcp/', accent: route.path.startsWith('/mcp') },
-  { label: 'Docs', href: '/docs/', accent: route.path.startsWith('/docs') },
+  { label: 'Docs', href: 'https://docs.mctl.ai' },
 ])
 </script>
 
@@ -52,14 +51,15 @@ const pageLinks = computed(() => [
     >
       {{ item.label }}
     </a>
-    <NuxtLink
+    <a
       v-for="item in pageLinks"
       :key="item.href"
-      :to="item.href"
-      :style="item.accent ? 'color: var(--color-accent)' : undefined"
+      :href="item.href"
+      target="_blank"
+      rel="noopener noreferrer"
       @click="emit('close')"
     >
       {{ item.label }}
-    </NuxtLink>
+    </a>
   </div>
 </template>

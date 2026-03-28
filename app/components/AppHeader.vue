@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import GithubIcon from '@/assets/icons/github.svg';
-
 const { t } = useI18n()
 
 const menuOpen = ref(false)
@@ -26,15 +24,6 @@ function closeMenu() {
       </div>
       <div class="app-header__right">
         <AppHeaderNav :open="menuOpen" @close="closeMenu" />
-        <a
-          href="https://github.com/mctlhq"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="app-header__github"
-          aria-label="GitHub"
-        >
-          <GithubIcon />
-        </a>
         <BaseButton
           variant="secondary"
           @click="$router.push({ hash: '#request-access' })"
@@ -66,17 +55,6 @@ function closeMenu() {
     display: flex;
     align-items: center;
     gap: 40px;
-  }
-
-  &__github {
-    display: flex;
-    align-items: center;
-    color: var(--color-text-muted);
-    transition: color 0.2s;
-
-    &:hover {
-      color: var(--color-text);
-    }
   }
 }
 </style>
