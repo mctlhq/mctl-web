@@ -181,7 +181,7 @@ const translations: Record<string, Record<string, string>> = {
     'contact.submit': 'Send Message',
 
     // Footer
-    'footer.copyright': '\u00a9 2025 MCTL. All rights reserved.',
+    'footer.copyright': '\u00a9 2026 MCTL. All rights reserved.',
     'footer.platform': 'Platform',
     'footer.pricing': 'Pricing',
     'footer.contact': 'Contact',
@@ -374,7 +374,7 @@ const translations: Record<string, Record<string, string>> = {
     'contact.submit': '\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c',
 
     // Footer
-    'footer.copyright': '\u00a9 2025 MCTL. \u0412\u0441\u0435 \u043f\u0440\u0430\u0432\u0430 \u0437\u0430\u0449\u0438\u0449\u0435\u043d\u044b.',
+    'footer.copyright': '\u00a9 2026 MCTL. \u0412\u0441\u0435 \u043f\u0440\u0430\u0432\u0430 \u0437\u0430\u0449\u0438\u0449\u0435\u043d\u044b.',
     'footer.platform': '\u041f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430',
     'footer.pricing': '\u0426\u0435\u043d\u044b',
     'footer.contact': '\u041a\u043e\u043d\u0442\u0430\u043a\u0442\u044b',
