@@ -1,47 +1,55 @@
 <script lang="ts" setup>
-const { t } = useI18n()
+import { useTemplateRef } from 'vue';
+import { onClickOutside } from '@vueuse/core';
 
-const menuOpen = ref(false)
+import BaseBurger from './shared/BaseBurger.vue';
+
+const { t } = useI18n();
+
+const target = useTemplateRef('target');
+
+const menuOpen = ref(false);
+
+onClickOutside(target, () => {
+  menuOpen.value = false;
+});
 
 function toggleMenu() {
-  menuOpen.value = !menuOpen.value
-  document.body.style.overflow = menuOpen.value ? 'hidden' : ''
+  menuOpen.value = !menuOpen.value;
 }
 
 function closeMenu() {
-  menuOpen.value = false
-  document.body.style.overflow = ''
+  menuOpen.value = false;
 }
 </script>
 
 <template>
-  <nav class="navbar">
-    <div class="container navbar-container">
-      <NuxtLink to="/" class="logo">
-        <LogoDefault />
-      </NuxtLink>
-      <div
-        class="burger-menu"
-        :class="{ active: menuOpen }"
-        role="button"
-        tabindex="0"
-        :aria-label="t('nav.burger_label')"
-        :aria-expanded="menuOpen"
-        @click="toggleMenu"
-        @keydown.enter="toggleMenu"
-      >
-        <span />
-        <span />
-        <span />
+  <header
+    class="app-header"
+    :class="{ 'app-header--menu-open': menuOpen }"
+  >
+    <BaseContainer size="lg" class="app-header__container">
+      <div class="app-header__left">
+        <NuxtLink to="/" class="app-header__logo">
+          <LogoDefault />
+        </NuxtLink>
       </div>
-      <AppHeaderNav :open="menuOpen" @close="closeMenu" />
-      <div
-        class="nav-overlay"
-        :class="{ active: menuOpen }"
-        @click="closeMenu"
+      <div ref="target" class="app-header__right">
+        <AppHeaderNav :open="menuOpen" @close="closeMenu" />
+        <BaseButton
+          variant="secondary"
+          @click="$router.push('#request-access')"
+        >
+          {{ t('nav.request_access') }}
+        </BaseButton>
+      </div>
+      <BaseBurger
+        :active="menuOpen"
+        class="app-header__burger"
+        @click="toggleMenu"
       />
-    </div>
-  </nav>
+    </BaseContainer>
+  </header>
 </template>
 
 <style lang="scss" scoped>
@@ -58,6 +66,10 @@ function closeMenu() {
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+
+  &__logo {
+    display: block;
   }
 
   &__right {
@@ -81,7 +93,7 @@ function closeMenu() {
     @media (min-width: 768px) {
       flex-direction: row;
       align-items: center;
-      gap: 40px;
+      gap: 60px;
       padding: 0;
 
       position: static;
@@ -101,6 +113,36 @@ function closeMenu() {
 
     &:hover {
       color: var(--color-text);
+    }
+  }
+
+  &__burger {
+    z-index: 1001;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(5, 8, 22, 0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--color-glass-border);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  &--menu-open {
+    .app-header__right {
+      right: 0;
+    }
+
+    &::before {
+      opacity: 1;
     }
   }
 }
