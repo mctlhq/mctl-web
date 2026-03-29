@@ -2,10 +2,10 @@ import svgLoader from 'vite-svg-loader';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  ssr: false,
+  ssr: true,
   nitro: {
     prerender: {
-      crawlLinks: true,
+      crawlLinks: import.meta.env.NUXT_VUE_DEVTOOLS,
     },
   },
   compatibilityDate: '2025-07-15',
@@ -48,6 +48,9 @@ export default defineNuxtConfig({
     options: {
       scrollBehaviorType: 'smooth',
     },
+  },
+  routeRules: {
+    '/api/**': { prerender: false },
   },
   vite: {
     plugins: [svgLoader()],

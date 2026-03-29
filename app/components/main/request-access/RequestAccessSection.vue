@@ -3,15 +3,10 @@ import GithubAuth from './GithubAuth.vue';
 
 const { t } = useI18n();
 
-const { githubUser, checkOAuthReturn, restoreFromStorage, logout, getAuthData } = useAuth();
+const { user, isAuth, logout } = useAuth();
 
 function handleLogin() {
   window.location.href = 'https://mctl.ai/api/github/login';
-}
-
-async function init() {
-  restoreFromStorage();
-  const result = checkOAuthReturn();
 }
 </script>
 
@@ -26,11 +21,11 @@ async function init() {
         {{ t('form.subtitle') }}
       </p>
       <GithubAuth
-        :user="githubUser"
+        :user="user"
         @clickLogin="handleLogin"
         @clickLogout="logout"
       />
-      <RequestAccessForm :disabled="!githubUser" />
+      <RequestAccessForm :disabled="!isAuth" />
     </BaseCard>
   </BaseSection>
 </template>

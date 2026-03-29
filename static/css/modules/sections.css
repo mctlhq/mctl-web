@@ -157,15 +157,6 @@
   z-index: -1;
 }
 
-.diagram-connector {
-  flex: 1;
-  max-width: 100px;
-  min-width: 40px;
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
 .connector-line {
   height: 2px;
   background: linear-gradient(90deg, var(--color-glass-border), var(--color-accent), var(--color-glass-border));

@@ -256,10 +256,6 @@
   .problems { padding: 4rem 0; }
   .problems-grid { grid-template-columns: 1fr; gap: 1.25rem; }
 
-  .diagram-container { flex-direction: column; gap: 2rem; }
-  .diagram-connector { transform: rotate(90deg); height: 40px; min-width: auto; max-width: none; width: 2px; }
-  .diagram-box { width: 100%; max-width: 300px; transform: none !important; }
-
   .features { padding: 4rem 0; }
   .features-grid { grid-template-columns: 1fr; grid-template-rows: none; }
   .feature-card { padding: 2rem 1.5rem; grid-row: auto; display: flex; flex-direction: column; }
@@ -310,7 +306,6 @@
   .diagram-container { gap: 1.5rem; margin-top: 5rem; }
   .diagram-box { padding: 2.75rem 2.25rem; }
   .connector-line { height: 2px; }
-  .diagram-connector { max-width: 120px; }
   .problems-grid { gap: 1.75rem; }
   .pricing-grid { max-width: 1200px; gap: 2.25rem; }
   .tech-logos { gap: 4.5rem; }

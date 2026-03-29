@@ -118,6 +118,10 @@ function closeMenu() {
 
   &__burger {
     z-index: 1001;
+
+    @media (min-width: 768px) {
+      display: none;
+    }
   }
 
   &::before {

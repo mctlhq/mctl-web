@@ -23,6 +23,7 @@ defineProps<Props>();
 <style lang="scss" scoped>
 .base-section {
   padding: 60px 0;
+  scroll-margin-top: 80px;
 
   &__tag {
     display: block;

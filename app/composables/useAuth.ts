@@ -1,103 +1,99 @@
-import { ref } from 'vue';
-
-import type { GitHubUser } from '@/types';
+import { computed } from 'vue'
+import { useStorage } from '@vueuse/core'
+import type { GitHubUser } from '@/types'
 
 const AUTH_KEY = 'mctl_auth'
 const AUTH_TTL = 8 * 60 * 60 * 1000
 
-function saveAuthStorage(data: Partial<GitHubUser>) {
-  try {
-    const cur = loadAuthStorage() || {}
-    localStorage.setItem(AUTH_KEY, JSON.stringify({ ...cur, ...data, exp: Date.now() + AUTH_TTL }))
-  } catch {}
-}
-
-function loadAuthStorage(): (GitHubUser & { exp: number }) | null {
-  try {
-    const d = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null')
-    if (!d || Date.now() > d.exp) {
-      localStorage.removeItem(AUTH_KEY)
-      return null
-    }
-    return d
-  } catch {
-    return null
-  }
-}
-
-function clearAuthStorage() {
-  try { localStorage.removeItem(AUTH_KEY) } catch {}
-}
-
-const githubUser = ref<GitHubUser | null>(null)
-
 export function useAuth() {
-  function checkOAuthReturn(): { error?: string } {
-    if (typeof window === 'undefined') return {}
+  // SSR-safe state
+  const user = useState<GitHubUser | null>('auth_user', () => null)
 
-    const hash = window.location.hash
-    const urlParams = new URLSearchParams(window.location.search)
+  const stored = useStorage<(GitHubUser & { exp: number }) | null>(
+    AUTH_KEY,
+    null
+  )
 
-    const authError = urlParams.get('auth_error') || (hash.startsWith('#auth_error=') ? hash.substring(12) : null)
-    const authData = urlParams.get('auth') || (hash.startsWith('#auth=') ? hash.substring(6) : null)
+  const isAuth = computed(() => !!user.value?.login)
 
-    if (authError) {
-      history.replaceState(null, '', window.location.pathname)
-      return { error: authError }
+  function setUser(u: GitHubUser) {
+    user.value = u
+    stored.value = {
+      ...u,
+      exp: Date.now() + AUTH_TTL,
     }
-
-    if (!authData) return {}
-
-    try {
-      const base64 = authData.replace(/-/g, '+').replace(/_/g, '/')
-      const json = atob(base64)
-      const user = JSON.parse(json) as GitHubUser
-      githubUser.value = user
-      saveAuthStorage({
-        login: user.login,
-        name: user.name || user.login,
-        email: user.email || '',
-        avatar_url: user.avatar_url || '',
-        html_url: user.html_url || '',
-        sig: user.sig || '',
-      })
-    } catch (e) {
-      console.error('Failed to parse GitHub auth data:', e)
-      history.replaceState(null, '', window.location.pathname)
-      return { error: 'PARSE_ERROR' }
-    }
-
-    history.replaceState(null, '', window.location.pathname)
-    return {}
   }
 
-  function restoreFromStorage() {
-    const saved = loadAuthStorage()
-    if (!saved || !saved.login || !saved.sig) return
-    githubUser.value = saved
+  function restore() {
+    if (!stored.value) return
+
+    if (Date.now() > stored.value.exp) {
+      stored.value = null
+      return
+    }
+
+    user.value = stored.value
   }
 
   function logout() {
-    githubUser.value = null
-    clearAuthStorage()
+    user.value = null
+    stored.value = null
   }
 
-  function getAuthData(): string {
-    if (!githubUser.value) return ''
+  function parseOAuth(): { error?: string } {
+    if (!window) return {}
+
+    const url = new URL(window.location.href)
+
+    const auth = url.searchParams.get('auth') || url.hash.replace('#auth=', '')
+    const error =
+      url.searchParams.get('auth_error') ||
+      url.hash.replace('#auth_error=', '')
+
+    if (error) {
+      cleanUrl()
+      return { error }
+    }
+
+    if (!auth) return {}
+
+    try {
+      const json = atob(auth.replace(/-/g, '+').replace(/_/g, '/'))
+      const parsed = JSON.parse(json) as GitHubUser
+
+      setUser(parsed)
+    } catch (e) {
+      console.error(e)
+      cleanUrl()
+      return { error: 'PARSE_ERROR' }
+    }
+
+    cleanUrl()
+    return {}
+  }
+
+  function cleanUrl() {
+    history.replaceState(null, '', window.location.pathname)
+  }
+
+  function getAuthData() {
+    if (!user.value) return ''
+
     return JSON.stringify({
-      login: githubUser.value.login,
-      name: githubUser.value.name || githubUser.value.login,
-      email: githubUser.value.email || '',
-      avatar_url: githubUser.value.avatar_url,
-      html_url: githubUser.value.html_url,
-      sig: githubUser.value.sig,
+      login: user.value.login,
+      name: user.value.name || user.value.login,
+      email: user.value.email || '',
+      avatar_url: user.value.avatar_url,
+      html_url: user.value.html_url,
+      sig: user.value.sig,
     })
   }
 
   return {
-    githubUser,
-    checkOAuthReturn,
-    restoreFromStorage,
+    user,
+    isAuth,
+    parseOAuth,
+    restore,
     logout,
     getAuthData,
   }
