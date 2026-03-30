@@ -3,7 +3,7 @@ import GithubAuth from './GithubAuth.vue';
 
 const { t } = useI18n();
 
-const { user, isAuth, authError, logout } = useAuth();
+const { user, isAuth, authData, authError, logout } = useAuth();
 
 function handleLogin() {
   window.location.href = 'https://mctl.ai/api/github/login';
@@ -26,7 +26,10 @@ function handleLogin() {
         @clickLogin="handleLogin"
         @clickLogout="logout"
       />
-      <RequestAccessForm :disabled="!isAuth" />
+      <RequestAccessForm
+        :disabled="!isAuth"
+        :auth-data="authData"
+      />
     </BaseCard>
   </BaseSection>
 </template>

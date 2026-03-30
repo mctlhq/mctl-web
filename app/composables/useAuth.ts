@@ -17,6 +17,19 @@ export function useAuth() {
 
   const isAuth = computed(() => !!user.value?.login)
 
+  const authData = computed(() => {
+    if (!user.value) return null;
+
+    return {
+      login: user.value.login,
+      name: user.value.name || user.value.login,
+      email: user.value.email || '',
+      avatar_url: user.value.avatar_url,
+      html_url: user.value.html_url,
+      sig: user.value.sig,
+    };
+  });
+
   function setUser(u: GitHubUser) {
     user.value = u
     stored.value = {
@@ -103,26 +116,13 @@ export function useAuth() {
     }
   }
 
-  function getAuthData() {
-    if (!user.value) return ''
-
-    return JSON.stringify({
-      login: user.value.login,
-      name: user.value.name || user.value.login,
-      email: user.value.email || '',
-      avatar_url: user.value.avatar_url,
-      html_url: user.value.html_url,
-      sig: user.value.sig,
-    })
-  }
-
   return {
     user,
     isAuth,
+    authData,
     authError,
     parseOAuth,
     restore,
     logout,
-    getAuthData,
   }
 }
