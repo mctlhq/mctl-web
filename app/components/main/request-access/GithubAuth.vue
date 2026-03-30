@@ -72,5 +72,44 @@ const { t } = useI18n();
   &__status {
     margin-top: 12px;
   }
+
+  &__user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(0, 245, 255, 0.05);
+    border: 1px solid rgba(0, 245, 255, 0.2);
+    border-radius: 8px;
+  }
+
+  &__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid var(--color-accent);
+    flex-shrink: 0;
+  }
+
+  &__user-info {
+    flex: 1;
+    min-width: 0;
+
+    strong {
+      display: block;
+      color: var(--color-text);
+      font-size: 1rem;
+    }
+
+    a {
+      color: var(--color-accent);
+      font-size: 0.9rem;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
 }
 </style>

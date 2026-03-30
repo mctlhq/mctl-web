@@ -57,12 +57,14 @@ function closeMenu() {
   position: fixed;
   z-index: 100;
   width: 100%;
-  padding: 20px 0;
+  height: var(--header-height);
+
   background: rgba(5, 8, 22, 0.8);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-glass-border);
 
   &__container {
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;

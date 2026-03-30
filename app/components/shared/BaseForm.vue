@@ -9,6 +9,8 @@ interface Props {
 }
 defineProps<Props>();
 
+const { t } = useI18n();
+
 const emit = defineEmits<{
   submit: [event: SubmitEvent]
 }>();
@@ -28,7 +30,8 @@ function onSubmit(event: SubmitEvent) {
           block
           :disabled="disabled || isLoading"
         >
-          {{ submitText || 'Submit' }}
+          <span v-if="isLoading">{{ t('js.submit.processing') }}</span>
+          <span v-else>{{ submitText || 'Submit' }}</span>
         </BaseButton>
         <BaseFormStatus
           v-if="status"

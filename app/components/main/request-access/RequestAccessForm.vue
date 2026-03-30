@@ -6,8 +6,9 @@ import type { RequestAccessFormData } from '@/types';
 
 interface Props {
   disabled?: boolean
+  authData?: Record<string, any> | null
 }
-defineProps<Props>();
+const { authData } = defineProps<Props>();
 
 const { t } = useI18n();
 
@@ -16,21 +17,60 @@ const schema = yup.object({
   usecase: yup.string().required().max(500),
 });
 
-const { defineField, errors, handleSubmit } = useForm<RequestAccessFormData>({ validationSchema: schema });
+const { defineField, values, errors, handleSubmit } = useForm<RequestAccessFormData>({ validationSchema: schema });
 
 const [team, teamProps] = defineField('team');
 const [usecase, usecaseProps] = defineField('usecase');
 
-const onSubmit = handleSubmit((formData) => {
+const { teamAvailable, teamError, checking, onInput, checkAvailability } = useTeamValidation();
+
+const { submitAccessRequest } = useApi();
+
+const formStatus = ref<{ message: string; type: 'success' | 'error' } | null>(null);
+
+const isSubmitting = ref(false);
+
+function handleTeamInput() {
+  onInput(values.team);
+}
+
+const onSubmit = handleSubmit(async (formData) => {
   console.log('Request Access Form Data:', formData);
+  if (!authData) {
+    formStatus.value = { message: t('js.submit.github_required'), type: 'error' };
+    return;
+  }
+
+  if (!teamAvailable.value) {
+    await checkAvailability(formData.team);
+    if (!teamAvailable.value) return;
+  }
+
+  try {
+    isSubmitting.value = true;
+
+    const result = await submitAccessRequest({
+      github_auth: authData,
+      team: formData.team,
+      usecase: formData.usecase,
+    })
+
+    if (!result.success) {
+      formStatus.value = { message: result.message || 'Error', type: 'error' }
+    }
+  } catch {
+    formStatus.value = { message: t('js.submit.network_error'), type: 'error' }
+  } finally {
+    isSubmitting.value = false
+  }
 });
 </script>
 
 <template>
   <BaseForm
     :submit-text="t('form.submit')"
-    :is-loading="false"
-    :status="null"
+    :is-loading="isSubmitting"
+    :status="formStatus"
     :disabled="disabled"
     class="request-access-form"
     @submit="onSubmit"
@@ -43,6 +83,7 @@ const onSubmit = handleSubmit((formData) => {
       :info="t('form.help.team')"
       :error="errors.team"
       id="team"
+      @update:model-value="handleTeamInput"
     />
 
     <BaseFormField
