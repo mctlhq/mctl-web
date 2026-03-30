@@ -6,7 +6,7 @@ import type { GitHubUser } from '@/types';
 
 interface Props {
   user?: GitHubUser | null
-  authError?: string
+  authError?: string | null
 }
 defineProps<Props>();
 
