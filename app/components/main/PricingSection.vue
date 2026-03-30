@@ -37,28 +37,52 @@ const plans = [
 </script>
 
 <template>
-  <section class="pricing" id="pricing">
-    <div class="container">
-      <p class="section-tag">{{ t('pricing.tag') }}</p>
-      <h2 class="section-title">{{ t('pricing.title') }}</h2>
-      <div class="pricing-grid">
-        <div
-          v-for="plan in plans"
-          :key="plan.titleKey"
+  <BaseSection
+    id="pricing"
+    class="pricing-section"
+    :tag="t('pricing.tag')"
+    :title="t('pricing.title')"
+    container-size="md"
+  >
+    <ul class="pricing-section__plans">
+      <li
+        v-for="plan in plans"
+        :key="plan.titleKey"
+        class="pricing-section__plans-item"
+      >
+        <PricingPlan
           v-reveal
-          class="pricing-card"
-          :class="{ 'pricing-card-featured': plan.featured }"
-        >
-          <div v-if="plan.badgeKey" class="pricing-badge">{{ t(plan.badgeKey) }}</div>
-          <h3>{{ t(plan.titleKey) }}</h3>
-          <div class="pricing-price">{{ t(plan.priceKey) }}</div>
-          <p class="pricing-desc">{{ t(plan.descKey) }}</p>
-          <ul class="pricing-features">
-            <li v-for="f in plan.features" :key="f">{{ t(f) }}</li>
-          </ul>
-          <a :href="plan.ctaHref" :class="plan.ctaClass">{{ t(plan.ctaKey) }}</a>
-        </div>
-      </div>
-    </div>
-  </section>
+          :title="t(plan.titleKey)"
+          :price="t(plan.priceKey)"
+          :description="t(plan.descKey)"
+          :features="plan.features.map(f => t(f))"
+          :badge="plan.badgeKey ? t(plan.badgeKey) : undefined"
+          :featured="plan.featured"
+          class="pricing-section__card"
+        />
+      </li>
+    </ul>
+  </BaseSection>
 </template>
+
+<style lang="scss" scoped>
+.pricing-section {
+  &__plans {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+    }
+  }
+
+  &__plans-item {
+    flex: 1;
+  }
+
+  &__card {
+    height: 100%;
+  }
+}
+</style>

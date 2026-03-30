@@ -22,10 +22,12 @@ defineProps<Props>();
 <style lang="scss" scoped>
 .base-card {
   --card-padding: 20px 32px;
+  --card-bg: var(--color-terminal);
+
   position: relative;
   padding: var(--card-padding);
 
-  background: var(--color-terminal);
+  background-color: var(--card-bg);
   border-radius: 8px;
   border: 1px solid rgba(0, 245, 255, 0.2);
   transition: all 0.3s ease;

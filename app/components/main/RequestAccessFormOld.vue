@@ -12,7 +12,7 @@ const usecase = ref('')
 const submitting = ref(false)
 const formStatus = ref<{ message: string; type: 'success' | 'error' } | null>(null)
 const authError = ref('')
-const githubLoginUrl = `https://mctl.ai/api/github/login?redirect_to=${encodeURIComponent(config.public.frontBase)}`
+const githubLoginUrl = `https://mctl.ai/api/github/login?redirect_to=${encodeURIComponent(config.public.baseUrlFront)}`
 
 onMounted(() => {
   restoreFromStorage()
