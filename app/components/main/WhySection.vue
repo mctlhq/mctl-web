@@ -24,7 +24,7 @@ const cards = [
         class="why-section__cards-item"
       >
         <BaseCard class="why-section__card">
-          <h3>{{ t(card.titleKey) }}</h3>
+          <h3 class="why-section__card-title">{{ t(card.titleKey) }}</h3>
           <p class="why-section__card-description">{{ t(card.descKey) }}</p>
         </BaseCard>
       </li>
@@ -34,11 +34,16 @@ const cards = [
 
 <style lang="scss" scoped>
 .why-section {
-  background: var(--color-bg-secondary);
+  background-color: var(--color-bg-secondary);
 
   &__cards {
     display: flex;
+    flex-direction: column;
     gap: 28px;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+    }
   }
 
   &__cards-item {
@@ -56,6 +61,11 @@ const cards = [
       transform: translateY(-4px);
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 245, 255, 0.1);
     }
+  }
+
+  &__card-title {
+    font-size: 18px;
+    margin-bottom: 12px;
   }
 
   &__card-description {

@@ -5,14 +5,14 @@
       <BaseInput
         v-model="modelValue"
         :id="id"
-        :type="type"
-        :placeholder="placeholder"
-        :disabled="disabled"
         v-bind="$attrs"
         class="base-form-field__input"
       />
     </slot>
-    <small v-if="info" class="base-form-field__info">
+    <small v-if="error" class="base-form-field__error">
+      {{ error }}
+    </small>
+    <small v-else-if="info" class="base-form-field__info">
       {{ info }}
     </small>
   </div>
@@ -22,9 +22,7 @@
 interface BaseFormFieldProps {
   label?: string
   id?: string
-  type?: string
-  placeholder?: string
-  disabled?: boolean
+  error?: string
   info?: string
 }
 
@@ -40,10 +38,19 @@ const modelValue = defineModel<string | number>();
   &__label {
     display: block;
     padding-bottom: 8px;
+    cursor: pointer;
   }
 
   &__input {
     width: 100%;
+  }
+
+  &__error {
+    display: block;
+    margin-top: 8px;
+
+    color: var(--color-error);
+    font-size: 12px;
   }
 
   &__info {

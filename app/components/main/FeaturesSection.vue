@@ -49,9 +49,9 @@ const features = [
   background-color: var(--color-bg-secondary);
 
   &__list {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    column-gap: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
   }
 
   &__list-item {
@@ -109,6 +109,20 @@ const features = [
 
   &__card-description {
     color: var(--color-text-muted);
+  }
+
+  @media (min-width: 768px) {
+    &__list {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      column-gap: 28px;
+    }
+
+    &__list-item {
+      display: grid;
+      grid-template-rows: subgrid;
+      grid-row: span 4;
+    }
   }
 }
 

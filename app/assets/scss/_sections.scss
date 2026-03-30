@@ -40,56 +40,6 @@
   line-height: 1.1;
 }
 
-.feature-code {
-  font-size: 0.8rem;
-  color: var(--color-accent);
-  background: rgba(0, 245, 255, 0.07);
-  padding: 0.5rem 0.8rem;
-  border-radius: 6px;
-  margin-bottom: 1.5rem;
-  border: 1px solid rgba(0, 245, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  line-height: 1.4;
-  min-height: 2.6rem;
-  box-sizing: border-box;
-}
-
-.feature-card p { color: var(--color-text-muted); line-height: 1.7; }
-
-// Audience
-.audience {
-  padding: var(--section-py) 0;
-  background: var(--color-bg);
-}
-
-.audience-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 2rem;
-}
-
-.audience-card {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-glass-border);
-  padding: 2.5rem 2rem;
-  border-radius: 16px;
-  text-align: center;
-  transition: all 0.4s ease;
-}
-
-.audience-card:hover {
-  border-color: var(--color-accent);
-  transform: translateY(-6px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-}
-
-.audience-icon { font-size: 2.5rem; margin-bottom: 1.5rem; }
-.audience-card h3 { font-size: 1.25rem; color: #fff; margin-bottom: 1rem; }
-.audience-card p { font-size: 0.9rem; color: var(--color-text-muted); line-height: 1.7; }
-
 // How It Works
 .how-it-works { padding: var(--section-py) 0; background: var(--color-bg-secondary); }
 .how-it-works .section-title { margin-bottom: 5.5rem; }
@@ -253,42 +203,6 @@
   flex-shrink: 0;
 }
 
-// Tech Stack
-.tech-stack {
-  padding: var(--section-py) 0;
-  background: var(--color-bg-secondary);
-  text-align: center;
-}
-
-.tech-logos {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 4rem;
-  flex-wrap: wrap;
-}
-
-.tech-logo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  text-decoration: none;
-  color: var(--color-accent);
-  font-size: 0.9rem;
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-  opacity: 0.7;
-}
-
-.tech-logo img { transition: all 0.4s ease; }
-
-.tech-logo:hover {
-  opacity: 1;
-  transform: translateY(-5px);
-}
-
-.tech-logo:hover img { transform: scale(1.15); }
-
 // Contact / Request Access
 .contact {
   padding: var(--section-py) 0;
@@ -316,12 +230,6 @@
   border: 1px solid var(--color-glass-border);
 }
 
-.contact-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
 .request-access { padding: var(--section-py) 0; background: var(--color-bg-secondary); }
 
 // Responsive
@@ -347,10 +255,6 @@
 
   .problems { padding: 4rem 0; }
   .problems-grid { grid-template-columns: 1fr; gap: 1.25rem; }
-
-  .diagram-container { flex-direction: column; gap: 2rem; }
-  .diagram-connector { transform: rotate(90deg); height: 40px; min-width: auto; max-width: none; width: 2px; }
-  .diagram-box { width: 100%; max-width: 300px; transform: none !important; }
 
   .features { padding: 4rem 0; }
   .features-grid { grid-template-columns: 1fr; grid-template-rows: none; }
@@ -402,7 +306,6 @@
   .diagram-container { gap: 1.5rem; margin-top: 5rem; }
   .diagram-box { padding: 2.75rem 2.25rem; }
   .connector-line { height: 2px; }
-  .diagram-connector { max-width: 120px; }
   .problems-grid { gap: 1.75rem; }
   .pricing-grid { max-width: 1200px; gap: 2.25rem; }
   .tech-logos { gap: 4.5rem; }
