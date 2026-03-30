@@ -24,6 +24,12 @@ const { t } = useI18n()
 .hero-block {
   position: relative;
   padding: 60px 0;
+  height: calc(100vh - var(--header-height));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
   text-align: center;
 
   h1 {
