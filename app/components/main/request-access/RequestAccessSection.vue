@@ -3,7 +3,7 @@ import GithubAuth from './GithubAuth.vue';
 
 const { t } = useI18n();
 
-const { user, isAuth, logout } = useAuth();
+const { user, isAuth, authError, logout } = useAuth();
 
 function handleLogin() {
   window.location.href = 'https://mctl.ai/api/github/login';
@@ -22,6 +22,7 @@ function handleLogin() {
       </p>
       <GithubAuth
         :user="user"
+        :auth-error="authError"
         @clickLogin="handleLogin"
         @clickLogout="logout"
       />

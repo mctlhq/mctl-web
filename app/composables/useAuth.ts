@@ -8,6 +8,7 @@ const AUTH_TTL = 8 * 60 * 60 * 1000
 export function useAuth() {
   // SSR-safe state
   const user = useState<GitHubUser | null>('auth_user', () => null)
+  const authError = useState<string | null>('auth_error', () => null)
 
   const stored = useStorage<(GitHubUser & { exp: number }) | null>(
     AUTH_KEY,
@@ -22,6 +23,7 @@ export function useAuth() {
       ...u,
       exp: Date.now() + AUTH_TTL,
     }
+    authError.value = null
   }
 
   function restore() {
@@ -38,19 +40,22 @@ export function useAuth() {
   function logout() {
     user.value = null
     stored.value = null
+    authError.value = null
   }
 
   function parseOAuth(): { error?: string } {
-    if (!window) return {}
+    if (import.meta.server || !window) return {}
 
     const url = new URL(window.location.href)
 
-    const auth = url.searchParams.get('auth') || url.hash.replace('#auth=', '')
+    const auth = url.searchParams.get('auth') || 
+                (url.hash.startsWith('#auth=') ? url.hash.substring(6) : null)
     const error =
       url.searchParams.get('auth_error') ||
-      url.hash.replace('#auth_error=', '')
+      (url.hash.startsWith('#auth_error=') ? url.hash.substring(12) : null)
 
     if (error) {
+      authError.value = error
       cleanUrl()
       return { error }
     }
@@ -63,7 +68,8 @@ export function useAuth() {
 
       setUser(parsed)
     } catch (e) {
-      console.error(e)
+      console.error('Failed to parse auth data:', e)
+      authError.value = 'PARSE_ERROR'
       cleanUrl()
       return { error: 'PARSE_ERROR' }
     }
@@ -73,7 +79,28 @@ export function useAuth() {
   }
 
   function cleanUrl() {
-    history.replaceState(null, '', window.location.pathname)
+    if (import.meta.server || !window) return
+
+    const url = new URL(window.location.href)
+    let changed = false
+
+    if (url.searchParams.has('auth')) {
+      url.searchParams.delete('auth')
+      changed = true
+    }
+    if (url.searchParams.has('auth_error')) {
+      url.searchParams.delete('auth_error')
+      changed = true
+    }
+    if (url.hash.startsWith('#auth=') || url.hash.startsWith('#auth_error=')) {
+      url.hash = ''
+      changed = true
+    }
+
+    if (changed) {
+      const cleanPath = url.pathname + url.search + url.hash
+      history.replaceState(null, '', cleanPath)
+    }
   }
 
   function getAuthData() {
@@ -92,6 +119,7 @@ export function useAuth() {
   return {
     user,
     isAuth,
+    authError,
     parseOAuth,
     restore,
     logout,
