@@ -216,7 +216,9 @@ async function hmacVerify(data, signature, secret) {
 // ─── GitHub OAuth: Login ─────────────────────────────────────────────────────
 
 async function handleGitHubLogin(env, url, origin) {
-  const forMcp = url && url.searchParams.get('for') === 'mcp';
+  const flowParam = url && url.searchParams.get('for');
+  const forMcp  = flowParam === 'mcp';
+  const forDocs = flowParam === 'docs';
 
   const stateBytes = new Uint8Array(16);
   crypto.getRandomValues(stateBytes);
@@ -236,6 +238,8 @@ async function handleGitHubLogin(env, url, origin) {
   headers.append('Set-Cookie', `__gh_state=${state}.${stateSig}; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
   if (forMcp) {
     headers.append('Set-Cookie', `__gh_flow=mcp; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
+  } else if (forDocs) {
+    headers.append('Set-Cookie', `__gh_flow=docs; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
   }
 
   return new Response(null, { status: 302, headers });
@@ -248,17 +252,20 @@ async function handleGitHubCallback(url, request, env) {
   const state = url.searchParams.get('state');
   const error = url.searchParams.get('error');
 
-  if (error) return redirectWithError('ACCESS_DENIED');
-  if (!code || !state) return redirectWithError('MISSING_PARAMS');
+  // Parse cookies early so we know where to redirect errors
+  const cookies = parseCookies(request.headers.get('Cookie') || '');
+  const ghFlow = cookies['__gh_flow'] || '';
+
+  if (error) return redirectWithError('ACCESS_DENIED', ghFlow);
+  if (!code || !state) return redirectWithError('MISSING_PARAMS', ghFlow);
 
   // Validate state from cookie
-  const cookies = parseCookies(request.headers.get('Cookie') || '');
   const stateCookie = cookies['__gh_state'];
-  if (!stateCookie) return redirectWithError('INVALID_STATE');
+  if (!stateCookie) return redirectWithError('INVALID_STATE', ghFlow);
 
   const [cookieState, cookieSig] = stateCookie.split('.');
   if (cookieState !== state || !await hmacVerify(cookieState, cookieSig, env.GITHUB_OAUTH_HMAC_KEY)) {
-    return redirectWithError('INVALID_STATE');
+    return redirectWithError('INVALID_STATE', ghFlow);
   }
 
   // Exchange code for access token
@@ -275,10 +282,10 @@ async function handleGitHubCallback(url, request, env) {
       }),
     });
     const tokenData = await tokenResponse.json();
-    if (tokenData.error) return redirectWithError('TOKEN_EXCHANGE');
+    if (tokenData.error) return redirectWithError('TOKEN_EXCHANGE', ghFlow);
     accessToken = tokenData.access_token;
   } catch (e) {
-    return redirectWithError('TOKEN_EXCHANGE');
+    return redirectWithError('TOKEN_EXCHANGE', ghFlow);
   }
 
   // Fetch user profile and emails
@@ -288,11 +295,11 @@ async function handleGitHubCallback(url, request, env) {
       githubAPI('/user', accessToken),
       githubAPI('/user/emails', accessToken),
     ]);
-    if (!userRes.ok || !emailsRes.ok) return redirectWithError('PROFILE_FETCH');
+    if (!userRes.ok || !emailsRes.ok) return redirectWithError('PROFILE_FETCH', ghFlow);
     user = await userRes.json();
     emails = await emailsRes.json();
   } catch (e) {
-    return redirectWithError('PROFILE_FETCH');
+    return redirectWithError('PROFILE_FETCH', ghFlow);
   }
 
   const primaryEmail = emails.find(e => e.primary && e.verified);
@@ -301,9 +308,9 @@ async function handleGitHubCallback(url, request, env) {
   const clearState = '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
   const clearFlow  = '__gh_flow=;  HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
 
-  // ── MCP flow: redirect to /mcp with token in URL fragment ───────────────
+  // ── MCP / Docs flow: redirect with token in URL fragment ─────────────
   // Fragment is never sent to the server — token stays client-side only.
-  if (cookies['__gh_flow'] === 'mcp') {
+  if (ghFlow === 'mcp' || ghFlow === 'docs') {
     const sig = await hmacSign(user.login, env.GITHUB_OAUTH_HMAC_KEY);
     const mcpPayload = {
       login:      user.login,
@@ -315,8 +322,13 @@ async function handleGitHubCallback(url, request, env) {
     };
     const encoded = btoa(JSON.stringify(mcpPayload))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+    const redirectUrl = ghFlow === 'docs'
+      ? `https://docs.mctl.ai/mcp/connecting#auth=${encoded}`
+      : `${LANDING_URL}/mcp/#auth=${encoded}`;
+
     const headers = new Headers();
-    headers.set('Location', `${LANDING_URL}/mcp/#auth=${encoded}`);
+    headers.set('Location', redirectUrl);
     headers.append('Set-Cookie', clearState);
     headers.append('Set-Cookie', clearFlow);
     return new Response(null, { status: 302, headers });
@@ -344,11 +356,17 @@ async function handleGitHubCallback(url, request, env) {
   return new Response(null, { status: 302, headers });
 }
 
-function redirectWithError(errorCode) {
+function redirectWithError(errorCode, flow = '') {
+  const errorUrls = {
+    mcp:  `${LANDING_URL}/mcp/#auth_error=${errorCode}`,
+    docs: `https://docs.mctl.ai/mcp/connecting#auth_error=${errorCode}`,
+  };
+  const location = errorUrls[flow] || `${LANDING_URL}/?auth_error=${errorCode}#request-access`;
+
   return new Response(null, {
     status: 302,
     headers: {
-      'Location': `${LANDING_URL}/?auth_error=${errorCode}#request-access`,
+      'Location': location,
       'Set-Cookie': '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/',
     },
   });
