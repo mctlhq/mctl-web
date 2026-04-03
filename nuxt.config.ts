@@ -3,6 +3,11 @@ import svgLoader from 'vite-svg-loader';
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   ssr: false,
+  runtimeConfig: {
+    public: {
+      frontBase: 'https://mctl.ai',
+    },
+  },
   nitro: {
     prerender: {
       crawlLinks: true,
