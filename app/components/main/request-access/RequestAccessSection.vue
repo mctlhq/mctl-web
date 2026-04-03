@@ -5,6 +5,8 @@ const { t } = useI18n();
 
 const { user, isAuth, authData, authError, logout } = useAuth();
 
+const showModal = ref(true);
+
 function handleLogin() {
   window.location.href = 'https://mctl.ai/api/github/login';
 }
@@ -31,6 +33,7 @@ function handleLogin() {
         :auth-data="authData"
       />
     </BaseCard>
+    <SuccessModal v-model="showModal" />
   </BaseSection>
 </template>
 
