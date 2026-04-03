@@ -4,6 +4,8 @@ import * as yup from 'yup';
 
 import type { RequestAccessFormData } from '@/types';
 
+import SuccessModal from './SuccessModal.vue';
+
 interface Props {
   disabled?: boolean
   authData?: Record<string, any> | null
@@ -30,12 +32,13 @@ const formStatus = ref<{ message: string; type: 'success' | 'error' } | null>(nu
 
 const isSubmitting = ref(false);
 
+const showSuccessModal = ref(false);
+
 function handleTeamInput() {
   onInput(values.team);
 }
 
 const onSubmit = handleSubmit(async (formData) => {
-  console.log('Request Access Form Data:', formData);
   if (!authData) {
     formStatus.value = { message: t('js.submit.github_required'), type: 'error' };
     return;
@@ -55,8 +58,11 @@ const onSubmit = handleSubmit(async (formData) => {
       usecase: formData.usecase,
     })
 
-    if (!result.success) {
-      formStatus.value = { message: result.message || 'Error', type: 'error' }
+    if (result.success) {
+      formStatus.value = null;
+      showSuccessModal.value = true;
+    } else {
+      formStatus.value = { message: result.message || 'Error', type: 'error' };
     }
   } catch {
     formStatus.value = { message: t('js.submit.network_error'), type: 'error' }
@@ -99,4 +105,6 @@ const onSubmit = handleSubmit(async (formData) => {
       />
     </BaseFormField>
   </BaseForm>
+
+  <SuccessModal v-model="showSuccessModal" />
 </template>

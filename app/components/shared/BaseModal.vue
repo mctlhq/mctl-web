@@ -1,12 +1,23 @@
 <script setup lang="ts">
 interface Props {
   title?: string;
+  /** CSS length for panel `max-width`, e.g. `480px` */
+  maxWidth?: string;
   closeOnOverlay?: boolean;
   teleportTo?: string | HTMLElement;
   align?: 'start' | 'center';
 }
 
-const { closeOnOverlay = true, teleportTo = 'body', align = 'start' } = defineProps<Props>();
+const {
+  closeOnOverlay = true,
+  teleportTo = 'body',
+  align = 'start',
+  maxWidth,
+} = defineProps<Props>();
+
+const panelStyle = computed(() =>
+  maxWidth ? { maxWidth: `min(${maxWidth}, 100%)` } : undefined,
+);
 
 const open = defineModel<boolean>({ default: false });
 
@@ -31,6 +42,7 @@ function onOverlayClick() {
       <div
         class="base-modal__panel"
         :class="{ 'base-modal__panel--align-center': align === 'center' }"
+        :style="panelStyle"
       >
         <header
           v-if="$slots.header || title"
