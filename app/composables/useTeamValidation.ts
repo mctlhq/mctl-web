@@ -49,7 +49,12 @@ export function useTeamValidation() {
         teamAvailable.value = true
       } else {
         teamAvailable.value = false
-        teamError.value = `js.team.taken`
+        // It will be beter to use codes instead of parsing error message
+        if (data.error === 'Invalid team name format') {
+          teamError.value = `js.team.wrong-format`
+        } else {
+          teamError.value = `js.team.taken`
+        }
       }
     } catch {
       teamAvailable.value = false

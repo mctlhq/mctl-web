@@ -196,12 +196,16 @@ const translations: Record<string, Record<string, string>> = {
     'js.oauth.parse_error': 'Failed to process authentication. Please try again.',
     'js.team.taken': 'Team "{{name}}" is already taken. Choose a different name.',
     'js.team.check_failed': 'Failed to check team availability. Try again.',
+    'js.team.wrong-format': 'Team name has wrong format',
     'js.submit.github_required': 'Sign in with GitHub first.',
     'js.submit.processing': 'Processing...',
     'js.submit.network_error': 'Network error. Please try again.',
     'js.contact.fill_all': 'Please fill in all fields.',
     'js.contact.sending': 'Sending...',
     'js.contact.network_error': 'Network error. Please try again.',
+
+    // Validation forms
+    'validation.required': 'This field is required',
   },
 
   ru: {
@@ -395,6 +399,9 @@ const translations: Record<string, Record<string, string>> = {
     'js.contact.fill_all': '\u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u0437\u0430\u043f\u043e\u043b\u043d\u0438\u0442\u0435 \u0432\u0441\u0435 \u043f\u043e\u043b\u044f.',
     'js.contact.sending': '\u041e\u0442\u043f\u0440\u0430\u0432\u043b\u044f\u0435\u043c...',
     'js.contact.network_error': '\u041e\u0448\u0438\u0431\u043a\u0430 \u0441\u0435\u0442\u0438 \u2014 \u043f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437.',
+
+    // Validation forms
+    'validation.required': 'Это обязательное поле',
   },
 }
 

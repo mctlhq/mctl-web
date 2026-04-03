@@ -7,7 +7,6 @@ import type { RequestAccessFormData } from '@/types';
 import SuccessModal from './SuccessModal.vue';
 
 interface Props {
-  disabled?: boolean
   authData?: Record<string, any> | null
 }
 const { authData } = defineProps<Props>();
@@ -15,8 +14,8 @@ const { authData } = defineProps<Props>();
 const { t } = useI18n();
 
 const schema = yup.object({
-  team: yup.string().required().max(50),
-  usecase: yup.string().required().max(500),
+  team: yup.string().required(t('validation.required')).max(50),
+  usecase: yup.string().required(t('validation.required')).max(500),
 });
 
 const { defineField, values, errors, handleSubmit } = useForm<RequestAccessFormData>({ validationSchema: schema });
@@ -24,7 +23,7 @@ const { defineField, values, errors, handleSubmit } = useForm<RequestAccessFormD
 const [team, teamProps] = defineField('team');
 const [usecase, usecaseProps] = defineField('usecase');
 
-const { teamAvailable, teamError, checking, onInput, checkAvailability } = useTeamValidation();
+const { teamAvailable, teamError, onInput, checkAvailability } = useTeamValidation();
 
 const { submitAccessRequest } = useApi();
 
@@ -77,7 +76,6 @@ const onSubmit = handleSubmit(async (formData) => {
     :submit-text="t('form.submit')"
     :is-loading="isSubmitting"
     :status="formStatus"
-    :disabled="disabled"
     class="request-access-form"
     @submit="onSubmit"
   >
@@ -87,7 +85,7 @@ const onSubmit = handleSubmit(async (formData) => {
       :label="t('form.label.team')"
       :placeholder="t('form.placeholder.team')"
       :info="t('form.help.team')"
-      :error="errors.team"
+      :error="errors.team || teamError ? t(teamError) : ''"
       id="team"
       @update:model-value="handleTeamInput"
     />

@@ -8,7 +8,7 @@ const AUTH_TTL = 8 * 60 * 60 * 1000
 export function useAuth() {
   // SSR-safe state
   const user = useState<GitHubUser | null>('auth_user', () => null)
-  const authError = useState<string | null>('auth_error', () => null)
+  const errorCode = useState<string | null>('auth_error', () => null)
 
   const stored = useStorage<(GitHubUser & { exp: number }) | null>(
     AUTH_KEY,
@@ -36,7 +36,7 @@ export function useAuth() {
       ...u,
       exp: Date.now() + AUTH_TTL,
     }
-    authError.value = null
+    errorCode.value = null
   }
 
   function restore() {
@@ -53,7 +53,7 @@ export function useAuth() {
   function logout() {
     user.value = null
     stored.value = null
-    authError.value = null
+    errorCode.value = null
   }
 
   function parseOAuth(): { error?: string } {
@@ -68,7 +68,7 @@ export function useAuth() {
       (url.hash.startsWith('#auth_error=') ? url.hash.substring(12) : null)
 
     if (error) {
-      authError.value = error
+      errorCode.value = error
       cleanUrl()
       return { error }
     }
@@ -82,7 +82,7 @@ export function useAuth() {
       setUser(parsed)
     } catch (e) {
       console.error('Failed to parse auth data:', e)
-      authError.value = 'PARSE_ERROR'
+      errorCode.value = 'PARSE_ERROR'
       cleanUrl()
       return { error: 'PARSE_ERROR' }
     }
@@ -120,7 +120,7 @@ export function useAuth() {
     user,
     isAuth,
     authData,
-    authError,
+    errorCode,
     parseOAuth,
     restore,
     logout,

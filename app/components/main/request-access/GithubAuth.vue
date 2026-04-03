@@ -92,8 +92,9 @@ const { t } = useI18n();
   }
 
   &__user-info {
-    flex: 1;
+    flex-grow: 1;
     min-width: 0;
+    text-align: left;
 
     strong {
       display: block;
@@ -109,6 +110,25 @@ const { t } = useI18n();
       &:hover {
         text-decoration: underline;
       }
+    }
+  }
+
+  &__logout {
+    background: transparent;
+    border: 1px solid var(--color-text-muted);
+    color: var(--color-text-muted);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    line-height: 1;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+
+    &:hover {
+      border-color: var(--color-error);
+      color: var(--color-error);
     }
   }
 }
