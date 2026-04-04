@@ -9,7 +9,7 @@ import SuccessModal from './SuccessModal.vue';
 interface Props {
   authData?: Record<string, any> | null
 }
-const { authData } = defineProps<Props>();
+const props = defineProps<Props>();
 
 const { t } = useI18n();
 
@@ -48,7 +48,7 @@ function handleTeamInput(value: string | number | undefined) {
 }
 
 const onSubmit = handleSubmit(async (formData) => {
-  if (!authData) {
+  if (!props.authData) {
     formStatus.value = { message: t('js.submit.github_required'), type: 'error' };
     return;
   }
@@ -62,7 +62,7 @@ const onSubmit = handleSubmit(async (formData) => {
     isSubmitting.value = true;
 
     const result = await submitAccessRequest({
-      github_auth: authData,
+      github_auth: props.authData,
       team: formData.team,
       usecase: formData.usecase,
     })

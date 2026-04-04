@@ -9,8 +9,6 @@ interface Props {
 }
 
 defineProps<Props>();
-
-const { t } = useI18n()
 </script>
 
 <template>
@@ -25,7 +23,7 @@ const { t } = useI18n()
         :key="feat"
         class="pricing-plan__features-item"
       >
-        {{ t(feat) }}
+        {{ feat }}
       </li>
     </ul>
   </article>

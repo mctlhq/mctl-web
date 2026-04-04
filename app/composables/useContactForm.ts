@@ -9,7 +9,11 @@ export function useContactForm() {
       error.value = null;
       isLoading.value = true;
 
-      await submitContactFormApi(formData);
+      const result = await submitContactFormApi(formData);
+
+      if (!result.success) {
+        error.value = new Error(result.message || 'Failed to send message');
+      }
     } catch (err) {
       error.value = err as Error;
 

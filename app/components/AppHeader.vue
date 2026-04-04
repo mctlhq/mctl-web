@@ -38,7 +38,7 @@ function closeMenu() {
         <AppHeaderNav :open="menuOpen" @close="closeMenu" />
         <BaseButton
           variant="secondary"
-          @click="$router.push('#request-access')"
+          @click="$router.push('/#request-access')"
         >
           {{ t('nav.request_access') }}
         </BaseButton>

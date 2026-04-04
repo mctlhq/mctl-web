@@ -185,6 +185,7 @@ const translations: Record<string, Record<string, string>> = {
     'footer.platform': 'Platform',
     'footer.pricing': 'Pricing',
     'footer.contact': 'Contact',
+    'footer.privacy': 'Privacy Policy',
 
     // Dynamic JS strings
     'js.oauth.access_denied': 'GitHub authorization was cancelled.',
@@ -382,6 +383,7 @@ const translations: Record<string, Record<string, string>> = {
     'footer.platform': '\u041f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430',
     'footer.pricing': '\u0426\u0435\u043d\u044b',
     'footer.contact': '\u041a\u043e\u043d\u0442\u0430\u043a\u0442\u044b',
+    'footer.privacy': '\u041f\u043e\u043b\u0438\u0442\u0438\u043a\u0430 \u043a\u043e\u043d\u0444\u0438\u0434\u0435\u043d\u0446\u0438\u0430\u043b\u044c\u043d\u043e\u0441\u0442\u0438',
 
     // Dynamic JS strings
     'js.oauth.access_denied': '\u0410\u0432\u0442\u043e\u0440\u0438\u0437\u0430\u0446\u0438\u044f \u0447\u0435\u0440\u0435\u0437 GitHub \u043e\u0442\u043c\u0435\u043d\u0435\u043d\u0430.',

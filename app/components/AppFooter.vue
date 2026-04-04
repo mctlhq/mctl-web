@@ -1,14 +1,10 @@
 <script setup lang="ts">
 const { t } = useI18n();
 
-const runtimeConfig = useRuntimeConfig();
-
-const { baseUrlFront } = runtimeConfig.public;
-
 const footerLinks = computed(() => [
-  { label: t('footer.platform'), target: `${baseUrlFront}#features` },
-  { label: t('footer.pricing'), target: `${baseUrlFront}#pricing` },
-  { label: t('footer.contact'), target: `${baseUrlFront}#contact` },
+  { label: t('footer.platform'), target: '/#features' },
+  { label: t('footer.pricing'), target: '/#pricing' },
+  { label: t('footer.contact'), target: '/#contact' },
 ]);
 </script>
 
