@@ -5,8 +5,8 @@ defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
 const sectionLinks = computed(() => [
-  { label: t('nav.platform'), section: '/#features' },
   { label: t('nav.how_it_works'), section: '/#orchestration' },
+  { label: t('nav.platform'), section: '/#features' },
   { label: t('nav.pricing'), section: '/#pricing' },
   { label: t('nav.contact'), section: '/#contact' },
 ])
