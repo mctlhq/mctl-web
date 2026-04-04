@@ -5,6 +5,7 @@
       <BaseInput
         v-model="modelValue"
         :id="id"
+        :state="state"
         v-bind="$attrs"
         class="base-form-field__input"
       />
@@ -19,11 +20,14 @@
 </template>
 
 <script setup lang="ts">
+import type { BaseInputState } from '@/components/shared/BaseInput.vue';
+
 interface BaseFormFieldProps {
   label?: string
   id?: string
   error?: string
   info?: string
+  state?: BaseInputState
 }
 
 defineProps<BaseFormFieldProps>();

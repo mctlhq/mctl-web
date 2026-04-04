@@ -23,7 +23,7 @@ const { defineField, values, errors, handleSubmit } = useForm<RequestAccessFormD
 const [team, teamProps] = defineField('team');
 const [usecase, usecaseProps] = defineField('usecase');
 
-const { teamAvailable, teamError, onInput, checkAvailability } = useTeamValidation();
+const { teamAvailable, teamError, checking, onInput, checkAvailability } = useTeamValidation();
 
 const { submitAccessRequest } = useApi();
 
@@ -33,8 +33,18 @@ const isSubmitting = ref(false);
 
 const showSuccessModal = ref(false);
 
-function handleTeamInput() {
-  onInput(values.team);
+const teamFieldState = computed(() => {
+  if (checking.value) {
+    return 'loading' as const;
+  }
+  if (teamAvailable.value && values.team?.trim()) {
+    return 'success' as const;
+  }
+  return undefined;
+});
+
+function handleTeamInput(value: string | number | undefined) {
+  onInput(String(value ?? ''));
 }
 
 const onSubmit = handleSubmit(async (formData) => {
@@ -85,7 +95,8 @@ const onSubmit = handleSubmit(async (formData) => {
       :label="t('form.label.team')"
       :placeholder="t('form.placeholder.team')"
       :info="t('form.help.team')"
-      :error="errors.team || teamError ? t(teamError) : ''"
+      :error="errors.team || teamError ? (teamError ? t(teamError, { name: values.team }) : errors.team) : ''"
+      :state="teamFieldState"
       id="team"
       @update:model-value="handleTeamInput"
     />
