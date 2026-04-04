@@ -100,12 +100,19 @@ const { t } = useI18n();
       display: block;
       color: var(--color-text);
       font-size: 1rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     a {
+      display: block;
       color: var(--color-accent);
       font-size: 0.9rem;
       text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
 
       &:hover {
         text-decoration: underline;
