@@ -1,6 +1,5 @@
 export default defineNuxtPlugin(() => {
-  console.log('Initializing auth plugin');
-  const { restore, parseOAuth } = useAuth();
+  const { restore, parseOAuth, isAuth } = useAuth();
 
   restore();
 
@@ -8,5 +7,13 @@ export default defineNuxtPlugin(() => {
 
   if (error) {
     console.error('OAuth error:', error);
+  }
+
+  if (isAuth.value && window.location.hash === '#request-access') {
+    nextTick(() => {
+      setTimeout(() => {
+        document.getElementById('request-access')?.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+    });
   }
 });
