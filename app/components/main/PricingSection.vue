@@ -70,15 +70,18 @@ const plans = [
   &__plans {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 28px;
 
     @media (min-width: 768px) {
       flex-direction: row;
+      justify-content: center;
     }
   }
 
   &__plans-item {
     flex: 1;
+    max-width: 400px;
   }
 
   &__card {
