@@ -75,5 +75,11 @@ const { variant = 'primary', size = 'md', block = false } = defineProps<BaseButt
   &--block {
     width: 100%;
   }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: .5;
+    pointer-events: none;
+  }
 }
 </style>

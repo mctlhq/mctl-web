@@ -1,44 +1,61 @@
 <script setup lang="ts">
-const { t } = useI18n()
-const route = useRoute()
-const router = useRouter()
+const { t } = useI18n();
 
-function scrollToId(sectionId: string) {
-  const section = document.getElementById(sectionId)
-  if (!section) return
-  const navHeight = (document.querySelector('.navbar') as HTMLElement)?.offsetHeight ?? 70
-  const tag = section.querySelector<HTMLElement>('.section-tag')
-  const target = tag ?? section
-  const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 16
-  window.scrollTo({ top, behavior: 'smooth' })
-}
-
-async function scrollTo(sectionId: string) {
-  if (route.path === '/') {
-    scrollToId(sectionId)
-  } else {
-    await router.push('/')
-    await nextTick()
-    setTimeout(() => scrollToId(sectionId), 120)
-  }
-}
+const footerLinks = computed(() => [
+  { label: t('footer.platform'), target: '/#features' },
+  { label: t('footer.pricing'), target: '/#pricing' },
+  { label: t('footer.contact'), target: '/#contact' },
+]);
 </script>
 
 <template>
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-logo">
-          <span class="logo"><span class="logo-m">M</span>CTL</span>
-        </div>
-        <div class="footer-links">
-          <a href="#" @click.prevent="scrollTo('features')">{{ t('footer.platform') }}</a>
-          <a href="#" @click.prevent="scrollTo('pricing')">{{ t('footer.pricing') }}</a>
-          <a href="#" @click.prevent="scrollTo('contact')">{{ t('footer.contact') }}</a>
-          <NuxtLink to="/privacy">Privacy Policy</NuxtLink>
-        </div>
-        <div class="footer-copy" v-html="t('footer.copyright')" />
-      </div>
-    </div>
+  <footer class="app-footer">
+    <BaseContainer>
+      <LogoDefault class="app-footer__logo" />
+      <ul class="app-footer__links">
+        <li
+          v-for="(link, index) in footerLinks"
+          :key="index"
+          class="app-footer__links-item"
+        >
+          <a :href="link.target" class="app-footer__link">{{ link.label }}</a>
+        </li>
+        <li>
+          <NuxtLink to="/privacy" class="app-footer__link">{{ t('footer.privacy') }}</NuxtLink>
+        </li>
+      </ul>
+      <p class="app-footer__copy" v-html="t('footer.copyright')" />
+    </BaseContainer>
   </footer>
 </template>
+
+<style lang="scss" scoped>
+.app-footer {
+  padding: 48px 0;
+  text-align: center;
+  background: var(--color-terminal);
+  border-top: 1px solid rgba(0, 245, 255, 0.2);
+
+  &__links {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin: 24px 0;
+  }
+
+  &__link {
+    color: var(--color-accent);
+    transition: all 0.3s ease;
+
+    &:hover {
+      color: #ffffff;
+    }
+  }
+
+  &__copy {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+  }
+}
+</style>

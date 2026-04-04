@@ -24,6 +24,12 @@ const { t } = useI18n()
 .hero-block {
   position: relative;
   padding: 60px 0;
+  height: calc(100vh - var(--header-height));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
   text-align: center;
 
   h1 {
@@ -34,9 +40,13 @@ const { t } = useI18n()
     max-width: 900px;
     margin: 0 auto 48px;
     text-align: center;
-    font-size: clamp(1rem, 2vw, 1.5rem);
+    font-size: 18px;
     color: var(--color-text-muted);
     line-height: 1.6;
+
+    @media (min-width: 768px) {
+      font-size: 24px;
+    }
   }
 
   &__glow {

@@ -2,15 +2,10 @@ import svgLoader from 'vite-svg-loader';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  ssr: false,
-  runtimeConfig: {
-    public: {
-      frontBase: 'https://mctl.ai',
-    },
-  },
+  ssr: true,
   nitro: {
     prerender: {
-      crawlLinks: true,
+      crawlLinks: import.meta.env.NUXT_VUE_DEVTOOLS,
     },
   },
   compatibilityDate: '2025-07-15',
@@ -54,7 +49,19 @@ export default defineNuxtConfig({
       scrollBehaviorType: 'smooth',
     },
   },
+  routeRules: {
+    '/api/**': { prerender: false },
+  },
   vite: {
     plugins: [svgLoader()],
+  },
+  runtimeConfig: {
+    // Private keys are only available on the server
+    apiSecret: '123',
+
+    // Public keys that are exposed to the client
+    public: {
+      baseUrlFront: import.meta.env.NUXT_PUBLIC_FRONT_BASE || '',
+    },
   },
 });

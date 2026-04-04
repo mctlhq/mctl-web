@@ -1,10 +1,10 @@
 export default defineNuxtPlugin(() => {
   console.log('Initializing auth plugin');
-  const { restoreFromStorage, checkOAuthReturn } = useAuth();
+  const { restore, parseOAuth } = useAuth();
 
-  restoreFromStorage();
+  restore();
 
-  const { error } = checkOAuthReturn();
+  const { error } = parseOAuth();
 
   if (error) {
     console.error('OAuth error:', error);

@@ -17,6 +17,7 @@
   --container-width: 1400px;
   --container-width-md: 1200px;
   --section-py: clamp(5rem, 6vw, 8rem);
+  --header-height: 80px;
 }
 
 * {
@@ -26,11 +27,12 @@
 }
 
 html {
-  scroll-behavior: auto;
+  scroll-behavior: smooth;
   overflow-x: hidden;
 }
 
 body {
+  font-size: 14px;
   font-family: var(--font-mono);
   background-color: var(--color-bg);
   color: var(--color-text);
@@ -38,6 +40,10 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  @media (min-width: 1024px) {
+    font-size: 16px;
+  }
 }
 
 a {
@@ -58,23 +64,43 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1 {
-  font-size: clamp(2.2rem, 5vw, 68px);
+  font-size: 32px;
   font-weight: 800;
   text-align: center;
   color: #fff;
   margin-bottom: 1.5rem;
   letter-spacing: -0.02em;
   line-height: 1.1;
+
+  @media (min-width: 768px) {
+    font-size: 48px;
+  }
+
+  @media (min-width: 1024px) {
+    font-size: 68px;
+  }
 }
 
 h2 {
-  font-size: clamp(1.75rem, 4vw, 48px);
+  font-size: 28px;
   font-weight: 800;
+
+  @media (min-width: 768px) {
+    font-size: 36px;
+  }
+
+  @media (min-width: 1024px) {
+    font-size: 48px;
+  }
 }
 
 h3 {
-  font-size: 1rem;
-  margin-bottom: 12px;
+  font-size: 18px;
+  margin-bottom: 1rem;
+
+  @media (min-width: 768px) {
+    font-size: 20px;
+  }
 }
 
 @media (max-height: 900px) {
