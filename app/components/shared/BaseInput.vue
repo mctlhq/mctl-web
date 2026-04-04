@@ -1,5 +1,8 @@
 <template>
-  <div class="base-input">
+  <div
+    class="base-input"
+    :class="{ 'base-input--with-icon': $slots.icon }"
+  >
     <input
       v-model="modelValue"
       :id="id"
@@ -9,6 +12,9 @@
       class="base-input__input"
       v-bind="$attrs"
     />
+    <span v-if="$slots.icon" class="base-input__icon">
+      <slot name="icon" />
+    </span>
   </div>
 </template>
 
@@ -20,7 +26,7 @@ interface BaseInputProps {
   disabled?: boolean
 }
 
-const props = defineProps<BaseInputProps>();
+defineProps<BaseInputProps>();
 
 const modelValue = defineModel<string | number>();
 </script>
@@ -46,6 +52,22 @@ const modelValue = defineModel<string | number>();
       border-color: var(--color-accent);
       box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.1);
     }
+  }
+
+  &--with-icon &__input {
+    padding-right: 44px;
+  }
+
+  &__icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    line-height: 0;
   }
 }
 </style>
