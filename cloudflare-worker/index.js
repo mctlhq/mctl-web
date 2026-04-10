@@ -332,9 +332,7 @@ async function handleGitHubCallback(url, request, env) {
     const encoded = btoa(JSON.stringify(mcpPayload))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-    const redirectUrl = ghFlow === 'docs'
-      ? `https://docs.mctl.ai/mcp/connecting#auth=${encoded}`
-      : `${LANDING_URL}/mcp/#auth=${encoded}`;
+    const redirectUrl = `https://docs.mctl.ai/mcp/connecting#auth=${encoded}`;
 
     const headers = new Headers();
     headers.set('Location', redirectUrl);
@@ -369,7 +367,7 @@ async function handleGitHubCallback(url, request, env) {
 
 function redirectWithError(errorCode, flow = '', baseUrl = LANDING_URL) {
   const errorUrls = {
-    mcp:  `${LANDING_URL}/mcp/#auth_error=${errorCode}`,
+    mcp:  `https://docs.mctl.ai/mcp/connecting#auth_error=${errorCode}`,
     docs: `https://docs.mctl.ai/mcp/connecting#auth_error=${errorCode}`,
   };
   const location = errorUrls[flow] || `${baseUrl}/?auth_error=${errorCode}#request-access`;

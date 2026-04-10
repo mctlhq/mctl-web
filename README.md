@@ -1,10 +1,10 @@
 # mctl-web
 
-Landing page and MCP connector for the mctl.ai platform.
+Landing page for the mctl.ai platform.
 
 ## What It Does
 
-mctl-web serves the public-facing website for mctl.ai — a landing page, documentation, and an MCP connector that lets users authenticate with GitHub and receive pre-filled client configurations. The Nuxt 4 SPA runs in an nginx container while a Cloudflare Worker handles the serverless API (OAuth, form submissions, team checks).
+mctl-web serves the public-facing website for mctl.ai — a landing page and documentation. MCP connector setup is at docs.mctl.ai/mcp/connecting. The Nuxt 4 SPA runs in an nginx container while a Cloudflare Worker handles the serverless API (OAuth, form submissions, team checks).
 
 ## Architecture
 
@@ -13,7 +13,6 @@ mctl-web serves the public-facing website for mctl.ai — a landing page, docume
                         │      Nuxt SPA Layer (nginx)      │
                         │                                  │
   Browser ─(HTTPS)────► │  /           → SPA (index.html)  │
-                        │  /mcp        → SPA (mcp page)    │
                         │  /docs       → SPA (docs page)   │
                         │  /_nuxt/*    → immutable assets   │
                         │  /healthz    → 200 OK            │
@@ -181,12 +180,11 @@ GitHub OAuth App settings — Homepage: `https://mctl.ai`, Callback: `https://mc
 | Path    | Description                                                                    |
 | ------- | ------------------------------------------------------------------------------ |
 | `/`     | Landing page — hero, features, pricing, access request form, contact form      |
-| `/mcp`  | MCP connector — GitHub OAuth sign-in, pre-filled client configs with real token |
 | `/docs` | Platform documentation — overview, architecture, components, quick start       |
 
 ## OAuth Flow
 
-The `/mcp` page uses GitHub OAuth to issue a personal token. The token is returned in the URL fragment and never appears in server logs.
+The MCP connector page (docs.mctl.ai/mcp/connecting) uses GitHub OAuth to issue a personal token. The token is returned in the URL fragment and never appears in server logs. After OAuth callback, the Worker redirects to `docs.mctl.ai/mcp/connecting#auth=<base64>`.
 
 ```
 ┌──────────┐        ┌──────────────────┐        ┌──────────┐
@@ -212,12 +210,9 @@ The `/mcp` page uses GitHub OAuth to issue a personal token. The token is return
       │                       │  sign {token,login,    │
       │                       │  name,avatar} with HMAC│
       │◄──────────────────────│                        │
-      │  302 → /mcp/#auth=    │                        │
+      │  302 → docs.mctl.ai/  │                        │
+      │  mcp/connecting#auth= │                        │
       │  <base64(signed blob)>│                        │
-      │                       │                        │
-      │  /mcp reads #auth     │                        │
-      │  fragment, fills in   │                        │
-      │  client configs       │                        │
 ```
 
 ## Security

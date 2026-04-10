@@ -40,7 +40,6 @@ This starts a local dev server that handles Worker routes (`/api/*`).
 | Path     | Description                |
 |----------|----------------------------|
 | `/`      | Landing page               |
-| `/mcp/`  | MCP connector page         |
 | `/docs/` | Documentation              |
 
 ### CSS

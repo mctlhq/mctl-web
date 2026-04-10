@@ -281,8 +281,8 @@ useHead({
           <div class="step-content">
             <h3>AI User</h3>
             <p>
-              Go to <a href="/mcp/" style="color:var(--color-accent)">mctl.ai/mcp</a>,
-              click "Add to Claude", sign in with GitHub. Start prompting: "deploy my-app
+              Go to <a href="https://docs.mctl.ai/mcp/connecting" style="color:var(--color-accent)">docs.mctl.ai/mcp/connecting</a>,
+              sign in with GitHub and add MCTL to your AI client. Start prompting: "deploy my-app
               to staging", "show service status", "create a preview for PR #42".
             </p>
           </div>

@@ -22,7 +22,6 @@ Public website (mctl.ai) + Cloudflare Worker for OAuth and form handling.
 
 ## Pages
 - `/` — landing page (`static/index.html`)
-- `/mcp/` — MCP connector page (`static/mcp/index.html`)
 - `/docs/` — platform documentation (`static/docs/index.html`)
 
 ## Key Paths
