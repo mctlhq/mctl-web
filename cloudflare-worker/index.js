@@ -217,8 +217,7 @@ async function hmacVerify(data, signature, secret) {
 
 async function handleGitHubLogin(env, url, origin) {
   const flowParam = url && url.searchParams.get('for');
-  const forMcp  = flowParam === 'mcp';
-  const forDocs = flowParam === 'docs';
+  const forDocs = flowParam === 'mcp' || flowParam === 'docs';
 
   // Allow caller to specify where to redirect after auth (validated against allowlist)
   const redirectTo = url && url.searchParams.get('redirect_to');
@@ -241,9 +240,7 @@ async function handleGitHubLogin(env, url, origin) {
   const headers = new Headers();
   headers.set('Location', githubAuthUrl.toString());
   headers.append('Set-Cookie', `__gh_state=${state}.${stateSig}; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
-  if (forMcp) {
-    headers.append('Set-Cookie', `__gh_flow=mcp; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
-  } else if (forDocs) {
+  if (forDocs) {
     headers.append('Set-Cookie', `__gh_flow=docs; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
   }
   headers.append('Set-Cookie', `__gh_origin=${safeOrigin}; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
@@ -317,9 +314,9 @@ async function handleGitHubCallback(url, request, env) {
   const clearFlow  = '__gh_flow=;  HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
   const clearOrigin = '__gh_origin=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
 
-  // ── MCP / Docs flow: redirect with token in URL fragment ─────────────
+  // ── Docs flow: redirect with token in URL fragment ──────────────────
   // Fragment is never sent to the server — token stays client-side only.
-  if (ghFlow === 'mcp' || ghFlow === 'docs') {
+  if (ghFlow === 'docs') {
     const sig = await hmacSign(user.login, env.GITHUB_OAUTH_HMAC_KEY);
     const mcpPayload = {
       login:      user.login,
@@ -366,11 +363,10 @@ async function handleGitHubCallback(url, request, env) {
 }
 
 function redirectWithError(errorCode, flow = '', baseUrl = LANDING_URL) {
-  const errorUrls = {
-    mcp:  `https://docs.mctl.ai/mcp/connecting#auth_error=${errorCode}`,
-    docs: `https://docs.mctl.ai/mcp/connecting#auth_error=${errorCode}`,
-  };
-  const location = errorUrls[flow] || `${baseUrl}/?auth_error=${errorCode}#request-access`;
+  const docsError = `https://docs.mctl.ai/mcp/connecting#auth_error=${errorCode}`;
+  const location = (flow === 'mcp' || flow === 'docs')
+    ? docsError
+    : `${baseUrl}/?auth_error=${errorCode}#request-access`;
 
   const headers = new Headers();
   headers.set('Location', location);
