@@ -5,7 +5,8 @@ export default defineNuxtConfig({
   ssr: true,
   nitro: {
     prerender: {
-      crawlLinks: import.meta.env.NUXT_VUE_DEVTOOLS,
+      crawlLinks: true,
+      routes: ['/', '/mcp', '/privacy', '/docs'],
     },
   },
   compatibilityDate: '2025-07-15',
