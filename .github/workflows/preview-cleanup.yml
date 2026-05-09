@@ -22,7 +22,7 @@ jobs:
         run: |
           PR="${{ github.event.pull_request.number }}"
           SERVICE="mctl-web-pr-${PR}"
-          PREVIEW_DIR="platform-gitops/services/labs/${SERVICE}"
+          PREVIEW_DIR="platform-gitops/services/admins/${SERVICE}"
 
           git clone "https://x-access-token:${GH_TOKEN}@github.com/mctlhq/mctl-gitops.git"
           cd mctl-gitops

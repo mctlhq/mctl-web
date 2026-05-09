@@ -1,0 +1,161 @@
+name: Create PR Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths-ignore: ['cloudflare-worker/**']
+
+permissions:
+  contents: read
+  packages: write
+  pull-requests: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/mctlhq/mctl-web
+          tags: |
+            type=raw,value=pr-${{ github.event.pull_request.number }}-${{ github.sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate GitHub App token for mctl-gitops
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          repositories: mctl-gitops
+
+      - name: Create preview in gitops
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          PR="${{ github.event.pull_request.number }}"
+          SHA="${{ github.sha }}"
+          IMAGE_TAG="pr-${PR}-${SHA}"
+          SERVICE="mctl-web-pr-${PR}"
+          PREVIEW_DIR="platform-gitops/services/admins/${SERVICE}"
+
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/mctlhq/mctl-gitops.git"
+          cd mctl-gitops
+          git config user.email "ci@mctl.ai"
+          git config user.name "mctl-ci"
+
+          mkdir -p "${PREVIEW_DIR}"
+
+          cat > "${PREVIEW_DIR}/values.yaml" <<EOF
+          image:
+            repository: ghcr.io/mctlhq/mctl-web
+            tag: "${IMAGE_TAG}"
+          imagePullSecrets:
+            - name: ghcr-credentials
+          service:
+            port: 8080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          env:
+            APP_ENV: preview
+            NUXT_PUBLIC_FRONT_BASE: https://${SERVICE}.mctl.ai
+          ingress:
+            enabled: true
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+            hosts:
+              - ${SERVICE}.mctl.ai
+            tls:
+              - secretName: ${SERVICE}-tls
+                hosts:
+                  - ${SERVICE}.mctl.ai
+          externalSecret: {}
+          envFrom: []
+          EOF
+
+          cat > "${PREVIEW_DIR}/catalog-info.yaml" <<EOF
+          apiVersion: backstage.io/v1alpha1
+          kind: Component
+          metadata:
+            name: ${SERVICE}
+            namespace: admins
+            description: "mctl-web PR #${PR} preview"
+            annotations:
+              argocd/app-name: admins-${SERVICE}
+              github.com/source-repo: mctlhq/mctl-web
+              mctl.me/auto-deploy: "false"
+            labels:
+              team: admins
+              env: preview
+          spec:
+            type: service
+            lifecycle: experimental
+            owner: group:default/admins
+            system: system:default/team-admins
+          EOF
+
+          git add "${PREVIEW_DIR}"
+          if git diff --staged --quiet; then
+            echo "No gitops changes needed"
+          else
+            git commit -m "chore: update preview for mctl-web PR #${PR}"
+            git push
+          fi
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request.number;
+            const url = `https://mctl-web-pr-${pr}.mctl.ai`;
+            const body = `**Preview:** ${url}\n\nDeploying — ArgoCD will be Healthy in ~60s after this comment.`;
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr,
+            });
+            const existing = comments.data.find(c => c.body.startsWith('**Preview:**'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr,
+                body,
+              });
+            }
