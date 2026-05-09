@@ -17,37 +17,53 @@
  */
 
 const BASE_DOMAIN = 'mctl.ai';
-// Domains that redirect to *.mctl.ai (root + all subdomains)
+// Subdomain redirects: *.mctl.me and *.mctl.ru → *.mctl.ai
+// Root domain redirects (mctl.me, mctl.ru) are handled by CF Redirect Rules — no Worker invocation.
 const REDIRECT_SUFFIXES = ['.mctl.me', '.mctl.ru'];
-const REDIRECT_ROOTS   = new Set(['mctl.me', 'mctl.ru']);
 const ALLOWED_ORIGINS = new Set(['https://mctl.ai', 'http://localhost:3000']);
 const LANDING_URL = `https://${BASE_DOMAIN}`;
-// NOTE: after deploying, update GitHub OAuth App callback URL to https://mctl.ai/api/github/callback
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
-const GITHUB_ORG = 'mctlhq';
 const BACKSTAGE_APP_URL = 'https://app.mctl.ai';
 const UNLIMITED_USERS = ['mashkovd'];
 
 // Rate limit: max requests per IP per window (seconds)
 const RATE_LIMITS = {
-  '/api/submit':  { max: 5,  windowSec: 300 },  // 5 per 5 min
-  '/api/contact': { max: 3,  windowSec: 300 },  // 3 per 5 min
-  '/api/github/login': { max: 10, windowSec: 60 }, // 10 per min
+  '/api/submit':  { max: 5,  windowSec: 300 },
+  '/api/contact': { max: 3,  windowSec: 300 },
+  '/api/github/login': { max: 10, windowSec: 60 },
 };
+
+// Known bot User-Agent fragments — block before any processing.
+// These scanners never represent real users and generate significant Worker invocations.
+const BOT_UA_FRAGMENTS = [
+  'zgrab', 'masscan', 'nuclei', 'sqlmap', 'nikto', 'nmap',
+  'python-requests', 'go-http-client', 'curl/', 'wget/',
+  'scrapy', 'dirbuster', 'gobuster', 'wfuzz', 'hydra',
+];
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
     const origin = request.headers.get('Origin') || '';
-
-    // ── Redirect *.mctl.me and *.mctl.ru to *.mctl.ai ────────────────────
-    // Root: mctl.me → mctl.ai, mctl.ru → mctl.ai
-    // Subdomains: app.mctl.me → app.mctl.ai, ops.mctl.me → ops.mctl.ai, etc.
     const host = url.hostname;
-    if (REDIRECT_ROOTS.has(host)) {
-      return Response.redirect(`https://mctl.ai${url.pathname}${url.search}`, 301);
+
+    // ── Early bot block by User-Agent (runs before anything else) ─────────
+    // Only applies to redirect domains — mctl.ai API traffic is legitimate.
+    const isRedirectDomain = REDIRECT_SUFFIXES.some(s => host.endsWith(s));
+    if (isRedirectDomain) {
+      const ua = (request.headers.get('User-Agent') || '').toLowerCase();
+      if (BOT_UA_FRAGMENTS.some(f => ua.includes(f))) {
+        return new Response('', { status: 410 });
+      }
+      // PHP path scan — belt-and-suspenders (WAF handles most; Worker catches the rest)
+      if (path.includes('.php')) {
+        return new Response('', { status: 410 });
+      }
     }
+
+    // ── Subdomain redirect: *.mctl.me and *.mctl.ru → *.mctl.ai ──────────
+    // Root domain redirects are handled upstream by CF Redirect Rules.
     const redirectSuffix = REDIRECT_SUFFIXES.find(s => host.endsWith(s));
     if (redirectSuffix) {
       const sub = host.slice(0, -redirectSuffix.length);
