@@ -1,94 +1,204 @@
 <script setup lang="ts">
-const { t } = useI18n()
-
 const steps = [
-  { num: 1, titleKey: 'how.step1.title', descKey: 'how.step1.desc', codeKey: 'how.step1.code' },
-  { num: 2, titleKey: 'how.step2.title', descKey: 'how.step2.desc', codeKey: 'how.step2.code' },
-  { num: 3, titleKey: 'how.step3.title', descKey: 'how.step3.desc', codeKey: 'how.step3.code' },
+  {
+    num: '01',
+    title: 'Get your workspace.',
+    body: 'Sign in with GitHub, choose a team name. Your isolated namespace, RBAC, secrets, and quotas are provisioned in about two minutes — no platform engineer in the loop.',
+    code: 'Sign in → Create team → Get namespace',
+  },
+  {
+    num: '02',
+    title: 'Configure your service.',
+    body: 'Pick a template from the Service Catalog. Specify database, domain, and secrets references. The repo and configs are generated automatically — owned by your team, ready to clone.',
+    code: 'Choose template → Configure → Generate',
+  },
+  {
+    num: '03',
+    title: 'Push your code, or ask AI.',
+    body: 'Push and GitOps deploys it. Or talk to Claude, Cursor or VS Code through MCP and let it deploy, roll back, or spin up a preview environment. Every action is auditable.',
+    code: 'git push → Build → Deploy → Live ✓',
+  },
 ]
+
+const yaml = `apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout-web
+  owner: team/checkout
+spec:
+  type: service
+  lifecycle: production
+  runtime: node-api  # template
+  database: postgres
+  domain: checkout.acme.dev
+  secrets:
+    - ref: vault://kv/team/checkout/db
+  previewEnvs:
+    enabled: true
+    ttl: 7d
+  tls: cert-manager`
 </script>
 
 <template>
-  <BaseSection
-    id="how-to-start"
-    class="how-to-start"
-    :tag="t('how.tag')"
-    :title="t('how.title')"
-    container-size="md"
-  >
-    <ul class="how-to-start__list">
-      <li
-        v-for="step in steps"
-        :key="step.num"
-        class="how-to-start__list-item"
-      >
-        <BaseCard class="how-to-start__card">
-          <span class="how-to-start__card-number">{{ step.num }}</span>
-          <h3 class="how-to-start__card-title">{{ t(step.titleKey) }}</h3>
-          <p class="how-to-start__card-description">{{ t(step.descKey) }}</p>
-          <pre class="how-to-start__card-substeps">{{ t(step.codeKey) }}</pre>
-        </BaseCard>
-      </li>
-    </ul>
-  </BaseSection>
+  <section id="how-it-works" class="how-section">
+    <BaseContainer size="lg">
+      <div class="how-section__head">
+        <p class="marker how-section__marker">S/03 · How it works</p>
+        <h2 class="how-section__title">
+          Three steps to production.
+          <em>Sign in. Pick a template. Push or ask.</em>
+        </h2>
+      </div>
+
+      <div class="how-section__body">
+        <!-- Steps -->
+        <ol class="how-section__steps">
+          <li
+            v-for="step in steps"
+            :key="step.num"
+            class="how-section__step"
+          >
+            <span class="how-section__step-num marker">step {{ step.num }}</span>
+            <h3 class="how-section__step-title">{{ step.title }}</h3>
+            <p class="how-section__step-body">{{ step.body }}</p>
+            <code class="how-section__step-code">{{ step.code }}</code>
+          </li>
+        </ol>
+
+        <!-- YAML column -->
+        <div class="how-section__yaml-col">
+          <p class="how-section__yaml-label marker">team/checkout-gitops · catalog-info.yaml</p>
+          <pre class="how-section__yaml"><code v-html="highlightYaml(yaml)" /></pre>
+        </div>
+      </div>
+    </BaseContainer>
+  </section>
 </template>
 
+<script lang="ts">
+function highlightYaml(src: string): string {
+  return src
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^([\w-]+):/gm, '<span class="yk">$1:</span>')
+    .replace(/(#.*)$/gm, '<span class="yc">$1</span>')
+    .replace(/'([^']*)'/g, '<span class="ys">\'$1\'</span>')
+    .replace(/:\s*(true|false|production|postgres|cert-manager)/g, ': <span class="ys">$1</span>')
+}
+export default {}
+</script>
+
 <style lang="scss" scoped>
-.how-to-start {
-  &__list {
+.how-section {
+  padding: var(--section-py) 0;
+  background: var(--ink-2);
+  border-top: 1px solid var(--line);
+
+  &__head {
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 16px;
+    margin-bottom: 56px;
+  }
 
-    @media (min-width: 768px) {
-      flex-direction: row;
+  &__marker { color: var(--fg-3); }
+
+  &__title {
+    font-family: var(--font-sans);
+    font-size: clamp(22px, 2.8vw, 40px);
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--fg);
+    max-width: 640px;
+
+    em {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-weight: 400;
+      color: var(--fg-2);
     }
   }
 
-  &__list-item {
-    flex: 1;
-  }
+  &__body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: start;
 
-  &__card {
-    height: 100%;
-    text-align: center;
-
-    &:hover {
-      border-color: var(--color-accent);
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 40px;
     }
   }
 
-  &__card-number {
-    margin: 0 auto 48px;
-    width: 70px;
-    height: 70px;
-    background: var(--color-accent);
-    color: var(--color-bg);
-    border-radius: 50%;
+  &__steps {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.75rem;
-    font-weight: 800;
-    box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+    flex-direction: column;
+    gap: 0;
+    list-style: none;
   }
 
-  &__card-description {
-    color: var(--color-text-muted);
-    line-height: 1.6;
-    margin-bottom: 16px;
+  &__step {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--line);
+
+    &:first-child { padding-top: 0; }
+    &:last-child  { border-bottom: none; padding-bottom: 0; }
   }
 
-  &__card-substeps {
+  &__step-num { color: var(--fg-3); }
+
+  &__step-title {
+    font-family: var(--font-sans);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--fg);
+  }
+
+  &__step-body {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    color: var(--fg-2);
+    line-height: 1.65;
+  }
+
+  &__step-code {
+    display: block;
     font-family: var(--font-mono);
-    font-size: 0.75rem;
-    background: var(--color-bg);
-    padding: 0.75rem;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    color: var(--color-accent);
-    line-height: 1.6;
-    white-space: pre-wrap;
+    font-size: 12px;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
+    padding: 8px 12px;
+    margin-top: 4px;
+  }
+
+  /* YAML column */
+  &__yaml-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: sticky;
+    top: 104px;
+  }
+
+  &__yaml-label { color: var(--fg-3); }
+
+  &__yaml {
+    background: var(--ink-3);
+    border: 1px solid var(--line);
+    padding: 20px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--fg-2);
+
+    :deep(.yk) { color: var(--syn-key); }
+    :deep(.ys) { color: var(--syn-str); }
+    :deep(.yc) { color: var(--syn-comment); font-style: italic; }
   }
 }
 </style>

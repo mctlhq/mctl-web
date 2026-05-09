@@ -8,6 +8,7 @@
 
 <style lang="scss" scoped>
 .main {
-  padding: 80px 0 0;
+  /* 32px utility bar + 56px primary nav */
+  padding: 88px 0 0;
 }
 </style>

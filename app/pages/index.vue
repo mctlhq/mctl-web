@@ -1,14 +1,18 @@
 <template>
   <article class="main-page">
     <HeroBlock />
-    <RequestAccessSection />
     <WhySection />
-    <OrchestrationSection />
     <FeaturesSection />
+    <HowToStartSection />
     <AudienceSection />
     <TechStackSection />
-    <HowToStartSection />
+    <BeforeAfterSection />
     <PricingSection />
+    <CtaSection />
+    <RequestAccessSection />
     <ContactSection />
+    <ClientOnly>
+      <TweaksPanel />
+    </ClientOnly>
   </article>
 </template>
