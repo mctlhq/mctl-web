@@ -1,12 +1,12 @@
 <script setup lang="ts">
 const headlineOptions = [
-  'The platform team <strong>is now</strong> <em>an agent</em>.',
-  'The platform team you didn\'t <em>have to hire</em>.',
-  'Production Kubernetes, <em>day one</em>.',
-  '<em>kubectl</em> is the fallback now.',
-  'Run Kubernetes like a <em>100-person</em> platform team.',
-  'Ship code. <em>Sleep through the night.</em>',
-  'Kubernetes, <em>finally civilized</em>.',
+  'The platform team <strong>is now</strong> <span class="hl-accent">an agent</span>.',
+  'The platform team you didn\'t <span class="hl-accent">have to hire</span>.',
+  'Production Kubernetes, <span class="hl-accent">day one</span>.',
+  '<span class="hl-accent">kubectl</span> is the fallback now.',
+  'Run Kubernetes like a <span class="hl-accent">100-person</span> platform team.',
+  'Ship code. <span class="hl-accent">Sleep through the night.</span>',
+  'Kubernetes, <span class="hl-accent">finally civilized</span>.',
 ]
 
 const ledeVoices = {
@@ -106,18 +106,18 @@ const lede     = computed(() => ledeVoices[currentVoice.value as keyof typeof le
 
   &__h1 {
     font-family: var(--font-sans);
-    font-size: clamp(36px, 6vw, 88px);
-    font-weight: 600;
-    line-height: 0.96;
-    letter-spacing: -0.02em;
+    font-size: clamp(48px, 8.5vw, 116px);
+    font-weight: 700;
+    line-height: 0.93;
+    letter-spacing: -0.03em;
     color: var(--fg);
 
-    :deep(strong) { font-weight: 700; color: #fff; }
-    :deep(em) {
+    :deep(strong) { font-weight: 700; color: var(--fg-3); }
+    :deep(.hl-accent) {
       font-family: var(--font-serif);
       font-style: italic;
       font-weight: 400;
-      color: var(--fg);
+      color: var(--accent);
     }
   }
 

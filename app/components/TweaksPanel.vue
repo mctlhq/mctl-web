@@ -30,13 +30,10 @@ const headlines = [
   'Kubernetes, finally civilized',
 ]
 
-const activeAccent  = ref('cyan')
-const activeSurface = ref('dark')
-const activeVoice   = ref('eng')
-const activeHeadline = ref(5)
-
-provide('tweaks-headline', activeHeadline)
-provide('tweaks-voice', activeVoice)
+const activeAccent   = ref('cyan')
+const activeSurface  = ref('dark')
+const activeHeadline = inject('tweaks-headline', ref(5))
+const activeVoice    = inject('tweaks-voice', ref('eng'))
 
 const LS_KEY = 'mctl-tweaks'
 

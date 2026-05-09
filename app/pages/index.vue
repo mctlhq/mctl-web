@@ -1,3 +1,10 @@
+<script setup lang="ts">
+const tweaksHeadline = ref(5)
+const tweaksVoice    = ref('eng')
+provide('tweaks-headline', tweaksHeadline)
+provide('tweaks-voice', tweaksVoice)
+</script>
+
 <template>
   <article class="main-page">
     <HeroBlock />

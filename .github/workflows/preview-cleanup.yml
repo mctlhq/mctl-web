@@ -1,0 +1,38 @@
+name: Cleanup PR Preview
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token for mctl-gitops
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          repositories: mctl-gitops
+
+      - name: Remove PR preview from gitops
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          PR="${{ github.event.pull_request.number }}"
+          SERVICE="mctl-web-pr-${PR}"
+          PREVIEW_DIR="platform-gitops/services/labs/${SERVICE}"
+
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/mctlhq/mctl-gitops.git"
+          cd mctl-gitops
+
+          if [ -d "${PREVIEW_DIR}" ]; then
+            git config user.email "ci@mctl.ai"
+            git config user.name "mctl-ci"
+            git rm -r "${PREVIEW_DIR}"
+            git commit -m "chore: remove preview ${SERVICE} (PR #${PR} closed)"
+            git push
+          else
+            echo "No preview for PR #${PR}, skipping"
+          fi
