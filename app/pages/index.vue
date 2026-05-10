@@ -8,8 +8,11 @@ provide('tweaks-voice', tweaksVoice)
 <template>
   <article class="main-page">
     <HeroBlock />
+    <TrustStrip />
+    <PainSection />
     <WhySection />
     <FeaturesSection />
+    <MidCtaSection />
     <HowToStartSection />
     <AudienceSection />
     <TechStackSection />

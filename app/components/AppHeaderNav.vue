@@ -3,12 +3,12 @@ defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
 const navLinks = [
-  { label: 'Why',      num: '01', href: '/#why-section' },
-  { label: 'Platform', num: '02', href: '/#features' },
+  { label: 'Pain',         num: '01', href: '/#pain' },
+  { label: 'Platform',     num: '02', href: '/#features' },
   { label: 'How it works', num: '03', href: '/#how-it-works' },
   { label: 'Who it\'s for', num: '04', href: '/#audience' },
-  { label: 'Stack',    num: '05', href: '/#stack' },
-  { label: 'Plans',    num: '06', href: '/#pricing' },
+  { label: 'Stack',        num: '05', href: '/#stack' },
+  { label: 'Plans',        num: '06', href: '/#pricing' },
 ]
 </script>
 

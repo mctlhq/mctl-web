@@ -10,7 +10,7 @@ const headlineOptions = [
 ]
 
 const ledeVoices = {
-  eng: 'MCTL is a production-grade, <strong>AI-native Kubernetes platform</strong> for growing product teams. GitOps, secrets, team isolation — built in. Sign in with GitHub, get a namespace in two minutes, and an <strong>on-call agent</strong> that opens fix PRs while you sleep.',
+  eng: 'For teams that <strong>outgrew DIY DevOps</strong> but aren\'t ready to hire a platform team. MCTL is a production-grade, AI-native Kubernetes platform — GitOps, secrets, team isolation, on-call agent — built in. Sign in with GitHub, get a namespace in <strong>about two minutes</strong>.',
   bold: 'Sign in with GitHub, get a namespace in two minutes, ship before lunch.',
   editorial: 'Most product teams don\'t have a platform problem — they have a queue problem. MCTL gives you production-grade infrastructure without the headcount, and without the queue.',
 }
@@ -43,15 +43,22 @@ const lede     = computed(() => ledeVoices[currentVoice.value as keyof typeof le
         <p class="hero-block__lede" v-html="lede" />
 
         <div class="hero-block__ctas">
-          <a href="#request-access" class="hero-block__cta hero-block__cta--primary">
-            Request access →
+          <a href="#cta" class="hero-block__cta hero-block__cta--primary">
+            Book a demo →
+          </a>
+          <a href="#contact" class="hero-block__cta hero-block__cta--ghost">
+            Talk to an engineer
           </a>
           <a href="https://docs.mctl.ai" target="_blank" rel="noopener" class="hero-block__cta hero-block__cta--ghost">
             Read the docs
           </a>
-          <a href="https://docs.mctl.ai/mcp/connecting" target="_blank" rel="noopener" class="hero-block__cta hero-block__cta--ghost">
-            Connect MCP
-          </a>
+        </div>
+
+        <div class="hero-block__micro">
+          <span><i class="hero-block__micro-dot" />Runs on your cloud</span>
+          <span><i class="hero-block__micro-dot" />No migration required</span>
+          <span><i class="hero-block__micro-dot" />Setup in days, not quarters</span>
+          <span><i class="hero-block__micro-dot" />No vendor lock-in</span>
         </div>
 
         <!-- Stats strip -->
@@ -164,6 +171,33 @@ const lede     = computed(() => ledeVoices[currentVoice.value as keyof typeof le
         color: var(--fg);
       }
     }
+  }
+
+  /* Micro strip */
+  &__micro {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 22px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-3);
+    letter-spacing: 0.02em;
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  &__micro-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--ok);
+    border-radius: 1px;
+    box-shadow: 0 0 6px rgba(124, 242, 164, 0.4);
+    flex-shrink: 0;
   }
 
   /* Stats strip */
