@@ -393,10 +393,20 @@ async function handleGitHubCallback(url, request, env) {
   return new Response(null, { status: 302, headers });
 }
 
+// Fragment-flow error targets must match the success-flow `fragmentTargets`
+// map in handleGitHubCallback — otherwise OAuth failures send the user to the
+// landing page instead of the page that initiated the flow (regression caught
+// by Codex on PR #14: `?for=tg-mcp` ACCESS_DENIED was leaking back to landing).
+const FRAGMENT_ERROR_TARGETS = {
+  docs:     'https://docs.mctl.ai/mcp/connecting',
+  'mcp':    'https://docs.mctl.ai/mcp/connecting',
+  'tg-mcp': 'https://labs-mctl-telegram.mctl.ai/telegram/connect',
+};
+
 function redirectWithError(errorCode, flow = '', baseUrl = LANDING_URL) {
-  const docsError = `https://docs.mctl.ai/mcp/connecting#auth_error=${errorCode}`;
-  const location = (flow === 'mcp' || flow === 'docs')
-    ? docsError
+  const fragmentBase = FRAGMENT_ERROR_TARGETS[flow];
+  const location = fragmentBase
+    ? `${fragmentBase}#auth_error=${errorCode}`
     : `${baseUrl}/?auth_error=${errorCode}#request-access`;
 
   const headers = new Headers();
