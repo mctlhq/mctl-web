@@ -233,7 +233,13 @@ async function hmacVerify(data, signature, secret) {
 
 async function handleGitHubLogin(env, url, origin) {
   const flowParam = url && url.searchParams.get('for');
-  const forDocs = flowParam === 'mcp' || flowParam === 'docs';
+  // Flows that bypass the landing redirect and instead post the auth payload to
+  // a downstream OAuth client via URL fragment. `tg-mcp` is the Telegram MCP
+  // server at labs-mctl-telegram.mctl.ai (mctlhq/mctl-telegram) — when its
+  // /telegram/connect web flow is ready it consumes #auth=... the same way
+  // docs.mctl.ai does today.
+  const fragmentFlows = new Set(['mcp', 'docs', 'tg-mcp']);
+  const forDocs = fragmentFlows.has(flowParam);
 
   // Allow caller to specify where to redirect after auth (validated against allowlist)
   const redirectTo = url && url.searchParams.get('redirect_to');
@@ -257,7 +263,9 @@ async function handleGitHubLogin(env, url, origin) {
   headers.set('Location', githubAuthUrl.toString());
   headers.append('Set-Cookie', `__gh_state=${state}.${stateSig}; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
   if (forDocs) {
-    headers.append('Set-Cookie', `__gh_flow=docs; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
+    // Cookie value carries which fragment-flow we're in so the callback knows
+    // which downstream URL to redirect to.
+    headers.append('Set-Cookie', `__gh_flow=${flowParam}; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
   }
   headers.append('Set-Cookie', `__gh_origin=${safeOrigin}; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
 
@@ -330,9 +338,16 @@ async function handleGitHubCallback(url, request, env) {
   const clearFlow  = '__gh_flow=;  HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
   const clearOrigin = '__gh_origin=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
 
-  // ── Docs flow: redirect with token in URL fragment ──────────────────
-  // Fragment is never sent to the server — token stays client-side only.
-  if (ghFlow === 'docs') {
+  // ── Fragment-redirect flows ─────────────────────────────────────────
+  // For `docs` (canonical) and `tg-mcp` (new in 5.x — Telegram MCP server),
+  // the auth payload is delivered in the URL fragment so it never reaches
+  // the destination's server logs.
+  const fragmentTargets = {
+    docs:     'https://docs.mctl.ai/mcp/connecting',
+    'mcp':    'https://docs.mctl.ai/mcp/connecting',
+    'tg-mcp': 'https://labs-mctl-telegram.mctl.ai/telegram/connect',
+  };
+  if (fragmentTargets[ghFlow]) {
     const sig = await hmacSign(user.login, env.GITHUB_OAUTH_HMAC_KEY);
     const mcpPayload = {
       login:      user.login,
@@ -345,7 +360,7 @@ async function handleGitHubCallback(url, request, env) {
     const encoded = btoa(JSON.stringify(mcpPayload))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-    const redirectUrl = `https://docs.mctl.ai/mcp/connecting#auth=${encoded}`;
+    const redirectUrl = `${fragmentTargets[ghFlow]}#auth=${encoded}`;
 
     const headers = new Headers();
     headers.set('Location', redirectUrl);
