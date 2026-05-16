@@ -37,10 +37,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: APP_VERSION=pr-${{ github.event.pull_request.number }}
-          # Auth for the @mctlhq/css GitHub Packages dependency. Consumed by a
-          # BuildKit secret mount in the Dockerfile; never stored in a layer.
+          # read:packages PAT for the private @mctlhq/css GitHub Packages
+          # dependency. Consumed by a BuildKit secret mount in the Dockerfile;
+          # never stored in a layer.
           secrets: |
-            github_token=${{ secrets.GITHUB_TOKEN }}
+            github_token=${{ secrets.GH_PACKAGES_TOKEN }}
 
       - name: Notify Telegram on failure
         if: failure()

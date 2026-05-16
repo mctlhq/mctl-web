@@ -147,8 +147,9 @@ maps mctl-web's legacy `--ink` / `--accent` / `--paper` / … variables onto the
 `--mctl-*` tokens as a backwards-compatibility alias layer.
 
 **To change the palette or typography, edit `mctl-design`, not this repo.**
-GitHub Packages requires authentication even for public packages, hence the
-`GITHUB_PACKAGES_TOKEN` / BuildKit secret above.
+`@mctlhq/css` is a private GitHub Packages package, so installs require a
+`read:packages` token — hence the `GITHUB_PACKAGES_TOKEN` env var locally and
+the `GH_PACKAGES_TOKEN` BuildKit secret in CI.
 
 OAuth callbacks are hardcoded to production, so authentication flows will not work locally.
 
