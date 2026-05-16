@@ -3,43 +3,52 @@
 @use 'sections';
 @use 'utilities';
 
+/**
+ * Design tokens are sourced from @mctlhq/css/theme.css (--mctl-* variables),
+ * loaded via nuxt.config.ts `css`. The variables below are mctl-web's legacy
+ * alias layer — kept for backwards compatibility with existing landing styles
+ * (--ink, --accent, --paper, … are referenced across all components).
+ *
+ * To change the palette or typography, edit mctl-design, not this file.
+ * Values without a matching --mctl-* token are site-specific and marked inline.
+ */
 :root {
   /* ── Dark surface (default) ─────────────────────────────── */
-  --ink:    #0a0b0d;
-  --ink-2:  #0f1114;
-  --ink-3:  #15181d;
-  --line:   #1f242b;
-  --line-2: #2a313a;
-  --fg:     #e6e7e9;
-  --fg-2:   #a4a8ae;
-  --fg-3:   #6b7079;
+  --ink:    var(--mctl-color-ink);
+  --ink-2:  var(--mctl-color-ink2);
+  --ink-3:  var(--mctl-color-ink3);
+  --line:   var(--mctl-color-line);
+  --line-2: var(--mctl-color-line2);
+  --fg:     var(--mctl-color-fg);
+  --fg-2:   var(--mctl-color-fg2);
+  --fg-3:   var(--mctl-color-fg3);
 
   /* ── Accent — default: cyan ─────────────────────────────── */
-  --accent:    #00e5ff;
-  --accent-hi: #7df2ff;
+  --accent:    var(--mctl-color-cyan);
+  --accent-hi: var(--mctl-color-cyan-highlight);
 
   /* ── Status ─────────────────────────────────────────────── */
-  --ok:   #7cf2a4;
-  --warn: #f5a524;
-  --bad:  #ff6b6b;
+  --ok:   var(--mctl-color-ok);
+  --warn: var(--mctl-color-warn);
+  --bad:  var(--mctl-color-bad);
 
   /* ── Syntax highlighting ────────────────────────────────── */
-  --syn-key:     #7df2ff;
-  --syn-str:     #bdf24a;
-  --syn-comment: #6b7079;
+  --syn-key:     var(--mctl-syntax-key);
+  --syn-str:     var(--mctl-syntax-string);
+  --syn-comment: var(--mctl-syntax-comment);
 
   /* ── Paper constants (AudienceSection uses these directly) ─ */
-  --paper:      #f1ede4;
-  --paper-ink:  #15181d;
-  --paper-fg:   #3a3f47;
-  --paper-line: #d8d2c4;
+  --paper:      var(--mctl-color-paper);
+  --paper-ink:  var(--mctl-color-paper-ink);
+  --paper-fg:   var(--mctl-color-paper-fg);
+  --paper-line: var(--mctl-color-paper-line);
 
   /* ── Font stack ─────────────────────────────────────────── */
-  --font-sans:  'Geist', ui-sans-serif, system-ui, sans-serif;
-  --font-mono:  'JetBrains Mono', ui-monospace, 'Fira Code', monospace;
-  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans:  var(--mctl-typography-font-family-display);
+  --font-mono:  var(--mctl-typography-font-family-mono);
+  --font-serif: var(--mctl-typography-font-family-editorial);
 
-  /* ── Layout ─────────────────────────────────────────────── */
+  /* ── Layout (site-specific — no design-system token) ─────── */
   --section-py:    clamp(72px, 9vw, 132px);
   --header-height: 88px;
 
@@ -62,28 +71,28 @@
    directly on its <section> element.
    ─────────────────────────────────────────────────────────── */
 [data-surface="light"] {
-  --ink:    #f1ede4;
-  --ink-2:  #ebe5db;
-  --ink-3:  #e2dbd0;
-  --line:   #d8d2c4;
-  --line-2: #ccc4b3;
-  --fg:     #15181d;
-  --fg-2:   #3a3f47;
-  --fg-3:   #7a8394;
+  --ink:    var(--mctl-color-paper);
+  --ink-2:  #ebe5db; /* site-specific — no design-system token */
+  --ink-3:  #e2dbd0; /* site-specific — no design-system token */
+  --line:   var(--mctl-color-paper-line);
+  --line-2: #ccc4b3; /* site-specific — no design-system token */
+  --fg:     var(--mctl-color-paper-ink);
+  --fg-2:   var(--mctl-color-paper-fg);
+  --fg-3:   #7a8394; /* site-specific — no design-system token */
 }
 
 /* ── Accent variants ─────────────────────────────────────── */
 [data-accent="lime"] {
-  --accent:    #bdf24a;
-  --accent-hi: #dcff8c;
+  --accent:    var(--mctl-color-lime);
+  --accent-hi: var(--mctl-color-lime-highlight);
 }
 [data-accent="vermilion"] {
-  --accent:    #ff5a36;
-  --accent-hi: #ff8a6a;
+  --accent:    var(--mctl-color-vermilion);
+  --accent-hi: var(--mctl-color-vermilion-highlight);
 }
 [data-accent="lilac"] {
-  --accent:    #b07aff;
-  --accent-hi: #d6b3ff;
+  --accent:    var(--mctl-color-lilac);
+  --accent-hi: var(--mctl-color-lilac-highlight);
 }
 
 * {

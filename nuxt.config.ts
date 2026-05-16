@@ -3,6 +3,9 @@ import svgLoader from 'vite-svg-loader';
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   ssr: true,
+  // Design tokens (--mctl-* variables) — single source of truth from mctl-design.
+  // base.scss aliases its legacy variables onto these tokens.
+  css: ['@mctlhq/css/theme.css'],
   nitro: {
     prerender: {
       crawlLinks: true,

@@ -34,7 +34,7 @@ mctl-web serves the public-facing website for mctl.ai — a landing page and doc
 | Category   | Details                                                        |
 | ---------- | -------------------------------------------------------------- |
 | Frontend   | Nuxt 4 SPA (Vue 3, `<script setup>`, TypeScript)              |
-| Styling    | SCSS partials, CSS variables, dark theme, JetBrains Mono      |
+| Styling    | SCSS partials + CSS variables; design tokens from `@mctlhq/css` |
 | i18n       | Custom composable (`useI18n`) — en/ru, domain-aware           |
 | Worker     | Cloudflare Worker (Node.js runtime via wrangler)               |
 | Server     | nginx Alpine (SPA fallback, security headers, caching)         |
@@ -107,10 +107,14 @@ mctl-web/
 - Node.js 22+
 - Docker
 - [wrangler](https://developers.cloudflare.com/workers/wrangler/) (for worker development)
+- `GITHUB_PACKAGES_TOKEN` — a GitHub token (any token with `read:packages`)
+  exported in your shell; required to install `@mctlhq/css` from GitHub
+  Packages. See [Design tokens](#design-tokens).
 
 ### Local Development
 
 ```bash
+export GITHUB_PACKAGES_TOKEN=$(gh auth token)   # or any read:packages token
 npm install
 npm run dev          # Nuxt dev server at http://localhost:3000
 ```
@@ -124,11 +128,28 @@ npx serve .output/public
 
 ### Docker
 
+The build pulls the private design-token package, so the token is passed as a
+BuildKit secret (never stored in an image layer):
+
 ```bash
-docker build -t mctl-web .
+GH_TOK=$(gh auth token) \
+  docker build --secret id=github_token,env=GH_TOK -t mctl-web .
 docker run -p 8080:80 mctl-web
 open http://localhost:8080
 ```
+
+### Design tokens
+
+Colors and typography come from `@mctlhq/css` — the design-system package
+published by [mctl-design](https://github.com/mctlhq/mctl-design) to GitHub
+Packages. `theme.css` is imported in `nuxt.config.ts`; `app/assets/scss/base.scss`
+maps mctl-web's legacy `--ink` / `--accent` / `--paper` / … variables onto the
+`--mctl-*` tokens as a backwards-compatibility alias layer.
+
+**To change the palette or typography, edit `mctl-design`, not this repo.**
+`@mctlhq/css` is a private GitHub Packages package, so installs require a
+`read:packages` token — hence the `GITHUB_PACKAGES_TOKEN` env var locally and
+the `GH_PACKAGES_TOKEN` BuildKit secret in CI.
 
 OAuth callbacks are hardcoded to production, so authentication flows will not work locally.
 

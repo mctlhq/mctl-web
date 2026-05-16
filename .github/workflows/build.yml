@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  packages: read
 
 jobs:
   build:
@@ -37,6 +37,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: APP_VERSION=pr-${{ github.event.pull_request.number }}
+          # read:packages PAT for the private @mctlhq/css GitHub Packages
+          # dependency. Consumed by a BuildKit secret mount in the Dockerfile;
+          # never stored in a layer.
+          secrets: |
+            github_token=${{ secrets.GH_PACKAGES_TOKEN }}
 
       - name: Notify Telegram on failure
         if: failure()
