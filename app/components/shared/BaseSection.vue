@@ -30,6 +30,7 @@ defineProps<Props>();
     margin-bottom: 16px;
 
     text-align: center;
+    font-family: var(--font-mono);
     font-size: .8rem;
     letter-spacing: 2px;
     color: var(--color-accent);
@@ -37,9 +38,23 @@ defineProps<Props>();
   }
 
   &__title {
+    position: relative;
     margin-bottom: 48px;
+    padding-bottom: 1.25rem;
     text-align: center;
     letter-spacing: -1px;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 56px;
+      height: 3px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+    }
   }
 }
 </style>

@@ -4,15 +4,33 @@
 @use 'utilities';
 
 :root {
-  --color-bg: #050816;
-  --color-bg-secondary: #0d111d;
-  --color-terminal: rgba(13, 17, 23, 0.85);
-  --color-text: #fff;
-  --color-text-muted: #9ca3af;
-  --color-accent: #00f5ff;
-  --color-error: #f85149;
-  --color-success: #3fb950;
-  --color-glass-border: rgba(0, 245, 255, 0.2);
+  // Canonical MCTL design tokens, vendored from @mctlhq/tokens (the same
+  // dependency-free pattern mctl-telegram and mctl-instruments use). Keep the
+  // existing --color-* variable names so consumers don't all need rewiring;
+  // only the values change — from the old #050816/#00f5ff fork to the
+  // canonical ink/cyan palette and the hairline (not glow) aesthetic.
+  --color-bg: #0a0b0d;            // ink
+  --color-bg-secondary: #0f1114;  // ink2 / elevated
+  --color-card: #15181d;          // ink3 / card
+  --color-terminal: rgba(21, 24, 29, 0.85);
+  --color-text: #e6e7e9;          // fg
+  --color-text-muted: #a4a8ae;    // fg2
+  --color-text-subtle: #6b7079;   // fg3
+  --color-accent: #00e5ff;        // cyan
+  --color-accent-highlight: #7df2ff;
+  --color-error: #ff6b6b;         // status bad
+  --color-success: #7cf2a4;       // status ok
+  --color-warn: #f5a524;          // status warn
+  --color-line: #1f242b;          // hairline
+  --color-line-strong: #2a313a;
+  // Borders are neutral hairlines, not cyan, in the canonical language.
+  --color-glass-border: var(--color-line);
+  --color-accent-soft: rgba(0, 229, 255, 0.1);
+  // Elevation is shadow-light; hover lifts on a hairline + a quiet drop, no glow.
+  --shadow-card-hover: 0 16px 48px rgba(0, 0, 0, 0.48);
+
+  --font-display: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-editorial: 'Instrument Serif', Georgia, serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   --container-width: 1400px;
   --container-width-md: 1200px;
@@ -32,8 +50,9 @@ html {
 }
 
 body {
+  position: relative;
   font-size: 14px;
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   background-color: var(--color-bg);
   color: var(--color-text);
   line-height: 1.6;
@@ -44,6 +63,24 @@ body {
   @media (min-width: 1024px) {
     font-size: 16px;
   }
+}
+
+// Ambient background: a faint neutral blueprint grid — engineering texture,
+// not a glow. Recoloured from cyan to a hairline tone to match the design
+// system's restraint; fixed so it stays put while content scrolls.
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 56px 56px, 56px 56px;
+  // Fade the grid out toward the bottom so it reads as atmosphere, not a table.
+  mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
 }
 
 a {
@@ -65,7 +102,7 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 {
   font-size: 32px;
-  font-weight: 800;
+  font-weight: 700;
   text-align: center;
   color: #fff;
   margin-bottom: 1.5rem;
@@ -83,7 +120,7 @@ h1 {
 
 h2 {
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 700;
 
   @media (min-width: 768px) {
     font-size: 36px;

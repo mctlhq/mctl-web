@@ -44,7 +44,10 @@ const plans = [
     :title="t('pricing.title')"
     container-size="md"
   >
-    <ul class="pricing-section__plans">
+    <ul
+      class="pricing-section__plans"
+      :class="{ 'pricing-section__plans--single': plans.length === 1 }"
+    >
       <li
         v-for="plan in plans"
         :key="plan.titleKey"
@@ -62,6 +65,14 @@ const plans = [
         />
       </li>
     </ul>
+
+    <p v-reveal class="pricing-section__custom">
+      {{ t('pricing.custom.note') }}
+      <a href="#contact" class="pricing-section__custom-link">
+        {{ t('pricing.custom.cta') }}
+        <span aria-hidden="true">&#8594;</span>
+      </a>
+    </p>
   </BaseSection>
 </template>
 
@@ -79,13 +90,51 @@ const plans = [
     }
   }
 
+  &__plans--single {
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
   &__plans-item {
     flex: 1;
     max-width: 400px;
   }
 
+  &__plans--single &__plans-item {
+    max-width: 440px;
+  }
+
   &__card {
     height: 100%;
+  }
+
+  &__custom {
+    margin-top: 2.5rem;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+  }
+
+  &__custom-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: 0.5rem;
+
+    color: var(--color-accent);
+    font-weight: 500;
+    transition: gap 0.25s ease;
+
+    span { transition: transform 0.25s ease; }
+
+    &:hover span { transform: translateX(4px); }
+  }
+
+  @media (max-width: 600px) {
+    &__custom-link {
+      margin-left: 0;
+      margin-top: 0.25rem;
+    }
   }
 }
 </style>
