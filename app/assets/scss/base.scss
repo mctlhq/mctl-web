@@ -13,6 +13,8 @@
   --color-error: #f85149;
   --color-success: #3fb950;
   --color-glass-border: rgba(0, 245, 255, 0.2);
+  --color-accent-soft: rgba(0, 245, 255, 0.1);
+  --shadow-card-hover: 0 20px 40px rgba(0, 0, 0, 0.45), 0 0 24px rgba(0, 245, 255, 0.12);
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   --container-width: 1400px;
   --container-width-md: 1200px;
@@ -32,6 +34,7 @@ html {
 }
 
 body {
+  position: relative;
   font-size: 14px;
   font-family: var(--font-mono);
   background-color: var(--color-bg);
@@ -44,6 +47,25 @@ body {
   @media (min-width: 1024px) {
     font-size: 16px;
   }
+}
+
+// Ambient background: a faint blueprint grid plus a top-anchored glow.
+// Fixed so it stays put while content scrolls, giving the flat dark
+// canvas a subtle sense of depth without competing with the content.
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, rgba(0, 245, 255, 0.08) 0%, transparent 55%),
+    linear-gradient(rgba(0, 245, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 56px 56px, 56px 56px;
+  // Fade the grid out toward the bottom so it reads as atmosphere, not a table.
+  mask-image: linear-gradient(180deg, #000 0%, #000 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 60%, transparent 100%);
 }
 
 a {
