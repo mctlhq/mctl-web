@@ -231,5 +231,34 @@ const plans = [
       &:hover { background: var(--accent-hi); border-color: var(--accent-hi); }
     }
   }
+
+  &__custom {
+    margin-top: 2.5rem;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+  }
+
+  &__custom-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: 0.5rem;
+
+    color: var(--color-accent);
+    font-weight: 500;
+    transition: gap 0.25s ease;
+
+    span { transition: transform 0.25s ease; }
+
+    &:hover span { transform: translateX(4px); }
+  }
+
+  @media (max-width: 600px) {
+    &__custom-link {
+      margin-left: 0;
+      margin-top: 0.25rem;
+    }
+  }
 }
 </style>

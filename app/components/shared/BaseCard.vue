@@ -30,8 +30,29 @@ defineProps<Props>();
   background-color: var(--card-bg);
   border-radius: 8px;
   border: 1px solid rgba(0, 245, 255, 0.2);
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   overflow: hidden;
+
+  // Accent sheen that lights up along the top edge on hover.
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-hover);
+
+    &::after { opacity: 1; }
+  }
 
   &--highlighted {
     border-color: var(--color-accent);

@@ -202,4 +202,96 @@ const lede     = computed(() => ledeVoices[currentVoice.value as keyof typeof le
     @media (max-width: 960px) { display: none; }
   }
 }
+
+// Terminal mockup — gives the hero a concrete focal point and shows
+// the core "push / ask AI / live" loop in the product's own voice.
+.hero-terminal {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  margin: 4rem auto 0;
+
+  text-align: left;
+  background: rgba(8, 12, 26, 0.85);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 12px;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-card-hover);
+
+  &__bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  &__dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+
+    &--red { background: #ff5f56; }
+    &--amber { background: #ffbd2e; }
+    &--green { background: #27c93f; }
+  }
+
+  &__title {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    letter-spacing: 0.5px;
+  }
+
+  &__body {
+    padding: 1.5rem 1.5rem 1.75rem;
+    font-size: 0.85rem;
+    line-height: 1.9;
+
+    @media (max-width: 480px) {
+      font-size: 0.72rem;
+    }
+  }
+
+  &__line {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &--muted { color: var(--color-text-muted); }
+    &--ok { color: var(--color-success); }
+  }
+
+  &__prompt { color: var(--color-accent); }
+  &__accent { color: var(--color-accent); }
+  &__str { color: #ffbd2e; }
+
+  &__cursor {
+    display: inline-block;
+    width: 8px;
+    height: 1em;
+    margin-left: 4px;
+    vertical-align: text-bottom;
+    background: var(--color-accent);
+    animation: heroBlink 1.1s step-end infinite;
+  }
+}
+
+@keyframes heroPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+@keyframes heroBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-block__badge-dot,
+  .hero-terminal__cursor { animation: none; }
+}
 </style>
