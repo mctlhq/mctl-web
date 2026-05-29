@@ -119,9 +119,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-// Ambient background: a faint blueprint grid plus a top-anchored glow.
-// Fixed so it stays put while content scrolls, giving the flat dark
-// canvas a subtle sense of depth without competing with the content.
+// Ambient background: a faint neutral blueprint grid — engineering texture,
+// not a glow. Recoloured from cyan to a hairline tone to match the design
+// system's restraint; fixed so it stays put while content scrolls.
 body::before {
   content: '';
   position: fixed;
@@ -129,13 +129,12 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background-image:
-    radial-gradient(120% 80% at 50% -10%, rgba(0, 245, 255, 0.08) 0%, transparent 55%),
-    linear-gradient(rgba(0, 245, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 245, 255, 0.025) 1px, transparent 1px);
-  background-size: 100% 100%, 56px 56px, 56px 56px;
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 56px 56px, 56px 56px;
   // Fade the grid out toward the bottom so it reads as atmosphere, not a table.
-  mask-image: linear-gradient(180deg, #000 0%, #000 60%, transparent 100%);
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 60%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
 }
 
 a {

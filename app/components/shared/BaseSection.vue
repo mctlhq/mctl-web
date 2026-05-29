@@ -30,6 +30,7 @@ defineProps<Props>();
     margin-bottom: 16px;
 
     text-align: center;
+    font-family: var(--font-mono);
     font-size: .8rem;
     letter-spacing: 2px;
     color: var(--color-accent);
