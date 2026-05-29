@@ -157,7 +157,8 @@ const { t } = useI18n()
     height: 70vw;
     max-width: 900px;
     max-height: 900px;
-    background: radial-gradient(circle, rgba(0, 245, 255, 0.12) 0%, transparent 65%);
+    // Quiet ambient wash — restrained per the design system's hairline language.
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.05) 0%, transparent 65%);
     z-index: 0;
     pointer-events: none;
   }
