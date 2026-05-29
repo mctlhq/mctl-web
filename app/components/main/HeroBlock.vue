@@ -173,7 +173,7 @@ const { t } = useI18n()
   margin: 4rem auto 0;
 
   text-align: left;
-  background: rgba(8, 12, 26, 0.85);
+  background: var(--color-terminal);
   border: 1px solid var(--color-glass-border);
   border-radius: 12px;
   overflow: hidden;
@@ -208,6 +208,9 @@ const { t } = useI18n()
 
   &__body {
     padding: 1.5rem 1.5rem 1.75rem;
+    // Body inherits the page's Geist now; force mono so the terminal reads
+    // as a terminal.
+    font-family: var(--font-mono);
     font-size: 0.85rem;
     line-height: 1.9;
 
@@ -218,9 +221,6 @@ const { t } = useI18n()
 
   &__line {
     margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 
     &--muted { color: var(--color-text-muted); }
     &--ok { color: var(--color-success); }
