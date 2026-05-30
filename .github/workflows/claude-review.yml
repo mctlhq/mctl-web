@@ -125,6 +125,8 @@ jobs:
           claude_args: '--model ${{ steps.classify.outputs.model }} --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"'
 
       - name: Claude review (fallback token)
+        id: review2
+        continue-on-error: true
         if: steps.review.outcome == 'failure' && steps.token-check.outputs.has_fallback == 'true'
         uses: anthropics/claude-code-action@51ea8ea73a139f2a74ff649e3092c25a904aed7e # v1
         with:
@@ -168,7 +170,7 @@ jobs:
           claude_args: '--model ${{ steps.classify.outputs.model }} --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"'
 
       - name: Classify reviewer outcome
-        if: steps.review.outcome != 'success' && steps.token-check.outputs.has_fallback != 'true'
+        if: steps.review.outcome != 'success' && steps.review2.outcome != 'success'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
