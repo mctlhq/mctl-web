@@ -1,14 +1,18 @@
+<script setup lang="ts">
+const { t } = useI18n()
+</script>
+
 <template>
   <div class="mid-cta" aria-label="Talk to us">
     <p class="mid-cta__text">
-      Want to see this on your stack?
-      <em>Bring a service, a cluster, and 30 minutes — we'll deploy it live.</em>
+      {{ t('v3.midcta.text') }}
+      <em>{{ t('v3.midcta.em') }}</em>
     </p>
     <div class="mid-cta__actions">
       <a href="#cta" class="mid-cta__btn mid-cta__btn--primary">
-        Book a demo <span class="mid-cta__arrow">→</span>
+        {{ t('v3.midcta.demo') }} <span class="mid-cta__arrow">→</span>
       </a>
-      <a href="#contact" class="mid-cta__btn">Talk to an engineer</a>
+      <a href="#contact" class="mid-cta__btn">{{ t('v3.midcta.engineer') }}</a>
     </div>
   </div>
 </template>

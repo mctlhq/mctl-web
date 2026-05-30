@@ -1,31 +1,36 @@
+<script setup lang="ts">
+const { t } = useI18n()
+
+// See HeroBlock: re-render v-html after mount so the client locale wins.
+const hydrated = ref(false)
+onMounted(() => { hydrated.value = true })
+</script>
+
 <template>
   <section id="cta" class="cta-section">
     <BaseContainer size="lg" class="cta-section__inner">
       <div class="cta-section__text">
-        <p class="marker cta-section__marker">S/08 · Get started</p>
-        <h2 class="cta-section__heading">
-          Stop triaging. <em>Start shipping.</em>
-        </h2>
+        <p class="marker cta-section__marker">S/08 · {{ t('v3.cta.label') }}</p>
+        <h2 :key="`ch-${hydrated}`" class="cta-section__heading" v-html="t('v3.cta.heading')" />
         <p class="cta-section__body">
-          Invite-only beta. Sign in with GitHub, pick a team name, tell us what you'll build — your namespace
-          is provisioned in about two minutes.
+          {{ t('v3.cta.body') }}
         </p>
       </div>
 
       <div class="cta-section__actions">
         <a href="#request-access" class="cta-section__btn cta-section__btn--primary">
-          Sign in with GitHub
+          {{ t('v3.cta.github') }}
         </a>
         <a href="https://docs.mctl.ai" target="_blank" rel="noopener" class="cta-section__btn cta-section__btn--ghost">
-          Read the docs
+          {{ t('v3.cta.docs') }}
         </a>
         <a href="https://docs.mctl.ai/mcp/connecting" target="_blank" rel="noopener" class="cta-section__btn cta-section__btn--ghost">
-          Connect MCP
+          {{ t('v3.cta.mcp') }}
         </a>
       </div>
 
       <p class="cta-section__micro marker">
-        No credit card · No platform team required · You can leave any time — your repos are yours.
+        {{ t('v3.cta.micro') }}
       </p>
     </BaseContainer>
   </section>

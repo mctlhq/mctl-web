@@ -1,8 +1,8 @@
 <template>
   <div class="trust-strip" aria-label="Built on technology you trust">
     <div class="trust-strip__label">
-      <span class="trust-strip__lab">Built on, not instead of</span>
-      <span class="trust-strip__sub">Boring, battle-tested OSS — wired together, kept current.</span>
+      <span class="trust-strip__lab">{{ t('v3.trust.lab') }}</span>
+      <span class="trust-strip__sub">{{ t('v3.trust.sub') }}</span>
     </div>
     <div class="trust-strip__chips">
       <span v-for="chip in chips" :key="chip.label" class="trust-strip__chip" :class="{ 'trust-strip__chip--accent': chip.accent }">
@@ -13,6 +13,8 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
+
 const chips = [
   { label: 'Kubernetes',      accent: false },
   { label: 'ArgoCD',          accent: false },

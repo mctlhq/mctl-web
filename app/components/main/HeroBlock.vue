@@ -1,32 +1,48 @@
 <script setup lang="ts">
-const headlineOptions = [
-  'The platform team <strong>is now</strong> <span class="hl-accent">an agent</span>.',
-  'The platform team you didn\'t <span class="hl-accent">have to hire</span>.',
-  'Production Kubernetes, <span class="hl-accent">day one</span>.',
-  '<span class="hl-accent">kubectl</span> is the fallback now.',
-  'Run Kubernetes like a <span class="hl-accent">100-person</span> platform team.',
-  'Ship code. <span class="hl-accent">Sleep through the night.</span>',
-  'Kubernetes, <span class="hl-accent">finally civilized</span>.',
-]
+const { t } = useI18n()
 
-const ledeVoices = {
-  eng: 'For teams that <strong>outgrew DIY DevOps</strong> but aren\'t ready to hire a platform team. MCTL is a production-grade, AI-native Kubernetes platform — GitOps, secrets, team isolation, on-call agent — built in. Sign in with GitHub, get a namespace in <strong>about two minutes</strong>.',
-  bold: 'Sign in with GitHub, get a namespace in two minutes, ship before lunch.',
-  editorial: 'Most product teams don\'t have a platform problem — they have a queue problem. MCTL gives you production-grade infrastructure without the headcount, and without the queue.',
-}
+// Locale-reactive (t() reads the current locale, so these recompute on switch).
+const headlineOptions = computed(() => [
+  t('v3.hero.headline.0'),
+  t('v3.hero.headline.1'),
+  t('v3.hero.headline.2'),
+  t('v3.hero.headline.3'),
+  t('v3.hero.headline.4'),
+  t('v3.hero.headline.5'),
+  t('v3.hero.headline.6'),
+])
 
-const stats = [
-  { value: '39', label: 'MCP tools' },
-  { value: '7',  label: 'AI clients' },
-  { value: '24/7', label: 'Self-healing agent' },
-  { value: '0', label: 'Tickets for routine work' },
-]
+const ledeVoices = computed<Record<string, string>>(() => ({
+  eng: t('v3.hero.voice.eng'),
+  bold: t('v3.hero.voice.bold'),
+  editorial: t('v3.hero.voice.editorial'),
+}))
+
+const stats = computed(() => [
+  { value: '39', label: t('v3.hero.stat.0') },
+  { value: '7', label: t('v3.hero.stat.1') },
+  { value: '24/7', label: t('v3.hero.stat.2') },
+  { value: '0', label: t('v3.hero.stat.3') },
+])
+
+const micro = computed(() => [
+  t('v3.hero.micro.0'),
+  t('v3.hero.micro.1'),
+  t('v3.hero.micro.2'),
+  t('v3.hero.micro.3'),
+])
 
 const currentHeadline = inject('tweaks-headline', ref(0))
 const currentVoice    = inject('tweaks-voice', ref('eng'))
 
-const headline = computed(() => headlineOptions[currentHeadline.value] ?? headlineOptions[0])
-const lede     = computed(() => ledeVoices[currentVoice.value as keyof typeof ledeVoices] ?? ledeVoices.eng)
+const headline = computed(() => headlineOptions.value[currentHeadline.value] ?? headlineOptions.value[0])
+const lede     = computed(() => ledeVoices.value[currentVoice.value] ?? ledeVoices.value.eng)
+
+// The server renders the default locale (no localStorage); flip a key after
+// mount so v-html re-renders with the resolved client locale (Vue doesn't
+// reconcile v-html innerHTML on a hydration locale mismatch like it does text).
+const hydrated = ref(false)
+onMounted(() => { hydrated.value = true })
 </script>
 
 <template>
@@ -35,30 +51,27 @@ const lede     = computed(() => ledeVoices[currentVoice.value as keyof typeof le
       <!-- Left column -->
       <div class="hero-block__left">
         <p class="hero-block__eyebrow marker">
-          S/00 — AI-native Kubernetes platform · self-service · GitOps · MCP
+          {{ t('v3.hero.eyebrow') }}
         </p>
 
-        <h1 class="hero-block__h1" v-html="headline" />
+        <h1 :key="`h-${hydrated}`" class="hero-block__h1" v-html="headline" />
 
-        <p class="hero-block__lede" v-html="lede" />
+        <p :key="`l-${hydrated}`" class="hero-block__lede" v-html="lede" />
 
         <div class="hero-block__ctas">
           <a href="#cta" class="hero-block__cta hero-block__cta--primary">
-            Book a demo →
+            {{ t('v3.hero.cta.demo') }}
           </a>
           <a href="#contact" class="hero-block__cta hero-block__cta--ghost">
-            Talk to an engineer
+            {{ t('v3.hero.cta.engineer') }}
           </a>
           <a href="https://docs.mctl.ai" target="_blank" rel="noopener" class="hero-block__cta hero-block__cta--ghost">
-            Read the docs
+            {{ t('v3.hero.cta.docs') }}
           </a>
         </div>
 
         <div class="hero-block__micro">
-          <span><i class="hero-block__micro-dot" />Runs on your cloud</span>
-          <span><i class="hero-block__micro-dot" />No migration required</span>
-          <span><i class="hero-block__micro-dot" />Setup in days, not quarters</span>
-          <span><i class="hero-block__micro-dot" />No vendor lock-in</span>
+          <span v-for="m in micro" :key="m"><i class="hero-block__micro-dot" />{{ m }}</span>
         </div>
 
         <!-- Stats strip -->

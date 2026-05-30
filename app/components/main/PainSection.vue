@@ -1,11 +1,8 @@
 <template>
   <section id="pain" class="pain-section">
     <div class="pain-section__head">
-      <div class="marker pain-section__marker"><b>S/01</b> &nbsp;·&nbsp; Pain</div>
-      <h2 class="pain-section__title">
-        When Kubernetes starts <em>slowing you down.</em>
-        <em>You probably hit two of these in the last sprint.</em>
-      </h2>
+      <div class="marker pain-section__marker"><b>S/01</b> &nbsp;·&nbsp; {{ t('v3.pain.label') }}</div>
+      <h2 :key="`pt-${hydrated}`" class="pain-section__title" v-html="t('v3.pain.title')" />
     </div>
 
     <div class="pain-section__grid">
@@ -17,7 +14,7 @@
         <h4 class="pain-card__title">{{ card.title }}</h4>
         <p class="pain-card__body">{{ card.body }}</p>
         <a v-if="card.outcome" href="#cta" class="pain-card__cta">
-          See how MCTL fixes this <span class="pain-card__arrow">→</span>
+          {{ t('v3.pain.cta') }} <span class="pain-card__arrow">→</span>
         </a>
       </article>
     </div>
@@ -25,50 +22,21 @@
 </template>
 
 <script setup lang="ts">
-const painCards = [
-  {
-    num: '01',
-    tag: 'deployments',
-    title: 'Deploys are fragile, and one person knows why.',
-    body: 'Helm values diverge across staging and prod. Rollbacks are a Slack thread. The bus factor is, generously, two.',
-    outcome: false,
-  },
-  {
-    num: '02',
-    tag: 'drift',
-    title: "Staging and prod don’t match — and you know it.",
-    body: '“What’s in production” is a question someone has to answer with kubectl. Manifests live in three places.',
-    outcome: false,
-  },
-  {
-    num: '03',
-    tag: 'tickets',
-    title: 'Every namespace, secret and domain is a ticket.',
-    body: 'Devs wait on DevOps for trivial work. DevOps becomes a queue. Preview environments become a luxury.',
-    outcome: false,
-  },
-  {
-    num: '04',
-    tag: 'tooling',
-    title: 'CI, CD and observability are glued together by hand.',
-    body: 'Five repos, four dashboards, three secret stores. New hires take a sprint just to deploy a hello world.',
-    outcome: false,
-  },
-  {
-    num: '05',
-    tag: 'hiring → cost',
-    title: 'Hiring a platform team is too early, or too expensive.',
-    body: 'Two SREs at $250k each, six months to a v1, eighteen to feature parity with the OSS you already run. The math is not loving.',
-    outcome: false,
-  },
-  {
-    num: '→',
-    tag: 'where this goes',
-    title: 'You ship slower the bigger you get.',
-    body: "Eventually someone says \"maybe we shouldn't be doing this ourselves.\" That's the conversation MCTL is built for.",
-    outcome: true,
-  },
-]
+const { t } = useI18n()
+
+// See HeroBlock: re-render v-html after mount so the resolved client locale
+// wins over the server's default-locale SSR output.
+const hydrated = ref(false)
+onMounted(() => { hydrated.value = true })
+
+const painCards = computed(() => [
+  { num: '01', tag: t('v3.pain.c1.tag'), title: t('v3.pain.c1.title'), body: t('v3.pain.c1.body'), outcome: false },
+  { num: '02', tag: t('v3.pain.c2.tag'), title: t('v3.pain.c2.title'), body: t('v3.pain.c2.body'), outcome: false },
+  { num: '03', tag: t('v3.pain.c3.tag'), title: t('v3.pain.c3.title'), body: t('v3.pain.c3.body'), outcome: false },
+  { num: '04', tag: t('v3.pain.c4.tag'), title: t('v3.pain.c4.title'), body: t('v3.pain.c4.body'), outcome: false },
+  { num: '05', tag: t('v3.pain.c5.tag'), title: t('v3.pain.c5.title'), body: t('v3.pain.c5.body'), outcome: false },
+  { num: '→', tag: t('v3.pain.c6.tag'), title: t('v3.pain.c6.title'), body: t('v3.pain.c6.body'), outcome: true },
+])
 </script>
 
 <style lang="scss" scoped>
