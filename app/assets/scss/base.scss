@@ -53,6 +53,8 @@
   --color-success:      var(--ok);
   --color-error:        var(--bad);
   --color-glass-border: color-mix(in srgb, var(--accent) 20%, transparent);
+  --color-accent-soft:  color-mix(in srgb, var(--accent) 10%, transparent);
+  --shadow-card-hover:  0 16px 48px rgba(0, 0, 0, 0.48);
   --container-width:    1400px;
   --container-width-md: 1200px;
 }
