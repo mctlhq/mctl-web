@@ -1,34 +1,98 @@
+/* ===== DESIGN TOKENS ===== */
 :root {
-  --color-bg: #050816;
-  --color-bg-secondary: #0d111d;
-  --color-terminal: rgba(13, 17, 23, 0.85);
-  --color-text: #e6edf3;
-  --color-text-muted: #9ca3af;
-  --color-accent: #00f5ff;
-  --color-error: #f85149;
-  --color-success: #3fb950;
-  --color-glass-border: rgba(0, 245, 255, 0.2);
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-  --section-py: clamp(5rem, 6vw, 8rem);
+  /* Dark surface (default) */
+  --ink:   #0a0b0d;
+  --ink-2: #0f1114;
+  --ink-3: #15181d;
+  --line:  #1f242b;
+  --line-2:#2a313a;
+  --fg:    #e6e7e9;
+  --fg-2:  #a4a8ae;
+  --fg-3:  #6b7079;
+
+  /* Light surface ("Editorial") */
+  --paper:      #f1ede4;
+  --paper-ink:  #15181d;
+  --paper-fg:   #3a3f47;
+  --paper-line: #d8d2c4;
+
+  /* Accent — Cyan (default) */
+  --accent:    #00e5ff;
+  --accent-hi: #7df2ff;
+
+  /* Status */
+  --ok:   #7cf2a4;
+  --warn: #f5a524;
+  --bad:  #ff6b6b;
+
+  /* Syntax */
+  --syn-key:     #7df2ff;
+  --syn-str:     #bdf24a;
+  --syn-comment: #6b7079;
+
+  /* Fonts */
+  --font-sans:  'Geist', system-ui, sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-mono:  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+
+  /* Layout */
+  --section-py:   clamp(72px, 9vw, 132px);
+  --page-px:      clamp(20px, 4vw, 56px);
+  --header-height: 40px; /* utility bar */
+
+  /* Legacy aliases (used by existing shared components) */
+  --color-bg:           var(--ink);
+  --color-bg-secondary: var(--ink-2);
+  --color-terminal:     var(--ink-3);
+  --color-text:         var(--fg);
+  --color-text-muted:   var(--fg-2);
+  --color-accent:       var(--accent);
+  --color-glass-border: color-mix(in srgb, var(--accent) 20%, transparent);
+  --color-error:        var(--bad);
+  --color-success:      var(--ok);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* Accent variants */
+[data-accent="lime"]      { --accent: #bdf24a; --accent-hi: #dcff8c; }
+[data-accent="vermilion"] { --accent: #ff5a36; --accent-hi: #ff8a6a; }
+[data-accent="lilac"]     { --accent: #b07aff; --accent-hi: #d6b3ff; }
+
+/* Light surface */
+[data-surface="light"] {
+  --ink:   var(--paper);
+  --ink-2: #e8e3d8;
+  --ink-3: #ddd7ca;
+  --line:  var(--paper-line);
+  --line-2:#c8c0b0;
+  --fg:    var(--paper-ink);
+  --fg-2:  var(--paper-fg);
+  --fg-3:  #6b6258;
+
+  --color-bg:           var(--paper);
+  --color-bg-secondary: #e8e3d8;
+  --color-terminal:     #ddd7ca;
+  --color-text:         var(--paper-ink);
+  --color-text-muted:   var(--paper-fg);
+}
+
+/* ===== RESET ===== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 html { scroll-behavior: auto; overflow-x: hidden; }
 
 body {
-  font-family: var(--font-mono);
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  font-family: var(--font-sans);
+  background-color: var(--ink);
+  color: var(--fg);
   line-height: 1.6;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Short viewport (e.g. Mac Default 1512×982) — compact vertical scale */
+/* Short viewport compact scale */
 @media (max-height: 900px) {
-  :root { --section-py: clamp(3rem, 4vh, 5rem); }
+  :root { --section-py: clamp(48px, 5vh, 80px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -38,4 +102,23 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ===== TYPOGRAPHY HELPERS ===== */
+.t-mono  { font-family: var(--font-mono); }
+.t-serif { font-family: var(--font-serif); font-style: italic; }
+.t-sans  { font-family: var(--font-sans); }
+
+.marker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

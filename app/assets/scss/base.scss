@@ -4,38 +4,88 @@
 @use 'utilities';
 
 :root {
-  // Canonical MCTL design tokens, vendored from @mctlhq/tokens (the same
-  // dependency-free pattern mctl-telegram and mctl-instruments use). Keep the
-  // existing --color-* variable names so consumers don't all need rewiring;
-  // only the values change — from the old #050816/#00f5ff fork to the
-  // canonical ink/cyan palette and the hairline (not glow) aesthetic.
-  --color-bg: #0a0b0d;            // ink
-  --color-bg-secondary: #0f1114;  // ink2 / elevated
-  --color-card: #15181d;          // ink3 / card
-  --color-terminal: rgba(21, 24, 29, 0.85);
-  --color-text: #e6e7e9;          // fg
-  --color-text-muted: #a4a8ae;    // fg2
-  --color-text-subtle: #6b7079;   // fg3
-  --color-accent: #00e5ff;        // cyan
-  --color-accent-highlight: #7df2ff;
-  --color-error: #ff6b6b;         // status bad
-  --color-success: #7cf2a4;       // status ok
-  --color-warn: #f5a524;          // status warn
-  --color-line: #1f242b;          // hairline
-  --color-line-strong: #2a313a;
-  // Borders are neutral hairlines, not cyan, in the canonical language.
-  --color-glass-border: var(--color-line);
-  --color-accent-soft: rgba(0, 229, 255, 0.1);
-  // Elevation is shadow-light; hover lifts on a hairline + a quiet drop, no glow.
-  --shadow-card-hover: 0 16px 48px rgba(0, 0, 0, 0.48);
+  /* ── Dark surface (default) ─────────────────────────────── */
+  --ink:    #0a0b0d;
+  --ink-2:  #0f1114;
+  --ink-3:  #15181d;
+  --line:   #1f242b;
+  --line-2: #2a313a;
+  --fg:     #e6e7e9;
+  --fg-2:   #a4a8ae;
+  --fg-3:   #6b7079;
 
-  --font-display: 'Geist', system-ui, -apple-system, sans-serif;
-  --font-editorial: 'Instrument Serif', Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-  --container-width: 1400px;
+  /* ── Accent — default: cyan ─────────────────────────────── */
+  --accent:    #00e5ff;
+  --accent-hi: #7df2ff;
+
+  /* ── Status ─────────────────────────────────────────────── */
+  --ok:   #7cf2a4;
+  --warn: #f5a524;
+  --bad:  #ff6b6b;
+
+  /* ── Syntax highlighting ────────────────────────────────── */
+  --syn-key:     #7df2ff;
+  --syn-str:     #bdf24a;
+  --syn-comment: #6b7079;
+
+  /* ── Paper constants (AudienceSection uses these directly) ─ */
+  --paper:      #f1ede4;
+  --paper-ink:  #15181d;
+  --paper-fg:   #3a3f47;
+  --paper-line: #d8d2c4;
+
+  /* ── Font stack ─────────────────────────────────────────── */
+  --font-sans:  'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:  'JetBrains Mono', ui-monospace, 'Fira Code', monospace;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+
+  /* ── Layout ─────────────────────────────────────────────── */
+  --section-py:    clamp(72px, 9vw, 132px);
+  --header-height: 88px;
+
+  /* ── Legacy aliases (keep old SCSS partials compiling) ───── */
+  --color-bg:           var(--ink);
+  --color-bg-secondary: var(--ink-2);
+  --color-terminal:     var(--ink-2);
+  --color-text:         var(--fg);
+  --color-text-muted:   var(--fg-3);
+  --color-accent:       var(--accent);
+  --color-success:      var(--ok);
+  --color-error:        var(--bad);
+  --color-glass-border: color-mix(in srgb, var(--accent) 20%, transparent);
+  --color-accent-soft:  color-mix(in srgb, var(--accent) 10%, transparent);
+  --shadow-card-hover:  0 16px 48px rgba(0, 0, 0, 0.48);
+  --container-width:    1400px;
   --container-width-md: 1200px;
-  --section-py: clamp(5rem, 6vw, 8rem);
-  --header-height: 80px;
+}
+
+/* ── Light surface ───────────────────────────────────────────
+   Applied by TweaksPanel on <html>, and by AudienceSection
+   directly on its <section> element.
+   ─────────────────────────────────────────────────────────── */
+[data-surface="light"] {
+  --ink:    #f1ede4;
+  --ink-2:  #ebe5db;
+  --ink-3:  #e2dbd0;
+  --line:   #d8d2c4;
+  --line-2: #ccc4b3;
+  --fg:     #15181d;
+  --fg-2:   #3a3f47;
+  --fg-3:   #7a8394;
+}
+
+/* ── Accent variants ─────────────────────────────────────── */
+[data-accent="lime"] {
+  --accent:    #bdf24a;
+  --accent-hi: #dcff8c;
+}
+[data-accent="vermilion"] {
+  --accent:    #ff5a36;
+  --accent-hi: #ff8a6a;
+}
+[data-accent="lilac"] {
+  --accent:    #b07aff;
+  --accent-hi: #d6b3ff;
 }
 
 * {
@@ -50,37 +100,14 @@ html {
 }
 
 body {
-  position: relative;
-  font-size: 14px;
-  font-family: var(--font-display);
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  font-size: 15px;
+  font-family: var(--font-sans);
+  background-color: var(--ink);
+  color: var(--fg);
   line-height: 1.6;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (min-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-// Ambient background: a faint neutral blueprint grid — engineering texture,
-// not a glow. Recoloured from cyan to a hairline tone to match the design
-// system's restraint; fixed so it stays put while content scrolls.
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-  background-size: 56px 56px, 56px 56px;
-  // Fade the grid out toward the bottom so it reads as atmosphere, not a table.
-  mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
 }
 
 a {
@@ -97,47 +124,7 @@ ul {
 
 h1, h2, h3, h4, h5, h6 {
   margin: 0;
-  margin-bottom: 1rem;
-}
-
-h1 {
-  font-size: 32px;
-  font-weight: 700;
-  text-align: center;
-  color: #fff;
-  margin-bottom: 1.5rem;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-
-  @media (min-width: 768px) {
-    font-size: 48px;
-  }
-
-  @media (min-width: 1024px) {
-    font-size: 68px;
-  }
-}
-
-h2 {
-  font-size: 28px;
-  font-weight: 700;
-
-  @media (min-width: 768px) {
-    font-size: 36px;
-  }
-
-  @media (min-width: 1024px) {
-    font-size: 48px;
-  }
-}
-
-h3 {
-  font-size: 18px;
-  margin-bottom: 1rem;
-
-  @media (min-width: 768px) {
-    font-size: 20px;
-  }
+  font-family: var(--font-sans);
 }
 
 @media (max-height: 900px) {
