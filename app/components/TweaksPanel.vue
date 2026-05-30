@@ -32,7 +32,7 @@ const headlines = [
 
 const activeAccent   = ref('cyan')
 const activeSurface  = ref('dark')
-const activeHeadline = inject('tweaks-headline', ref(5))
+const activeHeadline = inject('tweaks-headline', ref(0))
 const activeVoice    = inject('tweaks-voice', ref('eng'))
 
 const LS_KEY = 'mctl-tweaks'

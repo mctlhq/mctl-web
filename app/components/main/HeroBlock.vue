@@ -5,7 +5,6 @@ const headlineOptions = [
   'Production Kubernetes, <span class="hl-accent">day one</span>.',
   '<span class="hl-accent">kubectl</span> is the fallback now.',
   'Run Kubernetes like a <span class="hl-accent">100-person</span> platform team.',
-  'Ship code. <span class="hl-accent">Sleep through the night.</span>',
   'Kubernetes, <span class="hl-accent">finally civilized</span>.',
 ]
 

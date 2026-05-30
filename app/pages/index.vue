@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const tweaksHeadline = ref(5)
+const tweaksHeadline = ref(0)
 const tweaksVoice    = ref('eng')
 provide('tweaks-headline', tweaksHeadline)
 provide('tweaks-voice', tweaksVoice)
