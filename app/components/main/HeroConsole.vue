@@ -1,10 +1,10 @@
 <template>
   <div class="hero-console">
-    <!-- Tab bar -->
-    <div class="hero-console__tabs">
-      <button class="hero-console__tab hero-console__tab--active">~/checkout-web</button>
-      <button class="hero-console__tab">~/payments-api</button>
-      <button class="hero-console__tab hero-console__tab--add">+</button>
+    <!-- Tab bar (decorative — the console is a static mockup) -->
+    <div class="hero-console__tabs" aria-hidden="true">
+      <span class="hero-console__tab hero-console__tab--active">~/checkout-web</span>
+      <span class="hero-console__tab">~/payments-api</span>
+      <span class="hero-console__tab hero-console__tab--add">+</span>
     </div>
 
     <!-- Team header -->

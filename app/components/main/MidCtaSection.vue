@@ -76,14 +76,14 @@ const { t } = useI18n()
 
     &--primary {
       background: var(--accent);
-      color: #001316;
+      color: var(--ink);
       border-color: var(--accent);
       font-weight: 600;
 
       &:hover {
         background: var(--accent-hi);
         border-color: var(--accent-hi);
-        color: #001316;
+        color: var(--ink);
       }
     }
   }
