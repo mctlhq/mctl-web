@@ -23,23 +23,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate Platform App token
-        id: app
-        # SHA-pinned (v1.12.0) — this action handles APP_PRIVATE_KEY and mints a
-        # token with write access to mctl-gitops, so it must not float on a tag.
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: mctlhq
-          repositories: mctl-gitops
-
       # Note: `gh workflow run` is fire-and-forget — this step goes green once
       # the dispatch is accepted, not when release-deploy actually succeeds.
       # Watch the run in mctl-gitops Actions to confirm the build/bump landed.
       - name: Dispatch centralized release-deploy
         env:
-          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
           TAG: ${{ github.ref_name }}
         run: |
           gh workflow run release-deploy.yaml \
