@@ -13,6 +13,7 @@ const {
   teleportTo = 'body',
   align = 'start',
   maxWidth,
+  title,
 } = defineProps<Props>();
 
 const panelStyle = computed(() =>
@@ -20,6 +21,8 @@ const panelStyle = computed(() =>
 );
 
 const open = defineModel<boolean>({ default: false });
+const panelRef = ref<HTMLElement | null>(null);
+let lastActive: HTMLElement | null = null;
 
 function close() {
   open.value = false;
@@ -30,6 +33,19 @@ function onOverlayClick() {
     close();
   }
 }
+
+// Move focus into the dialog on open and restore it to the trigger on close.
+watch(open, async (isOpen) => {
+  if (import.meta.server) return;
+  if (isOpen) {
+    lastActive = (document.activeElement as HTMLElement) ?? null;
+    await nextTick();
+    panelRef.value?.focus();
+  } else if (lastActive) {
+    lastActive.focus?.();
+    lastActive = null;
+  }
+});
 </script>
 
 <template>
@@ -38,11 +54,17 @@ function onOverlayClick() {
       v-if="open"
       class="base-modal"
       @click.self="onOverlayClick"
+      @keydown.esc="close"
     >
       <div
+        ref="panelRef"
         class="base-modal__panel"
         :class="{ 'base-modal__panel--align-center': align === 'center' }"
         :style="panelStyle"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="title || 'Dialog'"
+        tabindex="-1"
       >
         <header
           v-if="$slots.header || title"
@@ -85,6 +107,7 @@ function onOverlayClick() {
     padding: 2rem;
     border-radius: 8px;
     text-align: start;
+    outline: none;
 
     color: var(--color-text);
     background: var(--color-terminal);
