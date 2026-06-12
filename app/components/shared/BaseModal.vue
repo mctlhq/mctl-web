@@ -34,6 +34,42 @@ function onOverlayClick() {
   }
 }
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function focusables(): HTMLElement[] {
+  const panel = panelRef.value;
+  if (!panel) return [];
+  return Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+    (el) => el.offsetParent !== null,
+  );
+}
+
+// Trap Tab/Shift+Tab inside the dialog so focus cannot escape to the page
+// behind the modal. With no focusable children, keep focus on the panel.
+function onTab(e: KeyboardEvent) {
+  const panel = panelRef.value;
+  if (!panel) return;
+  const els = focusables();
+  if (els.length === 0) {
+    e.preventDefault();
+    panel.focus();
+    return;
+  }
+  const first = els[0]!;
+  const last = els[els.length - 1]!;
+  const active = document.activeElement as HTMLElement | null;
+  if (e.shiftKey) {
+    if (active === first || active === panel) {
+      e.preventDefault();
+      last.focus();
+    }
+  } else if (active === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
 // Move focus into the dialog on open and restore it to the trigger on close.
 watch(open, async (isOpen) => {
   if (import.meta.server) return;
@@ -55,6 +91,7 @@ watch(open, async (isOpen) => {
       class="base-modal"
       @click.self="onOverlayClick"
       @keydown.esc="close"
+      @keydown.tab="onTab"
     >
       <div
         ref="panelRef"
@@ -63,7 +100,8 @@ watch(open, async (isOpen) => {
         :style="panelStyle"
         role="dialog"
         aria-modal="true"
-        :aria-label="title || 'Dialog'"
+        :aria-label="title ? undefined : 'Dialog'"
+        :aria-labelledby="title ? 'base-modal-title' : undefined"
         tabindex="-1"
       >
         <header
@@ -73,6 +111,7 @@ watch(open, async (isOpen) => {
           <slot name="header">
             <h2
               v-if="title"
+              id="base-modal-title"
               class="base-modal__title"
             >
               {{ title }}
