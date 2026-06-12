@@ -81,7 +81,7 @@ watch(open, async (isOpen) => {
     lastActive.focus?.();
     lastActive = null;
   }
-});
+}, { immediate: true });
 </script>
 
 <template>
