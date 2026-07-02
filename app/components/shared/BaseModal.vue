@@ -13,6 +13,7 @@ const {
   teleportTo = 'body',
   align = 'start',
   maxWidth,
+  title,
 } = defineProps<Props>();
 
 const panelStyle = computed(() =>
@@ -20,6 +21,8 @@ const panelStyle = computed(() =>
 );
 
 const open = defineModel<boolean>({ default: false });
+const panelRef = ref<HTMLElement | null>(null);
+let lastActive: HTMLElement | null = null;
 
 function close() {
   open.value = false;
@@ -30,6 +33,55 @@ function onOverlayClick() {
     close();
   }
 }
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function focusables(): HTMLElement[] {
+  const panel = panelRef.value;
+  if (!panel) return [];
+  return Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+    (el) => el.offsetParent !== null,
+  );
+}
+
+// Trap Tab/Shift+Tab inside the dialog so focus cannot escape to the page
+// behind the modal. With no focusable children, keep focus on the panel.
+function onTab(e: KeyboardEvent) {
+  const panel = panelRef.value;
+  if (!panel) return;
+  const els = focusables();
+  if (els.length === 0) {
+    e.preventDefault();
+    panel.focus();
+    return;
+  }
+  const first = els[0]!;
+  const last = els[els.length - 1]!;
+  const active = document.activeElement as HTMLElement | null;
+  if (e.shiftKey) {
+    if (active === first || active === panel) {
+      e.preventDefault();
+      last.focus();
+    }
+  } else if (active === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
+// Move focus into the dialog on open and restore it to the trigger on close.
+watch(open, async (isOpen) => {
+  if (import.meta.server) return;
+  if (isOpen) {
+    lastActive = (document.activeElement as HTMLElement) ?? null;
+    await nextTick();
+    panelRef.value?.focus();
+  } else if (lastActive) {
+    lastActive.focus?.();
+    lastActive = null;
+  }
+}, { immediate: true });
 </script>
 
 <template>
@@ -38,11 +90,19 @@ function onOverlayClick() {
       v-if="open"
       class="base-modal"
       @click.self="onOverlayClick"
+      @keydown.esc="close"
+      @keydown.tab="onTab"
     >
       <div
+        ref="panelRef"
         class="base-modal__panel"
         :class="{ 'base-modal__panel--align-center': align === 'center' }"
         :style="panelStyle"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="title ? undefined : 'Dialog'"
+        :aria-labelledby="title ? 'base-modal-title' : undefined"
+        tabindex="-1"
       >
         <header
           v-if="$slots.header || title"
@@ -51,6 +111,7 @@ function onOverlayClick() {
           <slot name="header">
             <h2
               v-if="title"
+              id="base-modal-title"
               class="base-modal__title"
             >
               {{ title }}
@@ -85,6 +146,7 @@ function onOverlayClick() {
     padding: 2rem;
     border-radius: 8px;
     text-align: start;
+    outline: none;
 
     color: var(--color-text);
     background: var(--color-terminal);
