@@ -13,7 +13,7 @@ jobs:
         with:
           node-version: '22'
       - name: Install wrangler
-        run: npm install --global wrangler@4.87.0
+        run: npm install --global wrangler@4.112.0
       - name: Deploy worker
         working-directory: cloudflare-worker
         env:
