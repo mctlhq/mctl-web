@@ -1,6 +1,6 @@
 # mctl-web
 
-Public website (mctl.ai) — Nuxt 3 Vue SPA served by nginx + Cloudflare Worker for OAuth and form handling.
+Public website (mctl.ai) — Nuxt 4 Vue SPA served by nginx + Cloudflare Worker for OAuth and form handling.
 
 ## Branch Strategy — HARD RULES
 
@@ -35,7 +35,7 @@ The git graph must show the "merge commit" pattern:
 
 ## Stack
 
-- **Nuxt 3** (`ssr: true`, prerendered static output) — source in `app/`
+- **Nuxt 4** (`ssr: true`, prerendered static output) — source in `app/`
 - **nginx** serves the prerendered output (`/usr/share/nginx/html`)
 - **Cloudflare Worker** handles `mctl.ai/api/*` routes (OAuth, contact form, Telegram notifications)
 
