@@ -1,0 +1,17 @@
+# MCTL — AI-Native Infrastructure Management Platform
+
+> MCTL is the Kubernetes management platform built for the AI era. Deploy microservices, run ArgoCD GitOps pipelines, manage multi-tenant environments, and automate incident response using natural language and Model Context Protocol (MCP).
+
+## Core Capabilities
+
+- **MCP Integration**: Connect Claude Code, Cursor, or VS Code directly to your infrastructure via Model Context Protocol (`https://api.mctl.ai/mcp`).
+- **GitOps Engine**: Zero imperative commands. Every state change is versioned and applied safely via ArgoCD.
+- **Multi-Tenant Isolation**: Out-of-the-box tenant boundaries, RBAC, network isolation, and resource quotas.
+- **Developer Portal**: Integrated Backstage service catalog (`https://app.mctl.ai`).
+- **Autonomous Agents**: Self-healing incident response and automated issue-to-PR implementation.
+
+## Key Resources
+
+- [Documentation](https://docs.mctl.ai/): Getting started, guides, and tool catalog.
+- [MCP Connecting Guide](https://docs.mctl.ai/mcp/connecting): Step-by-step assistant setup.
+- [GitHub Organization](https://github.com/mctlhq): Open-source repositories and ecosystem.
