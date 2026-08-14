@@ -88,7 +88,7 @@ export function useAuth() {
     }
 
     cleanUrl()
-    return {}
+    return { authenticated: true }
   }
 
   function cleanUrl() {

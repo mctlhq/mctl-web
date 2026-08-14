@@ -3,13 +3,16 @@ export default defineNuxtPlugin(() => {
 
   restore();
 
-  const { error } = parseOAuth();
+  const { error, authenticated } = parseOAuth();
 
   if (error) {
     console.error('OAuth error:', error);
   }
 
-  if (isAuth.value && window.location.hash === '#request-access') {
+  // Fresh OAuth used to land on ?auth=...#request-access. Auth is now in the
+  // fragment (#auth=), so after parseOAuth clears the hash we still scroll
+  // to the request-access form. Direct #request-access links keep working.
+  if (authenticated || (isAuth.value && window.location.hash === '#request-access')) {
     nextTick(() => {
       setTimeout(() => {
         document.getElementById('request-access')?.scrollIntoView({ behavior: 'smooth' });
