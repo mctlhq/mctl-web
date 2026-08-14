@@ -13,6 +13,8 @@ import {
   landingErrorLocation,
   landingSuccessLocation,
   newSessionId,
+  redeemFromCookie,
+  sessionIsLive,
 } from './index.js';
 
 const workerSrc = readFileSync(
@@ -70,4 +72,16 @@ test('worker source never builds a redirect with ?auth= or access_token in the U
   assert.doesNotMatch(workerSrc, /\$\{baseUrl\}\/\?auth=/);
   assert.doesNotMatch(workerSrc, /#auth=\$\{encoded\}/);
   assert.match(workerSrc, /#session=\$\{sessionId\}|#session=/);
+});
+
+test('cookie decrypt alone does not redeem; cache consume must hit', () => {
+  const live = { token: 'gho_placeholder_not_a_real_token', exp: Date.now() + 60_000 };
+  assert.equal(redeemFromCookie(live, null), null);
+  assert.equal(redeemFromCookie(null, live), null);
+  assert.equal(redeemFromCookie(live, live), live);
+  const expired = { ...live, exp: Date.now() - 1 };
+  assert.equal(redeemFromCookie(expired, live), null);
+  assert.equal(sessionIsLive(expired), false);
+  assert.equal(sessionIsLive(live), true);
+  assert.equal(sessionIsLive(null), false);
 });

@@ -244,6 +244,19 @@ export async function putOAuthSession(id, payload, ttlSec = SESSION_TTL_SEC) {
   }));
 }
 
+export function sessionIsLive(payload) {
+  if (!payload || typeof payload !== 'object') return false;
+  if (typeof payload.exp === 'number' && Date.now() > payload.exp) return false;
+  return true;
+}
+
+// Cookie is only a pointer to the one-time cache entry. Decrypt success
+// alone must not return the GitHub token; the cache consume must hit.
+export function redeemFromCookie(decrypted, consumed) {
+  if (!sessionIsLive(decrypted) || !sessionIsLive(consumed)) return null;
+  return consumed;
+}
+
 export async function takeOAuthSession(id) {
   if (!isSessionId(id)) return null;
   const cache = caches.default;
@@ -273,7 +286,11 @@ function b64urlToBytes(value) {
 }
 
 async function aesKeyFromSecret(secret) {
-  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret));
+  // Domain-separate AES key material from HMAC signing of the same root secret.
+  const hash = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(`mctl-oauth-session-v1:${secret}`),
+  );
   return crypto.subtle.importKey('raw', hash, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
 }
 
@@ -524,6 +541,7 @@ async function handleGitHubCallback(url, request, env) {
       token:      accessToken,
       sig,
       sessionId,
+      exp: Date.now() + SESSION_TTL_SEC * 1000,
     };
     await putOAuthSession(sessionId, mcpPayload);
     const encrypted = await encryptSessionPayload(mcpPayload, env.GITHUB_OAUTH_HMAC_KEY);
@@ -604,16 +622,19 @@ async function handleGitHubSession(request, env, origin) {
 
   let payload = null;
   if (isSessionId(body.code)) {
-    payload = await takeOAuthSession(body.code);
+    const consumed = await takeOAuthSession(body.code);
+    if (sessionIsLive(consumed)) payload = consumed;
   }
 
   const cookies = parseCookies(request.headers.get('Cookie') || '');
   const cookieVal = cookies[SESSION_COOKIE] || '';
   if (!payload && cookieVal) {
-    payload = await decryptSessionPayload(cookieVal, env.GITHUB_OAUTH_HMAC_KEY);
-    if (payload && isSessionId(payload.sessionId)) {
-      await takeOAuthSession(payload.sessionId);
+    const decrypted = await decryptSessionPayload(cookieVal, env.GITHUB_OAUTH_HMAC_KEY);
+    let consumed = null;
+    if (decrypted && isSessionId(decrypted.sessionId)) {
+      consumed = await takeOAuthSession(decrypted.sessionId);
     }
+    payload = redeemFromCookie(decrypted, consumed);
   }
 
   const headers = new Headers(sessionCorsHeaders(origin));
@@ -621,14 +642,14 @@ async function handleGitHubSession(request, env, origin) {
   headers.set('Cache-Control', 'private, no-store');
   appendClearSessionCookies(headers);
 
-  if (!payload || typeof payload !== 'object') {
+  if (!sessionIsLive(payload)) {
     return new Response(JSON.stringify({ error: 'Session expired or missing' }), {
       status: 401,
       headers,
     });
   }
 
-  const { sessionId: _sessionId, ...clientPayload } = payload;
+  const { sessionId: _sessionId, exp: _exp, ...clientPayload } = payload;
   return new Response(JSON.stringify(clientPayload), { status: 200, headers });
 }
 
