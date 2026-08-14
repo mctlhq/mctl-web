@@ -56,7 +56,7 @@ export function useAuth() {
     errorCode.value = null
   }
 
-  function parseOAuth(): { error?: string } {
+  function parseOAuth(): { error?: string; authenticated?: boolean } {
     if (import.meta.server || !window) return {}
 
     const url = new URL(window.location.href)
@@ -88,7 +88,7 @@ export function useAuth() {
     }
 
     cleanUrl()
-    return {}
+    return { authenticated: true }
   }
 
   function cleanUrl() {
