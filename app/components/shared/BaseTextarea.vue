@@ -32,7 +32,7 @@ const modelValue = defineModel<string | number>();
     width: 100%;
     appearance: none;
     background: var(--color-bg);
-    border: 1px solid rgba(0, 245, 255, .3);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
     border-radius: 6px;
     color: var(--color-text);
     font-family: var(--font-mono);
@@ -44,7 +44,7 @@ const modelValue = defineModel<string | number>();
     &:focus {
       outline: none;
       border-color: var(--color-accent);
-      box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.1);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 10%, transparent);
     }
   }
 }

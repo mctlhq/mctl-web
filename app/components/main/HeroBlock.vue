@@ -158,7 +158,7 @@ const { t } = useI18n()
     max-width: 900px;
     max-height: 900px;
     // Quiet ambient wash — restrained per the design system's hairline language.
-    background: radial-gradient(circle, rgba(0, 229, 255, 0.05) 0%, transparent 65%);
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 5%, transparent) 0%, transparent 65%);
     z-index: 0;
     pointer-events: none;
   }
@@ -208,8 +208,8 @@ const { t } = useI18n()
 
   &__body {
     padding: 1.5rem 1.5rem 1.75rem;
-    // Body inherits the page's Geist now; force mono so the terminal reads
-    // as a terminal.
+    // Body inherits the page's display face (Onest via CDN); force mono so
+    // the terminal reads as a terminal.
     font-family: var(--font-mono);
     font-size: 0.85rem;
     line-height: 1.9;

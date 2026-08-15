@@ -1,4 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
-  <circle cx="20" cy="20" r="18" stroke="#00f5ff" stroke-width="2.5"/>
-  <text x="20" y="25" text-anchor="middle" font-family="monospace" font-weight="bold" font-size="14" fill="#00f5ff">K3s</text>
+  <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2.5"/>
+  <text x="20" y="25" text-anchor="middle" font-family="monospace" font-weight="bold" font-size="14" fill="currentColor">K3s</text>
 </svg>

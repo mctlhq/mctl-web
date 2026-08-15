@@ -44,7 +44,7 @@ The git graph must show the "merge commit" pattern:
 - SCSS with design tokens in `app/assets/scss/` (`base.scss`, `_tokens.scss`)
 - Components in `app/components/` (no path prefix — imported directly by name)
 - i18n strings via `app/composables/useI18n.ts` (custom, not @nuxtjs/i18n)
-- JetBrains Mono for code/terminal, Geist for body, Instrument Serif for display
+- Onest for body (CDN `--font-display`), Instrument Serif for editorial, JetBrains Mono for code/terminal. Tokens from https://ui.mctl.ai/mctl.css; default accent is terracotta.
 - No emoji in content unless explicitly requested
 - English for all user-facing text
 

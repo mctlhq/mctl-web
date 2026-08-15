@@ -78,8 +78,8 @@ const { t } = useI18n();
     align-items: center;
     gap: 12px;
     padding: 16px;
-    background: rgba(0, 245, 255, 0.05);
-    border: 1px solid rgba(0, 245, 255, 0.2);
+    background: color-mix(in srgb, var(--color-accent) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
     border-radius: 8px;
   }
 
