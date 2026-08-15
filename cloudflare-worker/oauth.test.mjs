@@ -9,6 +9,9 @@ import {
   encryptSessionPayload,
   fragmentErrorLocation,
   fragmentSuccessLocation,
+  getUnlimitedUsers,
+  hmacSign,
+  hmacVerify,
   isSessionId,
   landingErrorLocation,
   landingSuccessLocation,
@@ -72,6 +75,37 @@ test('worker source never builds a redirect with ?auth= or access_token in the U
   assert.doesNotMatch(workerSrc, /\$\{baseUrl\}\/\?auth=/);
   assert.doesNotMatch(workerSrc, /#auth=\$\{encoded\}/);
   assert.match(workerSrc, /#session=\$\{sessionId\}|#session=/);
+});
+
+test('hmacVerify accepts a correct signature and rejects a wrong one', async () => {
+  const secret = 'test-hmac-key';
+  const sig = await hmacSign('mashkovd', secret);
+  assert.equal(await hmacVerify('mashkovd', sig, secret), true);
+  assert.equal(await hmacVerify('mashkovd', sig, 'other-secret'), false);
+  assert.equal(await hmacVerify('someone-else', sig, secret), false);
+});
+
+test('hmacVerify rejects malformed or wrong-length signatures without throwing', async () => {
+  const secret = 'test-hmac-key';
+  assert.equal(await hmacVerify('mashkovd', 'not-hex!!', secret), false);
+  assert.equal(await hmacVerify('mashkovd', 'ab', secret), false);
+  assert.equal(await hmacVerify('mashkovd', '', secret), false);
+  assert.equal(await hmacVerify('mashkovd', undefined, secret), false);
+});
+
+test('worker source never compares HMAC signatures with plain equality', () => {
+  assert.doesNotMatch(workerSrc, /expected\s*===\s*signature/);
+});
+
+test('getUnlimitedUsers falls back to the historical default when unset', () => {
+  assert.deepEqual(getUnlimitedUsers({}), ['mashkovd']);
+  assert.deepEqual(getUnlimitedUsers(undefined), ['mashkovd']);
+});
+
+test('getUnlimitedUsers parses a comma-separated env var', () => {
+  assert.deepEqual(getUnlimitedUsers({ UNLIMITED_USERS: 'alice,bob' }), ['alice', 'bob']);
+  assert.deepEqual(getUnlimitedUsers({ UNLIMITED_USERS: ' alice , bob ,' }), ['alice', 'bob']);
+  assert.deepEqual(getUnlimitedUsers({ UNLIMITED_USERS: 'mashkovd' }), ['mashkovd']);
 });
 
 test('cookie decrypt alone does not redeem; cache consume must hit', () => {

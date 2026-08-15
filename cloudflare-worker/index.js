@@ -14,6 +14,9 @@
  * - BACKSTAGE_LANDING_TOKEN: Shared secret for signing landing-page JWT tokens (HMAC-SHA256).
  *     Must match the BACKSTAGE_LANDING_TOKEN env var in the Backstage pod.
  * - RESEND_API_KEY: Resend.com API key for sending welcome emails
+ *
+ * Config vars (set via wrangler.toml [vars] — not secret):
+ * - UNLIMITED_USERS: comma-separated GitHub logins exempt from tenant-provisioning limits
  */
 
 const BASE_DOMAIN = 'mctl.ai';
@@ -30,7 +33,6 @@ const SESSION_ORIGINS = new Set([
 const LANDING_URL = `https://${BASE_DOMAIN}`;
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
 const BACKSTAGE_APP_URL = 'https://app.mctl.ai';
-const UNLIMITED_USERS = ['mashkovd'];
 const SESSION_COOKIE = '__gh_session';
 const SESSION_TTL_SEC = 300;
 const SESSION_ID_RE = /^[0-9a-f]{64}$/;
@@ -347,6 +349,14 @@ function redirectHeaders() {
   return headers;
 }
 
+// GitHub logins exempt from tenant-provisioning limits, configured via the
+// UNLIMITED_USERS wrangler.toml var (comma-separated). Defaults preserve the
+// previously hardcoded list if the var is unset.
+export function getUnlimitedUsers(env) {
+  const raw = (env && env.UNLIMITED_USERS) || 'mashkovd';
+  return raw.split(',').map(u => u.trim()).filter(Boolean);
+}
+
 // ─── GitHub API helper ───────────────────────────────────────────────────────
 
 function githubAPI(path, token, options = {}) {
@@ -399,7 +409,7 @@ async function createLandingJwt(secret) {
 
 // ─── HMAC helpers ────────────────────────────────────────────────────────────
 
-async function hmacSign(data, secret) {
+export async function hmacSign(data, secret) {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
@@ -408,9 +418,34 @@ async function hmacSign(data, secret) {
   return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function hmacVerify(data, signature, secret) {
+function hexToBytes(hex) {
+  if (typeof hex !== 'string' || hex.length % 2 !== 0) return null;
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    const byte = parseInt(hex.substr(i * 2, 2), 16);
+    if (Number.isNaN(byte)) return null;
+    bytes[i] = byte;
+  }
+  return bytes;
+}
+
+// Constant-time byte comparison — no early exit on mismatch, so the
+// runtime doesn't leak how many leading bytes matched. Both inputs must
+// already be the same length; the caller handles the (non-secret) length
+// check separately.
+function timingSafeEqualBytes(a, b) {
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
+export async function hmacVerify(data, signature, secret) {
   const expected = await hmacSign(data, secret);
-  return expected === signature;
+  const expectedBytes = hexToBytes(expected);
+  const providedBytes = hexToBytes(signature);
+  // Length check first is fine — signature length isn't secret.
+  if (!providedBytes || expectedBytes.length !== providedBytes.length) return false;
+  return timingSafeEqualBytes(expectedBytes, providedBytes);
 }
 
 // ─── GitHub OAuth: Login ─────────────────────────────────────────────────────
@@ -732,7 +767,7 @@ async function handleFormSubmit(request, env, origin) {
 
     // ── Check if tenant already exists ─────────────────────────────────────
     const jwt = await createLandingJwt(env.BACKSTAGE_LANDING_TOKEN);
-    if (!UNLIMITED_USERS.includes(login)) {
+    if (!getUnlimitedUsers(env).includes(login)) {
       try {
         const existsRes = await backstageAPI(
           `/api/tenant-management/tenants/${encodeURIComponent(team)}`,
