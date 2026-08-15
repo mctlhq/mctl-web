@@ -7,9 +7,11 @@
   // Bridge landing --color-* names onto the CDN semantic theme loaded from
   // https://ui.mctl.ai/mctl.css. Keep the existing variable names so section
   // styles do not need rewiring. Fallbacks match terracotta/ink so a blocked
-  // CDN cannot resurrect neon cyan. Do not redeclare --font-display /
-  // --font-editorial / --font-mono — those come from the CDN (Onest,
-  // Instrument Serif, JetBrains Mono).
+  // CDN cannot resurrect neon cyan. Local font stacks match the CDN so
+  // var(--font-mono) call sites stay monospace if ui.mctl.ai is down.
+  --font-display: 'Onest', system-ui, -apple-system, sans-serif;
+  --font-editorial: 'Instrument Serif', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   --color-bg: var(--surface-bg, #0a0b0d);
   --color-bg-secondary: var(--surface-elevated, #0f1114);
   --color-card: var(--surface-card, #15181d);
