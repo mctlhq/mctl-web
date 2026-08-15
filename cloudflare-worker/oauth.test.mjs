@@ -102,6 +102,18 @@ test('getUnlimitedUsers falls back to the historical default when unset', () => 
   assert.deepEqual(getUnlimitedUsers(undefined), ['mashkovd']);
 });
 
+test('getUnlimitedUsers respects an explicit empty string (revocation)', () => {
+  assert.deepEqual(getUnlimitedUsers({ UNLIMITED_USERS: '' }), []);
+  assert.deepEqual(getUnlimitedUsers({ UNLIMITED_USERS: ' , ' }), []);
+});
+
+test('hmacVerify rejects lenient-hex signatures like "1g" groups', async () => {
+  const secret = 'test-hmac-key-for-aes-derivation';
+  const sig = await hmacSign('mashkovd', secret);
+  const lenient = '1g' + sig.slice(2); // same length, non-hex second char
+  assert.equal(await hmacVerify('mashkovd', lenient, secret), false);
+});
+
 test('getUnlimitedUsers parses a comma-separated env var', () => {
   assert.deepEqual(getUnlimitedUsers({ UNLIMITED_USERS: 'alice,bob' }), ['alice', 'bob']);
   assert.deepEqual(getUnlimitedUsers({ UNLIMITED_USERS: ' alice , bob ,' }), ['alice', 'bob']);

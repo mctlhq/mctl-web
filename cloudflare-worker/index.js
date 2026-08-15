@@ -350,10 +350,12 @@ function redirectHeaders() {
 }
 
 // GitHub logins exempt from tenant-provisioning limits, configured via the
-// UNLIMITED_USERS wrangler.toml var (comma-separated). Defaults preserve the
-// previously hardcoded list if the var is unset.
+// UNLIMITED_USERS wrangler.toml var (comma-separated). The default preserves
+// the previously hardcoded list only when the var is UNSET — an explicit
+// empty string means "no unlimited users" and must not fall back.
 export function getUnlimitedUsers(env) {
-  const raw = (env && env.UNLIMITED_USERS) || 'mashkovd';
+  const raw =
+    env && env.UNLIMITED_USERS !== undefined ? env.UNLIMITED_USERS : 'mashkovd';
   return raw.split(',').map(u => u.trim()).filter(Boolean);
 }
 
@@ -419,7 +421,13 @@ export async function hmacSign(data, secret) {
 }
 
 function hexToBytes(hex) {
-  if (typeof hex !== 'string' || hex.length % 2 !== 0) return null;
+  // Strict validation: parseInt would accept groups like "1g" (stops at the
+  // first invalid char), and parsing attacker-length input before any length
+  // check wastes work — callers still re-check length against the expected
+  // digest, this just refuses non-hex early.
+  if (typeof hex !== 'string' || hex.length % 2 !== 0 || !/^[0-9a-fA-F]*$/.test(hex)) {
+    return null;
+  }
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < bytes.length; i++) {
     const byte = parseInt(hex.substr(i * 2, 2), 16);
@@ -441,10 +449,14 @@ function timingSafeEqualBytes(a, b) {
 
 export async function hmacVerify(data, signature, secret) {
   const expected = await hmacSign(data, secret);
+  // Length check first is fine — signature length isn't secret — and doing
+  // it before hexToBytes avoids parsing attacker-sized input.
+  if (typeof signature !== 'string' || signature.length !== expected.length) {
+    return false;
+  }
   const expectedBytes = hexToBytes(expected);
   const providedBytes = hexToBytes(signature);
-  // Length check first is fine — signature length isn't secret.
-  if (!providedBytes || expectedBytes.length !== providedBytes.length) return false;
+  if (!providedBytes) return false;
   return timingSafeEqualBytes(expectedBytes, providedBytes);
 }
 
