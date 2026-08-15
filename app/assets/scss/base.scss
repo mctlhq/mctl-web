@@ -4,34 +4,33 @@
 @use 'utilities';
 
 :root {
-  // Canonical MCTL design tokens, vendored from @mctlhq/tokens (the same
-  // dependency-free pattern mctl-telegram and mctl-instruments use). Keep the
-  // existing --color-* variable names so consumers don't all need rewiring;
-  // only the values change — from the old #050816/#00f5ff fork to the
-  // canonical ink/cyan palette and the hairline (not glow) aesthetic.
-  --color-bg: #0a0b0d;            // ink
-  --color-bg-secondary: #0f1114;  // ink2 / elevated
-  --color-card: #15181d;          // ink3 / card
-  --color-terminal: rgba(21, 24, 29, 0.85);
-  --color-text: #e6e7e9;          // fg
-  --color-text-muted: #a4a8ae;    // fg2
-  --color-text-subtle: #6b7079;   // fg3
-  --color-accent: #00e5ff;        // cyan
-  --color-accent-highlight: #7df2ff;
-  --color-error: #ff6b6b;         // status bad
-  --color-success: #7cf2a4;       // status ok
-  --color-warn: #f5a524;          // status warn
-  --color-line: #1f242b;          // hairline
-  --color-line-strong: #2a313a;
-  // Borders are neutral hairlines, not cyan, in the canonical language.
+  // Bridge landing --color-* names onto the CDN semantic theme loaded from
+  // https://ui.mctl.ai/mctl.css. Keep the existing variable names so section
+  // styles do not need rewiring. Fallbacks match terracotta/ink so a blocked
+  // CDN cannot resurrect neon cyan. Do not redeclare --font-display /
+  // --font-editorial / --font-mono — those names belong to the CDN. Call
+  // sites use var(--font-*, local-stack) so a missing CDN token cannot
+  // invalidate the declaration.
+  --color-bg: var(--surface-bg, #0a0b0d);
+  --color-bg-secondary: var(--surface-elevated, #0f1114);
+  --color-card: var(--surface-card, #15181d);
+  --color-terminal: color-mix(in srgb, var(--color-card) 85%, transparent);
+  --color-text: var(--surface-fg, #e6e7e9);
+  --color-text-muted: var(--surface-fg-muted, #a4a8ae);
+  --color-text-subtle: var(--surface-fg-subtle, #6b7079);
+  --color-accent: var(--accent, #e25a3c);
+  --color-accent-highlight: var(--accent-highlight, #ff8a6a);
+  --color-error: var(--status-bad, #ff6b6b);
+  --color-success: var(--status-ok, #7cf2a4);
+  --color-warn: var(--status-warn, #f5a524);
+  --color-line: var(--surface-line, #1f242b);
+  --color-line-strong: var(--surface-line-strong, #2a313a);
+  // Borders are neutral hairlines, not accent, in the canonical language.
   --color-glass-border: var(--color-line);
-  --color-accent-soft: rgba(0, 229, 255, 0.1);
+  --color-accent-soft: color-mix(in srgb, var(--color-accent) 10%, transparent);
   // Elevation is shadow-light; hover lifts on a hairline + a quiet drop, no glow.
   --shadow-card-hover: 0 16px 48px rgba(0, 0, 0, 0.48);
 
-  --font-display: 'Geist', system-ui, -apple-system, sans-serif;
-  --font-editorial: 'Instrument Serif', Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   --container-width: 1400px;
   --container-width-md: 1200px;
   --section-py: clamp(5rem, 6vw, 8rem);
@@ -52,7 +51,7 @@ html {
 body {
   position: relative;
   font-size: 14px;
-  font-family: var(--font-display);
+  font-family: var(--font-display, 'Onest', system-ui, -apple-system, sans-serif);
   background-color: var(--color-bg);
   color: var(--color-text);
   line-height: 1.6;

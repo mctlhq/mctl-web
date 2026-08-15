@@ -59,7 +59,7 @@ const cards = [
     &:hover {
       border-color: var(--color-accent);
       transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 245, 255, 0.1);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px color-mix(in srgb, var(--color-accent) 10%, transparent);
     }
   }
 

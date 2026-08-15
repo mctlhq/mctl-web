@@ -65,13 +65,14 @@ const { t } = useI18n();
     transform: translate(-50%, -50%);
     width: 150%;
     height: 150%;
-    background: radial-gradient(circle, rgba(0, 245, 255, 0.05) 0%, transparent 70%);
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 5%, transparent) 0%, transparent 70%);
     z-index: -1;
   }
 
   &__box-icon {
     display: block;
     margin: 0 auto 16px;
+    color: var(--color-accent);
     transition: all .3s ease;
   }
 

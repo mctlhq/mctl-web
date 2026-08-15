@@ -78,8 +78,8 @@ const { t } = useI18n();
     align-items: center;
     gap: 12px;
     padding: 16px;
-    background: rgba(0, 245, 255, 0.05);
-    border: 1px solid rgba(0, 245, 255, 0.2);
+    background: color-mix(in srgb, var(--color-accent) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
     border-radius: 8px;
   }
 
@@ -127,7 +127,7 @@ const { t } = useI18n();
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     cursor: pointer;
-    font-family: var(--font-mono);
+    font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
     font-size: 1.2rem;
     line-height: 1;
     transition: all 0.3s ease;

@@ -80,6 +80,7 @@ const features = [
     width: 56px;
     height: 56px;
     margin: 0 auto 20px;
+    color: var(--color-accent);
     transition: transform 0.3s ease;
     align-self: end;
   }
@@ -95,10 +96,10 @@ const features = [
     min-height: 54px;
     font-size: 0.8rem;
     color: var(--color-accent);
-    background: rgba(0, 245, 255, 0.07);
+    background: color-mix(in srgb, var(--color-accent) 7%, transparent);
     padding: 0.5rem 0.8rem;
     border-radius: 6px;
-    border: 1px solid rgba(0, 245, 255, 0.1);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 10%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;

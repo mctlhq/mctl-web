@@ -41,7 +41,7 @@ defineProps<Props>();
 
   &--featured {
     border-color: var(--color-accent);
-    box-shadow: 0 0 30px rgba(0, 245, 255, 0.15);
+    box-shadow: 0 0 30px color-mix(in srgb, var(--color-accent) 15%, transparent);
   }
 
   &:hover {

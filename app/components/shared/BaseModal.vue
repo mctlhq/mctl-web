@@ -150,7 +150,7 @@ watch(open, async (isOpen) => {
 
     color: var(--color-text);
     background: var(--color-terminal);
-    border: 1px solid rgba(0, 245, 255, 0.3);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
 
     &--align-center {
       text-align: center;

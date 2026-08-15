@@ -70,7 +70,7 @@ const steps = [
     justify-content: center;
     font-size: 1.75rem;
     font-weight: 800;
-    box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-accent) 30%, transparent);
   }
 
   &__card-description {
@@ -80,7 +80,7 @@ const steps = [
   }
 
   &__card-substeps {
-    font-family: var(--font-mono);
+    font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
     font-size: 0.75rem;
     background: var(--color-bg);
     padding: 0.75rem;
