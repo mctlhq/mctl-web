@@ -375,7 +375,7 @@ useHead({
 }
 
 .component-name {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
   font-size: 0.85rem;
   color: var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 7%, transparent);

@@ -127,7 +127,7 @@ const { t } = useI18n();
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     cursor: pointer;
-    font-family: var(--font-mono);
+    font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
     font-size: 1.2rem;
     line-height: 1;
     transition: all 0.3s ease;

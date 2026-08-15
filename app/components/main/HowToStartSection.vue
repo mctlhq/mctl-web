@@ -80,7 +80,7 @@ const steps = [
   }
 
   &__card-substeps {
-    font-family: var(--font-mono);
+    font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
     font-size: 0.75rem;
     background: var(--color-bg);
     padding: 0.75rem;

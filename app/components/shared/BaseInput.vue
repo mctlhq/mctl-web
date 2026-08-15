@@ -76,7 +76,7 @@ const modelValue = defineModel<string | number>();
     border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
     border-radius: 6px;
     color: var(--color-text);
-    font-family: var(--font-mono);
+    font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
     font-size: 16px;
     padding: 14px;
     transition: all .3s ease;

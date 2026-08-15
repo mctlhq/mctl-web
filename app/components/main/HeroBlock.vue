@@ -210,7 +210,7 @@ const { t } = useI18n()
     padding: 1.5rem 1.5rem 1.75rem;
     // Body inherits the page's display face (Onest via CDN); force mono so
     // the terminal reads as a terminal.
-    font-family: var(--font-mono);
+    font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
     font-size: 0.85rem;
     line-height: 1.9;
 
