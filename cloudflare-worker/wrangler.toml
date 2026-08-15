@@ -6,6 +6,11 @@ compatibility_date = "2024-01-01"
 # TELEGRAM_BOT_TOKEN = "your-bot-token-here"
 # TELEGRAM_CHAT_ID = "your-chat-id-here"
 
+# Non-secret config vars — plain values, safe to keep in git.
+[vars]
+# GitHub logins exempt from tenant-provisioning limits, comma-separated.
+UNLIMITED_USERS = "mashkovd"
+
 # Routes:
 #   mctl.ai/api/*      — primary API endpoint
 #   mctl.me/*          — redirect root domain to mctl.ai
