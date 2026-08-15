@@ -50,7 +50,7 @@ html {
 body {
   position: relative;
   font-size: 14px;
-  font-family: var(--font-display), 'Onest', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-display, 'Onest', system-ui, -apple-system, sans-serif);
   background-color: var(--color-bg);
   color: var(--color-text);
   line-height: 1.6;
