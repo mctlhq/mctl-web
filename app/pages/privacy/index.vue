@@ -116,8 +116,14 @@ useHead({
             <a href="https://letsencrypt.org/privacy/" target="_blank" rel="noopener">Let's Encrypt Privacy Policy</a>.
           </li>
           <li>
-            <strong>Telegram</strong> — operator incident paging only. This is not
-            a customer messaging product. See
+            <strong>Resend</strong> — transactional welcome email after a tenant
+            workspace is provisioned (name, email, team). See
+            <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener">Resend's Privacy Policy</a>.
+          </li>
+          <li>
+            <strong>Telegram</strong> — operator incident paging, and landing-form
+            notifications: tenant requests (GitHub identity, email, team, use
+            case) and contact-form messages (name, email, message). See
             <a href="https://telegram.org/privacy" target="_blank" rel="noopener">Telegram's Privacy Policy</a>.
           </li>
         </ul>
