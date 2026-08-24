@@ -14,7 +14,7 @@ useHead({
     <div class="container">
       <p class="section-tag">Legal</p>
       <h1>Privacy Policy</h1>
-      <p class="subtitle">Effective date: March 14, 2026</p>
+      <p class="subtitle">Effective date: August 24, 2026</p>
     </div>
   </section>
 
@@ -83,10 +83,27 @@ useHead({
         </ul>
 
         <h2>5. Third-Party Services</h2>
+        <p>
+          GitHub sign-in is brokered by Dex, which we host in-cluster. Dex is
+          not a separate processor. The following organizations process data
+          on our behalf or as independent platforms we rely on:
+        </p>
         <ul>
           <li>
-            <strong>GitHub</strong> — OAuth identity provider. Your use of GitHub is governed by
+            <strong>GitHub</strong> — OAuth identity provider, git hosting, and
+            GitHub Actions. Your use of GitHub is governed by
             <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub's Privacy Statement</a>.
+          </li>
+          <li>
+            <strong>Hetzner Cloud</strong> — compute, volumes, and network in
+            Frankfurt. Platform and tenant workloads at rest run here. See
+            <a href="https://www.hetzner.com/legal/privacy-policy/" target="_blank" rel="noopener">Hetzner's Privacy Policy</a>.
+          </li>
+          <li>
+            <strong>Cloudflare</strong> — DNS, CDN, Workers (landing OAuth), and
+            R2 object storage (backups, logs, Terraform state). Cloudflare may
+            log IP addresses and request metadata. See
+            <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare's Privacy Policy</a>.
           </li>
           <li>
             <strong>Anthropic Claude</strong> — when you connect the mctl MCP connector in Claude.ai,
@@ -94,8 +111,20 @@ useHead({
             <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">Anthropic's Privacy Policy</a>.
           </li>
           <li>
-            <strong>Cloudflare</strong> — CDN and network layer. Cloudflare may log IP addresses and
-            request metadata per their privacy policy.
+            <strong>Let's Encrypt</strong> — public TLS certificates for platform
+            hostnames via cert-manager. See
+            <a href="https://letsencrypt.org/privacy/" target="_blank" rel="noopener">Let's Encrypt Privacy Policy</a>.
+          </li>
+          <li>
+            <strong>Resend</strong> — transactional welcome email after a tenant
+            workspace is provisioned (name, email, team). See
+            <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener">Resend's Privacy Policy</a>.
+          </li>
+          <li>
+            <strong>Telegram</strong> — operator incident paging, and landing-form
+            notifications: tenant requests (GitHub identity, email, team, use
+            case) and contact-form messages (name, email, message). See
+            <a href="https://telegram.org/privacy" target="_blank" rel="noopener">Telegram's Privacy Policy</a>.
           </li>
         </ul>
 
