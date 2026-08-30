@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  buildSessionResponsePayload,
   decryptSessionPayload,
   encryptSessionPayload,
   fragmentErrorLocation,
@@ -130,4 +131,69 @@ test('cookie decrypt alone does not redeem; cache consume must hit', () => {
   assert.equal(sessionIsLive(expired), false);
   assert.equal(sessionIsLive(live), true);
   assert.equal(sessionIsLive(null), false);
+});
+
+test('buildSessionResponsePayload passes token through for docs/mcp-shaped payloads', () => {
+  const payload = {
+    login: 'octocat',
+    name: 'Octo Cat',
+    avatar_url: 'https://example.com/avatar.png',
+    html_url: 'https://github.com/octocat',
+    sig: 'deadbeef',
+    token: 'gho_placeholder_not_a_real_token',
+    sessionId: 'abc123',
+    exp: Date.now() + 60_000,
+  };
+  const result = buildSessionResponsePayload(payload);
+  assert.equal('token' in result, true);
+  assert.equal(result.token, payload.token);
+});
+
+test('buildSessionResponsePayload has no token key for tg-mcp-shaped payloads', () => {
+  const payload = {
+    login: 'octocat',
+    name: 'Octo Cat',
+    avatar_url: 'https://example.com/avatar.png',
+    html_url: 'https://github.com/octocat',
+    sig: 'deadbeef',
+    sessionId: 'abc123',
+    exp: Date.now() + 60_000,
+  };
+  const result = buildSessionResponsePayload(payload);
+  assert.equal('token' in result, false);
+});
+
+test('buildSessionResponsePayload strips sessionId and exp', () => {
+  const payload = {
+    login: 'octocat',
+    sig: 'deadbeef',
+    sessionId: 'abc123',
+    exp: Date.now() + 60_000,
+  };
+  const result = buildSessionResponsePayload(payload);
+  assert.equal('sessionId' in result, false);
+  assert.equal('exp' in result, false);
+});
+
+test('buildSessionResponsePayload drops fields not on the allowlist', () => {
+  const payload = {
+    login: 'octocat',
+    sig: 'deadbeef',
+    internal_id: 'should-not-leak',
+  };
+  const result = buildSessionResponsePayload(payload);
+  assert.equal('internal_id' in result, false);
+});
+
+test('buildSessionResponsePayload passes through identity fields unchanged and invents no keys', () => {
+  const payload = {
+    login: 'octocat',
+    name: 'Octo Cat',
+    avatar_url: 'https://example.com/avatar.png',
+    html_url: 'https://github.com/octocat',
+    sig: 'deadbeef',
+  };
+  const result = buildSessionResponsePayload(payload);
+  assert.deepEqual(result, payload);
+  assert.equal('token' in result, false);
 });
