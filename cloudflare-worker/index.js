@@ -259,6 +259,24 @@ export function redeemFromCookie(decrypted, consumed) {
   return consumed;
 }
 
+// Explicit allowlist for what `/api/github/session` returns to the browser.
+// `token` is on this list deliberately: it is the credential
+// docs.mctl.ai/mcp/connecting hands the user for api.mctl.ai/mcp, not an
+// incidental leak. It is absent from tg-mcp payloads (see
+// handleGitHubCallback), so those responses carry no token. Removing it from
+// here entirely requires mctl-api to issue its own scoped token first — see
+// mctlhq/mctl-api#218. Any other field on the internal session payload
+// (e.g. sessionId, exp) is intentionally never exposed unless added here.
+const SESSION_RESPONSE_FIELDS = ['login', 'name', 'avatar_url', 'html_url', 'sig', 'token'];
+
+export function buildSessionResponsePayload(payload) {
+  const out = {};
+  for (const key of SESSION_RESPONSE_FIELDS) {
+    if (key in payload) out[key] = payload[key];
+  }
+  return out;
+}
+
 export async function takeOAuthSession(id) {
   if (!isSessionId(id)) return null;
   const cache = caches.default;
@@ -585,11 +603,19 @@ async function handleGitHubCallback(url, request, env) {
       name:       user.name || '',
       avatar_url: user.avatar_url || '',
       html_url:   user.html_url || '',
-      token:      accessToken,
       sig,
       sessionId,
       exp: Date.now() + SESSION_TTL_SEC * 1000,
     };
+    // `token` is only handed to flows that actually consume it.
+    // docs.mctl.ai/mcp/connecting requires it as the api.mctl.ai/mcp bearer;
+    // tg-mcp never calls /api/github/session, so it never gets one — the
+    // token then never reaches the Cache API entry or the encrypted cookie
+    // for that flow either. See mctlhq/mctl-api#218 for the follow-up that
+    // replaces this GitHub token with a scoped, revocable mctl-issued one.
+    if (ghFlow === 'docs' || ghFlow === 'mcp') {
+      mcpPayload.token = accessToken;
+    }
     await putOAuthSession(sessionId, mcpPayload);
     const encrypted = await encryptSessionPayload(mcpPayload, env.GITHUB_OAUTH_HMAC_KEY);
 
@@ -696,8 +722,7 @@ async function handleGitHubSession(request, env, origin) {
     });
   }
 
-  const { sessionId: _sessionId, exp: _exp, ...clientPayload } = payload;
-  return new Response(JSON.stringify(clientPayload), { status: 200, headers });
+  return new Response(JSON.stringify(buildSessionResponsePayload(payload)), { status: 200, headers });
 }
 
 function parseCookies(cookieHeader) {
