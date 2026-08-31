@@ -65,6 +65,7 @@ export default defineNuxtConfig({
     // Public keys that are exposed to the client
     public: {
       baseUrlFront: import.meta.env.NUXT_PUBLIC_FRONT_BASE || '',
+      turnstileSiteKey: import.meta.env.NUXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAEjFjEMuTRSzlzQc',
     },
   },
 });
