@@ -21,10 +21,8 @@ jobs:
         with:
           scan-type: fs
           scan-ref: .
-          severity: CRITICAL
-          exit-code: "0"
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
           ignore-unfixed: true
           version: v0.69.3
-          # Report-only: package-lock.json already has CRITICAL findings with
-          # upstream fixes (Nuxt DevTools, seroval). Dependabot PRs are the
-          # remediation path; this workflow exists so the scan runs (SOC F16).
+          # Fails on fixable HIGH/CRITICAL findings; ignore-unfixed skips CVEs with no upstream fix.
