@@ -11,6 +11,7 @@ export function useApi() {
     github_auth: object
     team: string
     usecase: string
+    turnstile_token: string
   }): Promise<SubmitResult> {
     const response = await fetch(FORM_API_URL, {
       method: 'POST',
@@ -24,6 +25,7 @@ export function useApi() {
     name: string
     email: string
     message: string
+    turnstile_token: string
   }): Promise<SubmitResult> {
     const response = await fetch(CONTACT_API_URL, {
       method: 'POST',

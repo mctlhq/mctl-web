@@ -65,6 +65,17 @@ export default defineNuxtConfig({
     // Public keys that are exposed to the client
     public: {
       baseUrlFront: import.meta.env.NUXT_PUBLIC_FRONT_BASE || '',
+      // The production sitekey's hostname allowlist excludes localhost, so a
+      // single hardcoded fallback makes both gated forms unusable for anyone
+      // running `npm run dev` or the Docker workflow without an env file —
+      // and the failure looks like a broken form, not a missing key. Default
+      // by environment instead: Cloudflare's always-passes test key for dev,
+      // the real key for builds. An explicit env var still wins over both.
+      turnstileSiteKey:
+        import.meta.env.NUXT_PUBLIC_TURNSTILE_SITE_KEY
+        || (process.env.NODE_ENV === 'production'
+          ? '0x4AAAAAAEjFjEMuTRSzlzQc'
+          : '1x00000000000000000000AA'),
     },
   },
 });

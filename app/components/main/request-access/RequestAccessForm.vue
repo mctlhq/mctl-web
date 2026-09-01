@@ -12,6 +12,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t } = useI18n();
+const runtimeConfig = useRuntimeConfig();
 
 const schema = yup.object({
   team: yup.string().required(t('validation.required')).max(50),
@@ -32,6 +33,20 @@ const formStatus = ref<{ message: string; type: 'success' | 'error' } | null>(nu
 const isSubmitting = ref(false);
 
 const showSuccessModal = ref(false);
+
+const turnstileEl = ref<HTMLElement | null>(null);
+const {
+  token: turnstileToken,
+  loadFailed: turnstileLoadFailed,
+  render: renderTurnstile,
+  reset: resetTurnstile,
+} = useTurnstile();
+
+onMounted(() => {
+  if (turnstileEl.value) {
+    renderTurnstile(turnstileEl.value, runtimeConfig.public.turnstileSiteKey);
+  }
+});
 
 const teamFieldState = computed(() => {
   if (checking.value) {
@@ -58,6 +73,18 @@ const onSubmit = handleSubmit(async (formData) => {
     if (!teamAvailable.value) return;
   }
 
+  if (!turnstileToken.value) {
+    // See ContactForm: a widget that failed to load is not a challenge the
+    // user can complete, so it gets its own message.
+    formStatus.value = {
+      message: turnstileLoadFailed.value
+        ? t('js.submit.verification_unavailable')
+        : t('js.submit.verification_required'),
+      type: 'error',
+    };
+    return;
+  }
+
   try {
     isSubmitting.value = true;
 
@@ -65,6 +92,7 @@ const onSubmit = handleSubmit(async (formData) => {
       github_auth: props.authData,
       team: formData.team,
       usecase: formData.usecase,
+      turnstile_token: turnstileToken.value,
     })
 
     if (result.success) {
@@ -77,6 +105,11 @@ const onSubmit = handleSubmit(async (formData) => {
     formStatus.value = { message: t('js.submit.network_error'), type: 'error' }
   } finally {
     isSubmitting.value = false
+    // Turnstile tokens are single-use; siteverify consumes one on success
+    // too, and this form stays mounted after a successful send, so the
+    // widget must reset after every attempt that may have reached
+    // siteverify — not only on failure.
+    resetTurnstile()
   }
 });
 </script>
@@ -113,7 +146,17 @@ const onSubmit = handleSubmit(async (formData) => {
         id="usecase"
       />
     </BaseFormField>
+
+    <div ref="turnstileEl" class="request-access-form__turnstile" />
   </BaseForm>
 
   <SuccessModal v-model="showSuccessModal" />
 </template>
+
+<style lang="scss" scoped>
+.request-access-form {
+  &__turnstile {
+    margin-top: 16px;
+  }
+}
+</style>
