@@ -27,7 +27,7 @@ const { variant = 'primary', size = 'md', block = false } = defineProps<BaseButt
   font-family: inherit;
   font-size: inherit;
   font-weight: 500;
-  color: #fff;
+  color: var(--color-text);
 
   background-color: var(--color-primary);
   border-width: 1px;

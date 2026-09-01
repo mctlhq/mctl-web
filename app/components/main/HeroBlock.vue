@@ -228,7 +228,7 @@ const { t } = useI18n()
 
   &__prompt { color: var(--color-accent); }
   &__accent { color: var(--color-accent); }
-  &__str { color: #ffbd2e; }
+  &__str { color: var(--syntax-string, #e08b5a); }
 
   &__cursor {
     display: inline-block;

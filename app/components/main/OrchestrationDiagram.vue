@@ -79,7 +79,7 @@ const { t } = useI18n();
   &__box-title {
     margin-bottom: 0.5rem;
     font-size: 1.25rem;
-    color: #fff;
+    color: var(--color-text);
   }
 
   &__box-description {

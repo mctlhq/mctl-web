@@ -1,12 +1,12 @@
 // Typography Helpers
 .highlight { color: var(--color-accent); font-weight: 600; }
-.highlight-ctl { color: #ffffff; font-weight: 600; }
+.highlight-ctl { color: var(--color-text); font-weight: 600; }
 .terminal-prompt { color: var(--color-accent); opacity: 0.8; }
 
 .section-title {
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 800;
-  color: #fff;
+  color: var(--color-text);
   margin-bottom: clamp(2rem, 3vw, 4rem);
   letter-spacing: -0.02em;
   text-align: center;
@@ -297,7 +297,7 @@
 }
 
 .success-modal-content { max-width: 480px; box-sizing: border-box; }
-.success-modal-content h3 { color: #fff; margin-bottom: 1.5rem; font-size: 1.3rem; }
+.success-modal-content h3 { color: var(--color-text); margin-bottom: 1.5rem; font-size: 1.3rem; }
 .success-steps { text-align: left; margin-bottom: 1.5rem; }
 .success-step { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; align-items: flex-start; }
 .success-step p { color: var(--color-text); font-size: 0.95rem; margin: 0; line-height: 1.5; }

@@ -315,7 +315,7 @@ useHead({
 .docs-hero h1 {
   font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 800;
-  color: #fff;
+  color: var(--color-text);
   letter-spacing: -0.02em;
   margin-bottom: 1rem;
   position: relative;
@@ -388,7 +388,7 @@ useHead({
 
 .component-card h3 {
   font-size: 1.1rem;
-  color: #fff;
+  color: var(--color-text);
   margin-bottom: 0.75rem;
 }
 
@@ -421,7 +421,7 @@ useHead({
 
 .interface-card h3 {
   font-size: 1.1rem;
-  color: #fff;
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
@@ -478,7 +478,7 @@ useHead({
 
 .agent-callout h4 {
   font-size: 1rem;
-  color: #fff;
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 

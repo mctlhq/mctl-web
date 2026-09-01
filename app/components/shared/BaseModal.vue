@@ -163,7 +163,7 @@ watch(open, async (isOpen) => {
 
   &__title {
     margin: 0;
-    color: #fff;
+    color: var(--color-text);
     font-size: 1.25rem;
     font-weight: 600;
     line-height: 1.3;

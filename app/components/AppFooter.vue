@@ -49,7 +49,7 @@ const footerLinks = computed(() => [
     transition: all 0.3s ease;
 
     &:hover {
-      color: #ffffff;
+      color: var(--color-text);
     }
   }
 

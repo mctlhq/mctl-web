@@ -34,7 +34,7 @@
   font-size: clamp(2.5rem, 4.5vw, 4.25rem);
   font-weight: 800;
   text-align: center;
-  color: #fff;
+  color: var(--color-text);
   margin-bottom: 1.5rem;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -103,7 +103,7 @@
 }
 
 .step-content { flex: 1; min-width: 0; }
-.step-content h3 { font-size: 1.75rem; margin-bottom: 1rem; color: #fff; }
+.step-content h3 { font-size: 1.75rem; margin-bottom: 1rem; color: var(--color-text); }
 .step-content p { color: var(--color-text-muted); margin-bottom: 1.5rem; line-height: 1.7; }
 
 // Pricing
@@ -164,7 +164,7 @@
   letter-spacing: 1px;
 }
 
-.pricing-card h3 { font-size: 1.5rem; color: #fff; margin-bottom: 1rem; }
+.pricing-card h3 { font-size: 1.5rem; color: var(--color-text); margin-bottom: 1rem; }
 
 .pricing-price {
   font-size: 2rem;
