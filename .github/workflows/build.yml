@@ -1,10 +1,20 @@
 
 name: build
 
+# No paths-ignore on the trigger, deliberately.
+#
+# `build` is a required status check on main. A required check whose workflow
+# is path-filtered does not run at all on the PRs it excludes, and an absent
+# check is not "pending then green" — it never arrives, so the PR sits at
+# BLOCKED with mergeable=MERGEABLE and reviewDecision=APPROVED indefinitely.
+# The only way out is an admin override, which is how #88 had to be merged.
+#
+# So the job always starts and always reports the context; the expensive work
+# is skipped instead. Worker-only PRs get a green `build` in seconds without a
+# Docker build that would prove nothing about them.
 on:
   pull_request:
     branches: [main]
-    paths-ignore: ['cloudflare-worker/**']
 
 permissions:
   contents: read
@@ -15,8 +25,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Needed for the diff below: the default shallow fetch has no merge
+          # base to compare against.
+          fetch-depth: 0
+
+      - name: Decide whether anything outside the Worker changed
+        id: scope
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          # Fails loudly rather than silently building or silently skipping if
+          # the base ref cannot be resolved.
+          git rev-parse --verify "origin/${BASE_REF}" >/dev/null
+
+          changed=$(git diff --name-only "origin/${BASE_REF}...HEAD")
+          echo "changed files:"
+          printf '%s\n' "${changed:-<none>}"
+
+          # An empty diff builds. Treating "no files" as "nothing to build"
+          # would turn any failure to compute the diff into a silent pass on a
+          # required check.
+          if [ -z "${changed}" ] || printf '%s\n' "${changed}" | grep -qv '^cloudflare-worker/'; then
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "Only cloudflare-worker/** changed — skipping the image build."
+            echo "The Worker is covered by worker-test; this job builds the Nuxt site."
+          fi
 
       - name: Docker meta
+        if: steps.scope.outputs.needed == 'true'
         id: meta
         uses: docker/metadata-action@v6
         with:
@@ -25,9 +65,11 @@ jobs:
             type=sha,prefix=sha-
 
       - name: Set up Docker Buildx
+        if: steps.scope.outputs.needed == 'true'
         uses: docker/setup-buildx-action@v4
 
       - name: Build (PR validation — no push)
+        if: steps.scope.outputs.needed == 'true'
         uses: docker/build-push-action@v7
         with:
           context: .
