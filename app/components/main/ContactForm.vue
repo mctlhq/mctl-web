@@ -24,6 +24,16 @@ const { submitContactForm, isLoading, error } = useContactForm();
 const turnstileEl = ref<HTMLElement | null>(null);
 const { token: turnstileToken, render: renderTurnstile, reset: resetTurnstile } = useTurnstile();
 
+const turnstileStatus = ref<string | null>(null);
+
+// The submit error and the verification message share one status slot, so a
+// stale "complete the challenge" line cannot sit next to a fresh API error.
+const formStatus = computed(() => {
+  if (turnstileStatus.value) return { message: turnstileStatus.value, type: 'error' as const };
+  if (error.value) return { message: error.value.message, type: 'error' as const };
+  return null;
+});
+
 onMounted(() => {
   if (turnstileEl.value) {
     renderTurnstile(turnstileEl.value, runtimeConfig.public.turnstileSiteKey);
@@ -33,7 +43,15 @@ onMounted(() => {
 const onSubmit = handleSubmit(async (formData) => {
   // Gate, don't replace: existing validation/submit logic is unchanged,
   // this just requires a Turnstile token before calling the API.
-  if (!turnstileToken.value) return;
+  // Say so rather than returning silently — the token is absent whenever the
+  // widget is still loading, has expired, or errored, and a submit button
+  // that does nothing at all is indistinguishable from a broken form.
+  if (!turnstileToken.value) {
+    turnstileStatus.value = t('js.submit.verification_required');
+    return;
+  }
+
+  turnstileStatus.value = null;
 
   try {
     await submitContactForm({ ...formData, turnstile_token: turnstileToken.value });
@@ -51,7 +69,7 @@ const onSubmit = handleSubmit(async (formData) => {
   <BaseForm
     :submit-text="t('contact.submit')"
     :is-loading="isLoading"
-    :status="error ? { message: error.message, type: 'error' } : null"
+    :status="formStatus"
     class="contact-form"
     @submit="onSubmit"
   >

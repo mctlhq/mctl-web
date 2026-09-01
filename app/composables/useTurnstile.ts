@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { onUnmounted, ref } from 'vue'
 
 const TURNSTILE_SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
 
@@ -27,7 +27,7 @@ function loadTurnstileScript(): Promise<void> {
   if (window.turnstile) return Promise.resolve()
   if (scriptPromise) return scriptPromise
 
-  scriptPromise = new Promise((resolve, reject) => {
+  scriptPromise = new Promise<void>((resolve, reject) => {
     const script = document.createElement('script')
     script.src = TURNSTILE_SCRIPT_URL
     script.async = true
@@ -35,6 +35,13 @@ function loadTurnstileScript(): Promise<void> {
     script.onload = () => resolve()
     script.onerror = () => reject(new Error('Failed to load Turnstile script'))
     document.head.appendChild(script)
+  }).catch((err) => {
+    // Drop the cached promise so a later mount retries the load instead of
+    // re-awaiting a permanently rejected one. Without this, a single
+    // transient CDN failure disables the widget for the rest of the page's
+    // life, and both forms gate on a token that can then never arrive.
+    scriptPromise = null
+    throw err
   })
 
   return scriptPromise
@@ -43,14 +50,31 @@ function loadTurnstileScript(): Promise<void> {
 export function useTurnstile() {
   const token = ref('')
   const widgetId = ref<string | null>(null)
+  const loadFailed = ref(false)
+
+  // Set when the component unmounts while `render()` is still awaiting the
+  // script, so the late resolution does not render into a detached container.
+  let cancelled = false
 
   async function render(container: string | HTMLElement, sitekey: string) {
     if (import.meta.server) return
     if (!sitekey) return
 
-    await loadTurnstileScript()
-    if (!window.turnstile) return
+    cancelled = false
+    try {
+      await loadTurnstileScript()
+    } catch {
+      loadFailed.value = true
+      return
+    }
 
+    if (cancelled) return
+    if (!window.turnstile) {
+      loadFailed.value = true
+      return
+    }
+
+    loadFailed.value = false
     widgetId.value = window.turnstile.render(container, {
       sitekey,
       callback: (t: string) => {
@@ -73,9 +97,27 @@ export function useTurnstile() {
     }
   }
 
+  function remove() {
+    if (import.meta.server) return
+    cancelled = true
+    token.value = ''
+    if (window.turnstile && widgetId.value) {
+      window.turnstile.remove(widgetId.value)
+    }
+    widgetId.value = null
+  }
+
+  // Both forms live on the homepage, which is left and re-entered by SPA
+  // navigation (the footer links to /privacy). Without this, every return
+  // registers another widget against the global Turnstile API and keeps the
+  // previous one's callbacks alive.
+  onUnmounted(remove)
+
   return {
     token,
+    loadFailed,
     render,
     reset,
+    remove,
   }
 }
