@@ -183,19 +183,38 @@ export default {
 // page script cannot set or strip it, so a browser-driven request always
 // carries an honest value.
 //
-// A missing header shares the site's own bucket, deliberately. Spending the
-// *victim's* budget requires the victim's browser, and browsers always send
-// this header — so an absent one means a non-browser client (curl, uptime
-// checks, older agents) calling from its own address, where exhausting a
-// budget harms only itself. Bucketing those separately would buy nothing and
-// would break clients that predate the header.
+// A missing header shares the site's own bucket, deliberately — with a known
+// gap. Mostly an absent header means a non-browser client (curl, uptime checks,
+// older agents) calling from its own address, where exhausting a budget harms
+// only itself. But "browsers always send it" is too strong: privacy extensions,
+// some in-app webviews and proxies strip Fetch Metadata, and real cross-site
+// browser traffic from those clients does land in the visitor's own bucket, so
+// the drain stays open for that class. Not a regression — they had no
+// protection at all before — and there is no clean fix that does not also
+// break legitimate header-less callers. Origin is a possible secondary signal
+// for a later pass; tracked with the rest in #89's follow-ups.
+// The only values that may reach the cache key. Everything else folds into
+// 'cross-site'.
+//
+// This allowlist is load-bearing, not tidiness. Sec-Fetch-Site is a forbidden
+// header name for *page script*, which is what makes it trustworthy against a
+// browser-driven attack — but any non-browser client sets it freely. Passing
+// the raw value through would let a caller mint a fresh counter per request
+// ("Sec-Fetch-Site: bypass-1", "bypass-2", ...) and so remove the rate limit
+// entirely from /api/submit and /api/contact. Bounding the cardinality to four
+// buckets is what keeps the limiter a limiter.
+const FETCH_SITE_CLASSES = new Set(['same-site', 'cross-site', 'none']);
+
 function rateBucket(rateKey, request) {
   const site = request.headers.get('Sec-Fetch-Site');
   if (!site || site === 'same-origin') return rateKey;
   // Third-party-initiated traffic gets its own budget per initiator class.
   // Legitimate cross-site callers (docs.mctl.ai redeeming a session, for
   // example) are still limited — just not out of the same-origin allowance.
-  return `${rateKey} [${site}]`;
+  // Anything unrecognised shares the cross-site budget rather than getting one
+  // of its own, so inventing header values buys nothing.
+  const cls = FETCH_SITE_CLASSES.has(site) ? site : 'cross-site';
+  return `${rateKey} [${cls}]`;
 }
 
 async function checkRateLimit(ip, bucket, maxRequests, windowSec) {
