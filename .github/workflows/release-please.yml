@@ -1,35 +1,35 @@
-name: Deploy on tag
+name: release-please
 
-# Pushing a semver tag (e.g. 6.1.0, no v-prefix) ships the static site to
-# mctl.ai: build the image from the tag and roll it out via the centralized
-# mctl-gitops release-deploy pipeline (ArgoCD auto-syncs the bumped image tag).
-# This makes the documented "tag -> deploy" workflow actually work; previously
-# release-deploy had to be dispatched by hand in mctl-gitops.
 on:
   push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
+    branches: [main]
 
-# Serialize deploys: the gitops image.tag bump is a single-writer commit to
-# mctl-gitops main, so overlapping dispatches must not race.
 concurrency:
   group: deploy-mctl-web
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
-  deploy:
+  release-please:
     runs-on: ubuntu-latest
     steps:
+      - uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
       # Note: `gh workflow run` is fire-and-forget — this step goes green once
       # the dispatch is accepted, not when release-deploy actually succeeds.
       # Watch the run in mctl-gitops Actions to confirm the build/bump landed.
       - name: Dispatch centralized release-deploy
+        if: ${{ steps.release.outputs.release_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ steps.release.outputs.tag_name }}
         run: |
           gh workflow run release-deploy.yaml \
             --repo mctlhq/mctl-gitops \
