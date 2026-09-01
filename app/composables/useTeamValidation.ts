@@ -39,6 +39,22 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
   }
 
   function onInput(value: string) {
+    // Cancel first, before any early return. Every path out of this function
+    // invalidates whatever check is already running: an emptied field, a name
+    // that now fails the regex, a signed-out user. Returning without
+    // cancelling lets the previous request land afterwards and set
+    // `teamAvailable = true` for a value the user has already made invalid —
+    // the field then shows the success state and onSubmit lets it through.
+    if (checkTimeout) {
+      clearTimeout(checkTimeout)
+      checkTimeout = null
+    }
+    if (inFlight) {
+      inFlight.abort()
+      inFlight = null
+    }
+    checking.value = false
+
     teamAvailable.value = false
     teamError.value = ''
 
@@ -55,7 +71,7 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
       return
     }
 
-    if (checkTimeout) clearTimeout(checkTimeout)
+    // (the pending timer was already cleared at the top of this function)
     if (value.length >= 2) {
       checkTimeout = setTimeout(() => {
         checkAvailability(value)
@@ -99,6 +115,11 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
         signal: controller.signal,
       })
 
+      // First of two supersession guards, one after each await. A request that
+      // is no longer the current attempt must write nothing at all — not the
+      // 401 branch, not the rate-limit branch, not the verdict below.
+      if (inFlight !== controller) return
+
       if (res.status === 401) {
         teamAvailable.value = false
         teamError.value = 'js.team.sign_in_required'
@@ -115,6 +136,12 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
       } catch {
         data = {}
       }
+
+      // An abort during `res.json()` rejects here and would be indistinguishable
+      // from an empty body — `data.available` undefined, falling through to the
+      // `taken` branch, from a request that has already been superseded. Anything
+      // that is no longer the current attempt stops here and writes nothing.
+      if (inFlight !== controller) return
 
       // Every non-2xx, not just the one we recognise. 429 in particular is now
       // reachable — this endpoint is rate-limited at 20/min/IP, which repeated
