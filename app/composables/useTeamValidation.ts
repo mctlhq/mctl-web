@@ -3,11 +3,27 @@ import { ref } from 'vue'
 const TEAM_REGEX = /^[a-z0-9][a-z0-9-]{0,62}$/
 const CHECK_TEAM_URL = 'https://mctl.ai/api/github/check-team'
 
-export function useTeamValidation() {
+interface GithubAuthIdentity {
+  login?: string
+  sig?: string
+}
+
+// check-team is identity-gated (see cloudflare-worker/index.js handleCheckTeam):
+// it requires the same signed { login, sig } handleFormSubmit already
+// validates, sent in the POST body — never the query string, since sig is an
+// unbounded bearer credential. `getAuthData` is read on every call so the
+// composable always uses the caller's current sign-in state.
+export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null | undefined) {
   const teamAvailable = ref(false)
   const teamError = ref('')
   const checking = ref(false)
   let checkTimeout: ReturnType<typeof setTimeout> | null = null
+  // Cancels the in-flight check when a newer one starts. The debounce alone
+  // does not prevent overlap: it only delays the *start*, so two requests can
+  // still be in flight after a pause mid-typing, and a slow first response
+  // arriving second would overwrite the newer verdict — leaving the field
+  // showing the availability of a name the user has already changed.
+  let inFlight: AbortController | null = null
 
   function validate(value: string): string | null {
     if (!value) return null
@@ -17,7 +33,28 @@ export function useTeamValidation() {
     return null
   }
 
+  function hasIdentity(): boolean {
+    const authData = getAuthData ? getAuthData() : null
+    return !!(authData && authData.login && authData.sig)
+  }
+
   function onInput(value: string) {
+    // Cancel first, before any early return. Every path out of this function
+    // invalidates whatever check is already running: an emptied field, a name
+    // that now fails the regex, a signed-out user. Returning without
+    // cancelling lets the previous request land afterwards and set
+    // `teamAvailable = true` for a value the user has already made invalid —
+    // the field then shows the success state and onSubmit lets it through.
+    if (checkTimeout) {
+      clearTimeout(checkTimeout)
+      checkTimeout = null
+    }
+    if (inFlight) {
+      inFlight.abort()
+      inFlight = null
+    }
+    checking.value = false
+
     teamAvailable.value = false
     teamError.value = ''
 
@@ -29,7 +66,12 @@ export function useTeamValidation() {
       return
     }
 
-    if (checkTimeout) clearTimeout(checkTimeout)
+    if (!hasIdentity()) {
+      teamError.value = 'js.team.sign_in_required'
+      return
+    }
+
+    // (the pending timer was already cleared at the top of this function)
     if (value.length >= 2) {
       checkTimeout = setTimeout(() => {
         checkAvailability(value)
@@ -38,12 +80,83 @@ export function useTeamValidation() {
   }
 
   async function checkAvailability(name: string) {
+    const authData = getAuthData ? getAuthData() : null
+    if (!authData || !authData.login || !authData.sig) {
+      teamAvailable.value = false
+      teamError.value = 'js.team.sign_in_required'
+      return
+    }
+
+    // Cancel any debounce still pending from the last keystroke *before*
+    // claiming the in-flight slot. Without this, a direct call from onSubmit
+    // is overtaken by the timer it never cleared: that later call aborts the
+    // request onSubmit is awaiting, the AbortError returns early leaving
+    // teamAvailable false, and the form silently declines to submit.
+    if (checkTimeout) {
+      clearTimeout(checkTimeout)
+      checkTimeout = null
+    }
+
+    if (inFlight) inFlight.abort()
+    const controller = new AbortController()
+    inFlight = controller
+
     checking.value = true
     teamError.value = ''
 
     try {
-      const res = await fetch(`${CHECK_TEAM_URL}?name=${encodeURIComponent(name)}`)
-      const data = await res.json()
+      const res = await fetch(CHECK_TEAM_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          github_auth: { login: authData.login, sig: authData.sig },
+        }),
+        signal: controller.signal,
+      })
+
+      // First of two supersession guards, one after each await. A request that
+      // is no longer the current attempt must write nothing at all — not the
+      // 401 branch, not the rate-limit branch, not the verdict below.
+      if (inFlight !== controller) return
+
+      if (res.status === 401) {
+        teamAvailable.value = false
+        teamError.value = 'js.team.sign_in_required'
+        return
+      }
+
+      // Parse first, then branch. A 400 carries `error: 'Invalid team name
+      // format'`, and returning on `!res.ok` before reading the body would
+      // bury it under the generic check_failed — the wrong-format message
+      // would never reach the user from a backend rejection.
+      let data: { available?: boolean; error?: string } = {}
+      try {
+        data = await res.json()
+      } catch {
+        data = {}
+      }
+
+      // An abort during `res.json()` rejects here and would be indistinguishable
+      // from an empty body — `data.available` undefined, falling through to the
+      // `taken` branch, from a request that has already been superseded. Anything
+      // that is no longer the current attempt stops here and writes nothing.
+      if (inFlight !== controller) return
+
+      // Every non-2xx, not just the one we recognise. 429 in particular is now
+      // reachable — this endpoint is rate-limited at 20/min/IP, which repeated
+      // edits or an office behind one NAT will hit — and its body has no
+      // `available` field. Falling through would land in the `else` below and
+      // tell the user the name is taken, which is both false and blocking.
+      if (!res.ok) {
+        teamAvailable.value = false
+        if (data.error === 'Invalid team name format') {
+          teamError.value = 'js.team.wrong-format'
+        } else {
+          teamError.value = res.status === 429 ? 'js.team.rate_limited' : 'js.team.check_failed'
+        }
+        return
+      }
 
       if (data.available) {
         teamAvailable.value = true
@@ -56,11 +169,20 @@ export function useTeamValidation() {
           teamError.value = `js.team.taken`
         }
       }
-    } catch {
+    } catch (err) {
+      // A superseded request is not a failure: abort() rejects the fetch, and
+      // reporting that as check_failed would flash an error for a name the
+      // user has already moved on from. The newer call owns the outcome.
+      if ((err as { name?: string })?.name === 'AbortError') return
       teamAvailable.value = false
       teamError.value = 'js.team.check_failed'
     } finally {
-      checking.value = false
+      // Only the newest request may clear the spinner — an aborted older one
+      // must not, or the field would read "done" while a check is still running.
+      if (inFlight === controller) {
+        inFlight = null
+        checking.value = false
+      }
     }
   }
 

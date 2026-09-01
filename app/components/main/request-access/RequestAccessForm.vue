@@ -24,7 +24,7 @@ const { defineField, values, errors, handleSubmit } = useForm<RequestAccessFormD
 const [team, teamProps] = defineField('team');
 const [usecase, usecaseProps] = defineField('usecase');
 
-const { teamAvailable, teamError, checking, onInput, checkAvailability } = useTeamValidation();
+const { teamAvailable, teamError, checking, onInput, checkAvailability } = useTeamValidation(() => props.authData);
 
 const { submitAccessRequest } = useApi();
 
