@@ -563,3 +563,48 @@ test('rate limit: requests under the limit are not rate limited', async () => {
     globalThis.caches = originalCaches;
   }
 });
+
+// ─── Transitional GET shim (remove with the shim itself) ─────────────────────
+
+test('transitional GET check-team answers available:true without touching Backstage', async () => {
+  const originalCaches = globalThis.caches;
+  globalThis.caches = { default: createMockCache() };
+  let backstageCalled = false;
+  const stub = async (url) => {
+    if (String(url).includes('tenant')) backstageCalled = true;
+    return new Response('{}', { status: 200 });
+  };
+  try {
+    await withGlobalFetch(stub, async () => {
+      const res = await worker.fetch(
+        new Request('https://mctl.ai/api/github/check-team?name=some-tenant'),
+        baseEnv(),
+      );
+      assert.equal(res.status, 200);
+      assert.deepEqual(await res.json(), { available: true });
+      // The whole point of the shim: it must NOT restore the enumeration
+      // oracle this PR removes. Optimistic-true, never a real lookup.
+      assert.equal(backstageCalled, false);
+    });
+  } finally {
+    globalThis.caches = originalCaches;
+  }
+});
+
+test('transitional GET answers identically for an existing and a made-up name', async () => {
+  const originalCaches = globalThis.caches;
+  globalThis.caches = { default: createMockCache() };
+  const stub = async () => new Response('{}', { status: 200 });
+  try {
+    await withGlobalFetch(stub, async () => {
+      const a = await worker.fetch(
+        new Request('https://mctl.ai/api/github/check-team?name=admins'), baseEnv());
+      const b = await worker.fetch(
+        new Request('https://mctl.ai/api/github/check-team?name=zzz-does-not-exist'), baseEnv());
+      assert.equal(a.status, b.status);
+      assert.equal(await a.text(), await b.text());
+    });
+  } finally {
+    globalThis.caches = originalCaches;
+  }
+});

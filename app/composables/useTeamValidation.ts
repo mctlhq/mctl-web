@@ -18,6 +18,12 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
   const teamError = ref('')
   const checking = ref(false)
   let checkTimeout: ReturnType<typeof setTimeout> | null = null
+  // Cancels the in-flight check when a newer one starts. The debounce alone
+  // does not prevent overlap: it only delays the *start*, so two requests can
+  // still be in flight after a pause mid-typing, and a slow first response
+  // arriving second would overwrite the newer verdict — leaving the field
+  // showing the availability of a name the user has already changed.
+  let inFlight: AbortController | null = null
 
   function validate(value: string): string | null {
     if (!value) return null
@@ -65,6 +71,10 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
       return
     }
 
+    if (inFlight) inFlight.abort()
+    const controller = new AbortController()
+    inFlight = controller
+
     checking.value = true
     teamError.value = ''
 
@@ -76,11 +86,23 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
           name,
           github_auth: { login: authData.login, sig: authData.sig },
         }),
+        signal: controller.signal,
       })
 
       if (res.status === 401) {
         teamAvailable.value = false
         teamError.value = 'js.team.sign_in_required'
+        return
+      }
+
+      // Every other non-2xx, not just the one we recognise. 429 in particular
+      // is now reachable — this endpoint is rate-limited at 20/min/IP, which
+      // repeated edits or an office behind one NAT will hit — and its body has
+      // no `available` field. Falling through would land in the `else` below
+      // and tell the user the name is taken, which is both false and blocking.
+      if (!res.ok) {
+        teamAvailable.value = false
+        teamError.value = res.status === 429 ? 'js.team.rate_limited' : 'js.team.check_failed'
         return
       }
 
@@ -97,11 +119,20 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
           teamError.value = `js.team.taken`
         }
       }
-    } catch {
+    } catch (err) {
+      // A superseded request is not a failure: abort() rejects the fetch, and
+      // reporting that as check_failed would flash an error for a name the
+      // user has already moved on from. The newer call owns the outcome.
+      if ((err as { name?: string })?.name === 'AbortError') return
       teamAvailable.value = false
       teamError.value = 'js.team.check_failed'
     } finally {
-      checking.value = false
+      // Only the newest request may clear the spinner — an aborted older one
+      // must not, or the field would read "done" while a check is still running.
+      if (inFlight === controller) {
+        inFlight = null
+        checking.value = false
+      }
     }
   }
 
