@@ -615,6 +615,73 @@ test('GET check-team stays uniform across an existing and a made-up name', async
   }
 });
 
+test('an unrouted GET flood does not spend the POST budget (cross-origin img-tag DoS)', async () => {
+  const originalCaches = globalThis.caches;
+  globalThis.caches = { default: createMockCache() };
+  const stub = async () => new Response('{}', { status: 200 });
+  const ip = '198.51.100.9';
+  try {
+    await withGlobalFetch(stub, async () => {
+      // What a third-party page can do with nothing but <img> tags: CORS stops
+      // it reading the response, not sending the request. Well past 20/min.
+      for (let i = 0; i < 30; i++) {
+        const res = await worker.fetch(
+          new Request('https://mctl.ai/api/github/check-team?name=probe', {
+            headers: { 'CF-Connecting-IP': ip },
+          }),
+          baseEnv(),
+        );
+        assert.equal(res.status, 404);
+      }
+
+      // The victim's real request, from the same IP, must be unaffected: the
+      // budget it spends is a different bucket entirely.
+      const real = await worker.fetch(
+        new Request('https://mctl.ai/api/github/check-team', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip },
+          body: JSON.stringify({ name: 'probe' }),
+        }),
+        baseEnv(),
+      );
+      assert.notEqual(real.status, 429);
+    });
+  } finally {
+    globalThis.caches = originalCaches;
+  }
+});
+
+test('a GET flood does not spend the contact form budget either (3 per 5 min)', async () => {
+  const originalCaches = globalThis.caches;
+  globalThis.caches = { default: createMockCache() };
+  const stub = async () => new Response('{}', { status: 200 });
+  const ip = '198.51.100.22';
+  try {
+    await withGlobalFetch(stub, async () => {
+      // The cheapest instance of the same class, and pre-existing rather than
+      // introduced here: at 3 per 5 minutes, three image tags on any page the
+      // victim loaded used to lock them out of the contact form.
+      for (let i = 0; i < 10; i++) {
+        await worker.fetch(
+          new Request('https://mctl.ai/api/contact', { headers: { 'CF-Connecting-IP': ip } }),
+          baseEnv(),
+        );
+      }
+      const real = await worker.fetch(
+        new Request('https://mctl.ai/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip },
+          body: JSON.stringify({ name: 'a', email: 'a@example.com', message: 'hi' }),
+        }),
+        baseEnv(),
+      );
+      assert.notEqual(real.status, 429);
+    });
+  } finally {
+    globalThis.caches = originalCaches;
+  }
+});
+
 test('POST check-team is still rate limited now that the exemption is gone', async () => {
   const originalCaches = globalThis.caches;
   globalThis.caches = { default: createMockCache() };
