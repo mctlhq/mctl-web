@@ -58,7 +58,14 @@ export function useTurnstile() {
 
   async function render(container: string | HTMLElement, sitekey: string) {
     if (import.meta.server) return
-    if (!sitekey) return
+    if (!sitekey) {
+      // Reached only via a misbuild — an empty NUXT_PUBLIC_TURNSTILE_SITE_KEY
+      // overriding the config fallback. Returning quietly here is what turned
+      // that into two permanently unusable forms with no diagnosis.
+      loadFailed.value = true
+      console.error('[turnstile] no sitekey configured; widget will not render')
+      return
+    }
 
     cancelled = false
     try {
