@@ -564,9 +564,9 @@ test('rate limit: requests under the limit are not rate limited', async () => {
   }
 });
 
-// ─── Transitional GET shim (remove with the shim itself) ─────────────────────
+// ─── The transitional GET shim is gone ───────────────────────────────────────
 
-test('transitional GET check-team answers available:true without touching Backstage', async () => {
+test('GET check-team is no longer routed and never answers available', async () => {
   const originalCaches = globalThis.caches;
   globalThis.caches = { default: createMockCache() };
   let backstageCalled = false;
@@ -580,10 +580,12 @@ test('transitional GET check-team answers available:true without touching Backst
         new Request('https://mctl.ai/api/github/check-team?name=some-tenant'),
         baseEnv(),
       );
-      assert.equal(res.status, 200);
-      assert.deepEqual(await res.json(), { available: true });
-      // The whole point of the shim: it must NOT restore the enumeration
-      // oracle this PR removes. Optimistic-true, never a real lookup.
+      assert.equal(res.status, 404);
+      // Pinned separately from the status: a future handler that answered this
+      // route with anything carrying `available` would hand back the client-side
+      // hint the identity gate exists to withhold, even at a non-200 status.
+      const body = await res.text();
+      assert.ok(!body.includes('available'), `GET leaked an availability hint: ${body}`);
       assert.equal(backstageCalled, false);
     });
   } finally {
@@ -591,12 +593,16 @@ test('transitional GET check-team answers available:true without touching Backst
   }
 });
 
-test('transitional GET answers identically for an existing and a made-up name', async () => {
+test('GET check-team stays uniform across an existing and a made-up name', async () => {
   const originalCaches = globalThis.caches;
   globalThis.caches = { default: createMockCache() };
   const stub = async () => new Response('{}', { status: 200 });
   try {
     await withGlobalFetch(stub, async () => {
+      // Held over from the shim's own suite. Removing the route must not
+      // reintroduce the enumeration oracle by a different door — a 404 that
+      // differed between a real and an invented tenant would be the same leak
+      // in a new status code.
       const a = await worker.fetch(
         new Request('https://mctl.ai/api/github/check-team?name=admins'), baseEnv());
       const b = await worker.fetch(
@@ -609,22 +615,27 @@ test('transitional GET answers identically for an existing and a made-up name', 
   }
 });
 
-test('transitional GET is exempt from the rate limit (POST is not)', async () => {
+test('POST check-team is still rate limited now that the exemption is gone', async () => {
   const originalCaches = globalThis.caches;
   globalThis.caches = { default: createMockCache() };
   const stub = async () => new Response('{}', { status: 200 });
   try {
     await withGlobalFetch(stub, async () => {
-      // Well past the 20/min POST limit. The deployed old frontend reads a 429
-      // as "name taken" and blocks submission, so a throttled shim would
-      // reintroduce the very breakage the shim exists to prevent.
+      // The exemption was written as `method === 'GET' && path === ...`, so a
+      // careless removal could drop the whole `limit` lookup with it. Drive the
+      // POST route past 20/min and require the 429 to still arrive.
       let last;
       for (let i = 0; i < 25; i++) {
         last = await worker.fetch(
-          new Request('https://mctl.ai/api/github/check-team?name=probe'), baseEnv());
+          new Request('https://mctl.ai/api/github/check-team', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '203.0.113.7' },
+            body: JSON.stringify({ name: 'probe' }),
+          }),
+          baseEnv(),
+        );
       }
-      assert.equal(last.status, 200);
-      assert.deepEqual(await last.json(), { available: true });
+      assert.equal(last.status, 429);
     });
   } finally {
     globalThis.caches = originalCaches;

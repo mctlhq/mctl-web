@@ -96,18 +96,7 @@ export default {
     }
 
     // Rate limiting for sensitive endpoints.
-    //
-    // TRANSITIONAL exemption — drop together with the GET shim below. The shim
-    // exists so the currently-deployed frontend keeps working until the
-    // POST-calling build is tagged, and that frontend reads a 429 (no
-    // `available` field) as "name taken" and blocks submission — the exact
-    // failure the shim is meant to prevent. Limiting it would leave the shim
-    // half-working for anyone editing repeatedly or sharing an IP.
-    // Safe to exempt: the shim returns a constant, never calls Backstage, and
-    // does no work worth throttling. The POST route stays limited.
-    const skipRateLimit =
-      request.method === 'GET' && path === '/api/github/check-team';
-    const limit = skipRateLimit ? null : RATE_LIMITS[path];
+    const limit = RATE_LIMITS[path];
     if (limit) {
       const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
       const limited = await checkRateLimit(clientIP, path, limit.max, limit.windowSec);
@@ -141,27 +130,6 @@ export default {
     // with query-string credentials. See handleCheckTeam.
     if (request.method === 'POST' && path === '/api/github/check-team') {
       return handleCheckTeam(request, env, origin);
-    }
-
-    // TRANSITIONAL — remove once the POST-calling frontend is tagged and live.
-    //
-    // The Worker deploys on merge (deploy.yml, path-filtered on
-    // cloudflare-worker/**) while the frontend ships only on a semver tag
-    // (tag-deploy.yml). Between the two, the deployed SPA is still calling
-    // GET /api/github/check-team?name=..., and without this route it would get
-    // 404 — `teamAvailable` would never become true and RequestAccessForm
-    // would refuse every submission.
-    //
-    // It answers `{ available: true }` unconditionally and NEVER calls
-    // Backstage. That is deliberate: the whole point of this PR is that an
-    // unauthenticated caller must not learn whether a tenant exists, and a
-    // shim that proxied the real lookup would hand the enumeration oracle
-    // straight back. Optimistic-true is safe because it only relaxes a
-    // client-side hint — /api/submit still rejects a taken name server-side,
-    // so the worst case in this window is a user reaching submit and being
-    // told there that the name is taken.
-    if (request.method === 'GET' && path === '/api/github/check-team') {
-      return jsonResponse({ available: true }, 200, {}, origin);
     }
 
     // Form submission
