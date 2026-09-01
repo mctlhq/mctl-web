@@ -30,6 +30,13 @@ jobs:
           # base to compare against.
           fetch-depth: 0
 
+      # The required check validates its own decision logic before acting on
+      # it. This runs in milliseconds and is the reason the logic lives in a
+      # script rather than inline: two defects shipped in six lines of YAML
+      # shell that no test could reach.
+      - name: Test the scope decision logic
+        run: bash .github/scripts/build-needed.test.sh
+
       - name: Decide whether anything outside the Worker changed
         id: scope
         env:
@@ -40,17 +47,17 @@ jobs:
           # the base ref cannot be resolved.
           git rev-parse --verify "origin/${BASE_REF}" >/dev/null
 
-          changed=$(git diff --name-only "origin/${BASE_REF}...HEAD")
+          # core.quotePath=false keeps non-ASCII paths literal. With the default
+          # on, git renders them as "cloudflare-worker/r\303\251sum\303\251.txt"
+          # — leading quote included — so a worker file stops matching the
+          # prefix and drags in a build it does not need.
+          changed=$(git -c core.quotePath=false diff --name-only "origin/${BASE_REF}...HEAD")
           echo "changed files:"
           printf '%s\n' "${changed:-<none>}"
 
-          # An empty diff builds. Treating "no files" as "nothing to build"
-          # would turn any failure to compute the diff into a silent pass on a
-          # required check.
-          if [ -z "${changed}" ] || printf '%s\n' "${changed}" | grep -qv '^cloudflare-worker/'; then
-            echo "needed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "needed=false" >> "$GITHUB_OUTPUT"
+          needed=$(printf '%s' "${changed}" | bash .github/scripts/build-needed.sh)
+          echo "needed=${needed}" >> "$GITHUB_OUTPUT"
+          if [ "${needed}" = "false" ]; then
             echo "Only cloudflare-worker/** changed — skipping the image build."
             echo "The Worker is covered by worker-test; this job builds the Nuxt site."
           fi
