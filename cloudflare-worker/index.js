@@ -169,6 +169,16 @@ export default {
 // Not perfectly accurate (distributed, eventually consistent) but provides
 // reasonable abuse protection without additional services (KV, D1).
 
+// The only Sec-Fetch-Site values that may reach a cache key; everything else
+// folds into 'cross-site'.
+//
+// Load-bearing, not tidiness. The header is unforgeable by *page script*, but
+// any non-browser client sets it freely, so passing the raw value into the key
+// would let a caller mint a fresh counter per request ("bypass-1", "bypass-2",
+// ...) and take the rate limit off /api/submit and /api/contact entirely.
+// Bounding the cardinality is what keeps the limiter a limiter.
+const FETCH_SITE_CLASSES = new Set(['same-site', 'cross-site', 'none']);
+
 // Splits the counter by who caused the request, so traffic a third-party page
 // can make a visitor's browser send cannot spend the budget the visitor needs.
 //
@@ -179,40 +189,26 @@ export default {
 // visitor loads used to cost them the contact form. The handler rejects the
 // body, but rejection happens after the counter has already been spent.
 //
-// Sec-Fetch-Site is the right signal because it is a forbidden header name:
-// page script cannot set or strip it, so a browser-driven request always
-// carries an honest value.
+// Sec-Fetch-Site carries this because page script can neither set nor strip it.
+// That makes it honest about a browser-driven attack, which is the threat here.
+// It says nothing about a direct client — see FETCH_SITE_CLASSES above.
 //
-// A missing header shares the site's own bucket, deliberately — with a known
-// gap. Mostly an absent header means a non-browser client (curl, uptime checks,
-// older agents) calling from its own address, where exhausting a budget harms
-// only itself. But "browsers always send it" is too strong: privacy extensions,
-// some in-app webviews and proxies strip Fetch Metadata, and real cross-site
-// browser traffic from those clients does land in the visitor's own bucket, so
-// the drain stays open for that class. Not a regression — they had no
-// protection at all before — and there is no clean fix that does not also
+// A missing header shares the site's own bucket, deliberately, with a known
+// gap. Usually an absent header means a non-browser client (curl, uptime
+// checks, older agents) calling from its own address, where exhausting a budget
+// harms only itself. But "browsers always send it" would be too strong: privacy
+// extensions, some in-app webviews and proxies strip Fetch Metadata, and real
+// cross-site browser traffic from those clients does land in the visitor's own
+// bucket, so the drain stays open for that class. Not a regression — they had
+// no protection at all before — and there is no clean fix that does not also
 // break legitimate header-less callers. Origin is a possible secondary signal
 // for a later pass; tracked with the rest in #89's follow-ups.
-// The only values that may reach the cache key. Everything else folds into
-// 'cross-site'.
-//
-// This allowlist is load-bearing, not tidiness. Sec-Fetch-Site is a forbidden
-// header name for *page script*, which is what makes it trustworthy against a
-// browser-driven attack — but any non-browser client sets it freely. Passing
-// the raw value through would let a caller mint a fresh counter per request
-// ("Sec-Fetch-Site: bypass-1", "bypass-2", ...) and so remove the rate limit
-// entirely from /api/submit and /api/contact. Bounding the cardinality to four
-// buckets is what keeps the limiter a limiter.
-const FETCH_SITE_CLASSES = new Set(['same-site', 'cross-site', 'none']);
-
 function rateBucket(rateKey, request) {
   const site = request.headers.get('Sec-Fetch-Site');
   if (!site || site === 'same-origin') return rateKey;
   // Third-party-initiated traffic gets its own budget per initiator class.
   // Legitimate cross-site callers (docs.mctl.ai redeeming a session, for
   // example) are still limited — just not out of the same-origin allowance.
-  // Anything unrecognised shares the cross-site budget rather than getting one
-  // of its own, so inventing header values buys nothing.
   const cls = FETCH_SITE_CLASSES.has(site) ? site : 'cross-site';
   return `${rateKey} [${cls}]`;
 }
