@@ -682,6 +682,218 @@ test('a GET flood does not spend the contact form budget either (3 per 5 min)', 
   }
 });
 
+test('a cross-site form POST flood does not spend the same-origin budget', async () => {
+  const originalCaches = globalThis.caches;
+  globalThis.caches = { default: createMockCache() };
+  const stub = async () => new Response('{}', { status: 200 });
+  const ip = '198.51.100.44';
+  try {
+    await withGlobalFetch(stub, async () => {
+      // The attack method keying could not stop: a form-encoded POST is a
+      // simple request, so no preflight, and it arrives with the same method
+      // the real form uses. /api/contact allows 3 per 5 minutes.
+      for (let i = 0; i < 12; i++) {
+        await worker.fetch(
+          new Request('https://mctl.ai/api/contact', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'CF-Connecting-IP': ip,
+              'Sec-Fetch-Site': 'cross-site',
+            },
+            body: 'x=1',
+          }),
+          baseEnv(),
+        );
+      }
+
+      // The victim's own submission, same IP, must still be served.
+      const real = await worker.fetch(
+        new Request('https://mctl.ai/api/contact', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'CF-Connecting-IP': ip,
+            'Sec-Fetch-Site': 'same-origin',
+          },
+          body: JSON.stringify({}),
+        }),
+        baseEnv(),
+      );
+      assert.notEqual(real.status, 429);
+    });
+  } finally {
+    globalThis.caches = originalCaches;
+  }
+});
+
+test('a request with no Sec-Fetch-Site shares the same-origin bucket', async () => {
+  const originalCaches = globalThis.caches;
+  globalThis.caches = { default: createMockCache() };
+  const stub = async () => new Response('{}', { status: 200 });
+  const ip = '198.51.100.55';
+  try {
+    await withGlobalFetch(stub, async () => {
+      // Deliberate, not an oversight: spending the *victim's* budget needs the
+      // victim's browser, and browsers always send this header. An absent one
+      // is a non-browser client calling from its own address. Giving it a
+      // separate bucket would buy nothing and would quietly raise the real
+      // limit for anything that strips the header.
+      //
+      // The requests must be MIXED to pin this. Sending only header-less ones
+      // and asserting the last is 429 proves nothing — they would exhaust a
+      // separate bucket just as readily, and the test passes either way.
+      // Interleaving is what makes a shared budget observable.
+      const post = (extra) => worker.fetch(
+        new Request('https://mctl.ai/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip, ...extra },
+          body: JSON.stringify({}),
+        }),
+        baseEnv(),
+      );
+
+      // /api/contact allows 3 per 5 minutes. Spend two as the site itself...
+      assert.notEqual((await post({ 'Sec-Fetch-Site': 'same-origin' })).status, 429);
+      assert.notEqual((await post({ 'Sec-Fetch-Site': 'same-origin' })).status, 429);
+      // ...one more with no header at all, which fits inside the same 3...
+      assert.notEqual((await post({})).status, 429);
+      // ...and the fourth must be refused, whichever of the two sent it.
+      assert.equal((await post({})).status, 429);
+      assert.equal((await post({ 'Sec-Fetch-Site': 'same-origin' })).status, 429);
+    });
+  } finally {
+    globalThis.caches = originalCaches;
+  }
+});
+
+test('cross-site traffic is still limited, just in its own bucket', async () => {
+  const originalCaches = globalThis.caches;
+  globalThis.caches = { default: createMockCache() };
+  const stub = async () => new Response('{}', { status: 200 });
+  const ip = '198.51.100.66';
+  try {
+    await withGlobalFetch(stub, async () => {
+      // Splitting the bucket must not mean exempting it — otherwise the fix
+      // would trade a DoS against visitors for an unlimited endpoint.
+      let last;
+      for (let i = 0; i < 6; i++) {
+        last = await worker.fetch(
+          new Request('https://mctl.ai/api/contact', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'CF-Connecting-IP': ip,
+              'Sec-Fetch-Site': 'cross-site',
+            },
+            body: JSON.stringify({}),
+          }),
+          baseEnv(),
+        );
+      }
+      assert.equal(last.status, 429);
+    });
+  } finally {
+    globalThis.caches = originalCaches;
+  }
+});
+
+test('a made-up Sec-Fetch-Site cannot mint a fresh counter per request', async () => {
+  const originalCaches = globalThis.caches;
+  globalThis.caches = { default: createMockCache() };
+  const stub = async () => new Response('{}', { status: 200 });
+  const ip = '198.51.100.77';
+  try {
+    await withGlobalFetch(stub, async () => {
+      // Sec-Fetch-Site is unforgeable by page script, which is what makes it
+      // trustworthy against a browser-driven attack — but a non-browser client
+      // sets it freely. Interpolating the raw value would give a fresh bucket
+      // per unique string and remove the limit entirely.
+      let last;
+      for (let i = 0; i < 6; i++) {
+        last = await worker.fetch(
+          new Request('https://mctl.ai/api/contact', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'CF-Connecting-IP': ip,
+              'Sec-Fetch-Site': `bypass-${i}`,
+            },
+            body: JSON.stringify({}),
+          }),
+          baseEnv(),
+        );
+      }
+      assert.equal(last.status, 429);
+    });
+  } finally {
+    globalThis.caches = originalCaches;
+  }
+});
+
+test('an unrecognised Sec-Fetch-Site shares the cross-site budget, not its own', async () => {
+  const originalCaches = globalThis.caches;
+  globalThis.caches = { default: createMockCache() };
+  const stub = async () => new Response('{}', { status: 200 });
+  const ip = '198.51.100.88';
+  try {
+    await withGlobalFetch(stub, async () => {
+      // Interleaved, so a shared bucket is observable — a per-value bucket
+      // would let each of these run to its own limit independently.
+      const post = (site) => worker.fetch(
+        new Request('https://mctl.ai/api/contact', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'CF-Connecting-IP': ip,
+            'Sec-Fetch-Site': site,
+          },
+          body: JSON.stringify({}),
+        }),
+        baseEnv(),
+      );
+      assert.notEqual((await post('cross-site')).status, 429);
+      assert.notEqual((await post('nonsense-value')).status, 429);
+      assert.notEqual((await post('cross-site')).status, 429);
+      // Fourth against a 3-per-5-minutes limit, whichever spelling sent it.
+      assert.equal((await post('nonsense-value')).status, 429);
+    });
+  } finally {
+    globalThis.caches = originalCaches;
+  }
+});
+
+test('same-site keeps its own budget, separate from cross-site', async () => {
+  const originalCaches = globalThis.caches;
+  globalThis.caches = { default: createMockCache() };
+  const stub = async () => new Response('{}', { status: 200 });
+  const ip = '198.51.100.99';
+  try {
+    await withGlobalFetch(stub, async () => {
+      // docs.mctl.ai redeeming a session is same-site, not same-origin. The
+      // allowlist must not collapse it into cross-site, or one noisy embedder
+      // would starve the other.
+      const post = (site) => worker.fetch(
+        new Request('https://mctl.ai/api/contact', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'CF-Connecting-IP': ip,
+            'Sec-Fetch-Site': site,
+          },
+          body: JSON.stringify({}),
+        }),
+        baseEnv(),
+      );
+      for (let i = 0; i < 5; i++) await post('cross-site');
+      assert.equal((await post('cross-site')).status, 429);
+      assert.notEqual((await post('same-site')).status, 429);
+    });
+  } finally {
+    globalThis.caches = originalCaches;
+  }
+});
+
 test('POST check-team is still rate limited now that the exemption is gone', async () => {
   const originalCaches = globalThis.caches;
   globalThis.caches = { default: createMockCache() };

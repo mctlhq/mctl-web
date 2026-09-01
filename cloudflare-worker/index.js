@@ -110,12 +110,14 @@ export default {
     }
 
     // Rate limiting for sensitive endpoints. See RATE_LIMITS on why the method
-    // is part of both the lookup and the counter key.
+    // is part of the lookup, and rateBucket below on why the initiator is part
+    // of the counter key but not of the lookup.
     const rateKey = `${request.method} ${path}`;
     const limit = RATE_LIMITS[rateKey];
     if (limit) {
       const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-      const limited = await checkRateLimit(clientIP, rateKey, limit.max, limit.windowSec);
+      const limited = await checkRateLimit(
+        clientIP, rateBucket(rateKey, request), limit.max, limit.windowSec);
       if (limited) {
         return jsonResponse(
           { error: 'Too many requests. Please try again later.' },
@@ -166,6 +168,50 @@ export default {
 // Simple per-IP rate limiter using Cloudflare Cache API.
 // Not perfectly accurate (distributed, eventually consistent) but provides
 // reasonable abuse protection without additional services (KV, D1).
+
+// The only Sec-Fetch-Site values that may reach a cache key; everything else
+// folds into 'cross-site'.
+//
+// Load-bearing, not tidiness. The header is unforgeable by *page script*, but
+// any non-browser client sets it freely, so passing the raw value into the key
+// would let a caller mint a fresh counter per request ("bypass-1", "bypass-2",
+// ...) and take the rate limit off /api/submit and /api/contact entirely.
+// Bounding the cardinality is what keeps the limiter a limiter.
+const FETCH_SITE_CLASSES = new Set(['same-site', 'cross-site', 'none']);
+
+// Splits the counter by who caused the request, so traffic a third-party page
+// can make a visitor's browser send cannot spend the budget the visitor needs.
+//
+// Keying by method alone was not enough. A cross-origin form POST is a simple
+// request — form-encoded, no preflight — so the browser sends it with the right
+// method and it lands in the same bucket the real form uses. /api/contact
+// allows 3 per 5 minutes, so an auto-submitting hidden form on any page the
+// visitor loads used to cost them the contact form. The handler rejects the
+// body, but rejection happens after the counter has already been spent.
+//
+// Sec-Fetch-Site carries this because page script can neither set nor strip it.
+// That makes it honest about a browser-driven attack, which is the threat here.
+// It says nothing about a direct client — see FETCH_SITE_CLASSES above.
+//
+// A missing header shares the site's own bucket, deliberately, with a known
+// gap. Usually an absent header means a non-browser client (curl, uptime
+// checks, older agents) calling from its own address, where exhausting a budget
+// harms only itself. But "browsers always send it" would be too strong: privacy
+// extensions, some in-app webviews and proxies strip Fetch Metadata, and real
+// cross-site browser traffic from those clients does land in the visitor's own
+// bucket, so the drain stays open for that class. Not a regression — they had
+// no protection at all before — and there is no clean fix that does not also
+// break legitimate header-less callers. Origin is a possible secondary signal
+// for a later pass; tracked with the rest in #89's follow-ups.
+function rateBucket(rateKey, request) {
+  const site = request.headers.get('Sec-Fetch-Site');
+  if (!site || site === 'same-origin') return rateKey;
+  // Third-party-initiated traffic gets its own budget per initiator class.
+  // Legitimate cross-site callers (docs.mctl.ai redeeming a session, for
+  // example) are still limited — just not out of the same-origin allowance.
+  const cls = FETCH_SITE_CLASSES.has(site) ? site : 'cross-site';
+  return `${rateKey} [${cls}]`;
+}
 
 async function checkRateLimit(ip, bucket, maxRequests, windowSec) {
   const cache = caches.default;
