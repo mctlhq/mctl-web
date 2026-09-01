@@ -122,6 +122,18 @@ npm run generate     # static export to .output/public/
 npx serve .output/public
 ```
 
+`npm run generate` builds in production mode, so it bakes in the **production**
+Turnstile sitekey — whose hostname allowlist excludes localhost. The contact
+and request-access forms will therefore refuse every submission in a local
+preview. Copy `.env.example` to `.env` (it carries Cloudflare's always-passes
+test key) before generating, or set it inline:
+
+```bash
+NUXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA npm run generate
+```
+
+`npm run dev` needs none of this — it defaults to the test key already.
+
 ### Docker
 
 ```bash
@@ -129,6 +141,18 @@ docker build -t mctl-web .
 docker run -p 8080:80 mctl-web
 open http://localhost:8080
 ```
+
+The image build has the same constraint as `npm run generate` above, and
+`.dockerignore` excludes every `.env*` file, so the env var cannot reach it
+that way. For a container whose forms work on localhost, pass the test key as
+a build arg:
+
+```bash
+docker build --build-arg NUXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA -t mctl-web .
+```
+
+Omitting the arg is correct for real builds — it falls back to the production
+sitekey.
 
 OAuth callbacks are hardcoded to production, so authentication flows will not work locally.
 
