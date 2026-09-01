@@ -95,18 +95,31 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
         return
       }
 
-      // Every other non-2xx, not just the one we recognise. 429 in particular
-      // is now reachable — this endpoint is rate-limited at 20/min/IP, which
-      // repeated edits or an office behind one NAT will hit — and its body has
-      // no `available` field. Falling through would land in the `else` below
-      // and tell the user the name is taken, which is both false and blocking.
-      if (!res.ok) {
-        teamAvailable.value = false
-        teamError.value = res.status === 429 ? 'js.team.rate_limited' : 'js.team.check_failed'
-        return
+      // Parse first, then branch. A 400 carries `error: 'Invalid team name
+      // format'`, and returning on `!res.ok` before reading the body would
+      // bury it under the generic check_failed — the wrong-format message
+      // would never reach the user from a backend rejection.
+      let data: { available?: boolean; error?: string } = {}
+      try {
+        data = await res.json()
+      } catch {
+        data = {}
       }
 
-      const data = await res.json()
+      // Every non-2xx, not just the one we recognise. 429 in particular is now
+      // reachable — this endpoint is rate-limited at 20/min/IP, which repeated
+      // edits or an office behind one NAT will hit — and its body has no
+      // `available` field. Falling through would land in the `else` below and
+      // tell the user the name is taken, which is both false and blocking.
+      if (!res.ok) {
+        teamAvailable.value = false
+        if (data.error === 'Invalid team name format') {
+          teamError.value = 'js.team.wrong-format'
+        } else {
+          teamError.value = res.status === 429 ? 'js.team.rate_limited' : 'js.team.check_failed'
+        }
+        return
+      }
 
       if (data.available) {
         teamAvailable.value = true

@@ -608,3 +608,25 @@ test('transitional GET answers identically for an existing and a made-up name', 
     globalThis.caches = originalCaches;
   }
 });
+
+test('transitional GET is exempt from the rate limit (POST is not)', async () => {
+  const originalCaches = globalThis.caches;
+  globalThis.caches = { default: createMockCache() };
+  const stub = async () => new Response('{}', { status: 200 });
+  try {
+    await withGlobalFetch(stub, async () => {
+      // Well past the 20/min POST limit. The deployed old frontend reads a 429
+      // as "name taken" and blocks submission, so a throttled shim would
+      // reintroduce the very breakage the shim exists to prevent.
+      let last;
+      for (let i = 0; i < 25; i++) {
+        last = await worker.fetch(
+          new Request('https://mctl.ai/api/github/check-team?name=probe'), baseEnv());
+      }
+      assert.equal(last.status, 200);
+      assert.deepEqual(await last.json(), { available: true });
+    });
+  } finally {
+    globalThis.caches = originalCaches;
+  }
+});

@@ -95,8 +95,19 @@ export default {
       return new Response(null, { headers: corsHeaders(origin) });
     }
 
-    // Rate limiting for sensitive endpoints
-    const limit = RATE_LIMITS[path];
+    // Rate limiting for sensitive endpoints.
+    //
+    // TRANSITIONAL exemption — drop together with the GET shim below. The shim
+    // exists so the currently-deployed frontend keeps working until the
+    // POST-calling build is tagged, and that frontend reads a 429 (no
+    // `available` field) as "name taken" and blocks submission — the exact
+    // failure the shim is meant to prevent. Limiting it would leave the shim
+    // half-working for anyone editing repeatedly or sharing an IP.
+    // Safe to exempt: the shim returns a constant, never calls Backstage, and
+    // does no work worth throttling. The POST route stays limited.
+    const skipRateLimit =
+      request.method === 'GET' && path === '/api/github/check-team';
+    const limit = skipRateLimit ? null : RATE_LIMITS[path];
     if (limit) {
       const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
       const limited = await checkRateLimit(clientIP, path, limit.max, limit.windowSec);
