@@ -5,6 +5,7 @@ import * as yup from 'yup';
 import type { ContactFormData } from '@/types';
 
 const { t } = useI18n();
+const runtimeConfig = useRuntimeConfig();
 
 const schema = yup.object({
   name: yup.string().required().max(50),
@@ -20,8 +21,29 @@ const [message, messageProps] = defineField('message');
 
 const { submitContactForm, isLoading, error } = useContactForm();
 
-const onSubmit = handleSubmit((formData) => {
-  submitContactForm(formData);
+const turnstileEl = ref<HTMLElement | null>(null);
+const { token: turnstileToken, render: renderTurnstile, reset: resetTurnstile } = useTurnstile();
+
+onMounted(() => {
+  if (turnstileEl.value) {
+    renderTurnstile(turnstileEl.value, runtimeConfig.public.turnstileSiteKey);
+  }
+});
+
+const onSubmit = handleSubmit(async (formData) => {
+  // Gate, don't replace: existing validation/submit logic is unchanged,
+  // this just requires a Turnstile token before calling the API.
+  if (!turnstileToken.value) return;
+
+  try {
+    await submitContactForm({ ...formData, turnstile_token: turnstileToken.value });
+  } finally {
+    // Turnstile tokens are single-use; siteverify consumes one on success
+    // too, and this form stays mounted after a successful send, so the
+    // widget must reset after every attempt that may have reached
+    // siteverify — not only on failure.
+    resetTurnstile();
+  }
 });
 </script>
 
@@ -63,6 +85,8 @@ const onSubmit = handleSubmit((formData) => {
         id="user-message"
       />
     </BaseFormField>
+
+    <div ref="turnstileEl" class="contact-form__turnstile" />
   </BaseForm>
 </template>
 
@@ -72,6 +96,10 @@ const onSubmit = handleSubmit((formData) => {
 
   @media (min-width: 768px) {
     width: 600px;
+  }
+
+  &__turnstile {
+    margin-top: 16px;
   }
 }
 </style>

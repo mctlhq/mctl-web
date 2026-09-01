@@ -4,7 +4,7 @@ export function useContactForm() {
 
   const { submitContactForm: submitContactFormApi } = useApi();
 
-  async function submitContactForm(formData: { name: string; email: string; message: string }) {
+  async function submitContactForm(formData: { name: string; email: string; message: string; turnstile_token: string }) {
     try {
       error.value = null;
       isLoading.value = true;
