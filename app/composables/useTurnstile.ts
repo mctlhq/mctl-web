@@ -63,14 +63,19 @@ export function useTurnstile() {
     cancelled = false
     try {
       await loadTurnstileScript()
-    } catch {
+    } catch (err) {
       loadFailed.value = true
+      // The most likely causes are a CSP block or an ad blocker, neither of
+      // which produces any other trace. Without this line the on-call view of
+      // "nobody can submit the contact form" is an empty console.
+      console.error('[turnstile] script failed to load', err)
       return
     }
 
     if (cancelled) return
     if (!window.turnstile) {
       loadFailed.value = true
+      console.error('[turnstile] script loaded but window.turnstile is undefined')
       return
     }
 

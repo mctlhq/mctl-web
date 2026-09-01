@@ -35,7 +35,12 @@ const isSubmitting = ref(false);
 const showSuccessModal = ref(false);
 
 const turnstileEl = ref<HTMLElement | null>(null);
-const { token: turnstileToken, render: renderTurnstile, reset: resetTurnstile } = useTurnstile();
+const {
+  token: turnstileToken,
+  loadFailed: turnstileLoadFailed,
+  render: renderTurnstile,
+  reset: resetTurnstile,
+} = useTurnstile();
 
 onMounted(() => {
   if (turnstileEl.value) {
@@ -69,7 +74,14 @@ const onSubmit = handleSubmit(async (formData) => {
   }
 
   if (!turnstileToken.value) {
-    formStatus.value = { message: t('js.submit.verification_required'), type: 'error' };
+    // See ContactForm: a widget that failed to load is not a challenge the
+    // user can complete, so it gets its own message.
+    formStatus.value = {
+      message: turnstileLoadFailed.value
+        ? t('js.submit.verification_unavailable')
+        : t('js.submit.verification_required'),
+      type: 'error',
+    };
     return;
   }
 

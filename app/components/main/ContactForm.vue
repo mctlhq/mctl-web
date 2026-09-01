@@ -22,7 +22,12 @@ const [message, messageProps] = defineField('message');
 const { submitContactForm, isLoading, error } = useContactForm();
 
 const turnstileEl = ref<HTMLElement | null>(null);
-const { token: turnstileToken, render: renderTurnstile, reset: resetTurnstile } = useTurnstile();
+const {
+  token: turnstileToken,
+  loadFailed: turnstileLoadFailed,
+  render: renderTurnstile,
+  reset: resetTurnstile,
+} = useTurnstile();
 
 const turnstileStatus = ref<string | null>(null);
 
@@ -47,7 +52,13 @@ const onSubmit = handleSubmit(async (formData) => {
   // widget is still loading, has expired, or errored, and a submit button
   // that does nothing at all is indistinguishable from a broken form.
   if (!turnstileToken.value) {
-    turnstileStatus.value = t('js.submit.verification_required');
+    // Distinguish "you haven't solved it yet" from "it will never load":
+    // the second is not something the user can fix by trying again, and
+    // telling them to complete a challenge that isn't on screen is worse
+    // than saying nothing.
+    turnstileStatus.value = turnstileLoadFailed.value
+      ? t('js.submit.verification_unavailable')
+      : t('js.submit.verification_required');
     return;
   }
 
