@@ -308,14 +308,14 @@ useHead({
   transform: translate(-50%, -50%);
   width: 50vw;
   height: 50vw;
-  background: radial-gradient(circle, rgba(0,245,255,0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 8%, transparent) 0%, transparent 70%);
   pointer-events: none;
 }
 
 .docs-hero h1 {
   font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 800;
-  color: #fff;
+  color: var(--color-text);
   letter-spacing: -0.02em;
   margin-bottom: 1rem;
   position: relative;
@@ -371,24 +371,24 @@ useHead({
 .component-card:hover {
   border-color: var(--color-accent);
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(0,245,255,0.1);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 .component-name {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
   font-size: 0.85rem;
   color: var(--color-accent);
-  background: rgba(0,245,255,0.07);
+  background: color-mix(in srgb, var(--color-accent) 7%, transparent);
   padding: 0.35rem 0.65rem;
   border-radius: 4px;
-  border: 1px solid rgba(0,245,255,0.1);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 10%, transparent);
   display: inline-block;
   margin-bottom: 0.75rem;
 }
 
 .component-card h3 {
   font-size: 1.1rem;
-  color: #fff;
+  color: var(--color-text);
   margin-bottom: 0.75rem;
 }
 
@@ -421,7 +421,7 @@ useHead({
 
 .interface-card h3 {
   font-size: 1.1rem;
-  color: #fff;
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
@@ -478,7 +478,7 @@ useHead({
 
 .agent-callout h4 {
   font-size: 1rem;
-  color: #fff;
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 

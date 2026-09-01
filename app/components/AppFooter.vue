@@ -34,7 +34,7 @@ const footerLinks = computed(() => [
   padding: 48px 0;
   text-align: center;
   background: var(--color-terminal);
-  border-top: 1px solid rgba(0, 245, 255, 0.2);
+  border-top: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
 
   &__links {
     display: flex;
@@ -49,7 +49,7 @@ const footerLinks = computed(() => [
     transition: all 0.3s ease;
 
     &:hover {
-      color: #ffffff;
+      color: var(--color-text);
     }
   }
 

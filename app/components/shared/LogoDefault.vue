@@ -10,7 +10,7 @@
   display: inline-block;
   font-size: 24px;
   font-weight: 800;
-  color: #fff;
+  color: var(--color-text);
   letter-spacing: 2px;
 
   &__accent {

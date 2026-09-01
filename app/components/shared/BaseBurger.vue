@@ -28,7 +28,7 @@ const { t } = useI18n()
   width: 24px;
   height: 18px;
 
-  color: #fff;
+  color: var(--color-text);
   border: none;
   background-color: transparent;
   cursor: pointer;

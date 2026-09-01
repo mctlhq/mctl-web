@@ -27,7 +27,7 @@ const { variant = 'primary', size = 'md', block = false } = defineProps<BaseButt
   font-family: inherit;
   font-size: inherit;
   font-weight: 500;
-  color: #fff;
+  color: var(--color-text);
 
   background-color: var(--color-primary);
   border-width: 1px;
@@ -45,7 +45,7 @@ const { variant = 'primary', size = 'md', block = false } = defineProps<BaseButt
       &:hover {
         background-color: transparent;
         color: var(--color-accent);
-        box-shadow: 0 0 20px rgba(0, 245, 255, 0.5);
+        box-shadow: 0 0 20px color-mix(in srgb, var(--color-accent) 50%, transparent);
       }
     }
 
@@ -57,7 +57,7 @@ const { variant = 'primary', size = 'md', block = false } = defineProps<BaseButt
       &:hover {
         background-color: var(--color-accent);
         color: var(--color-bg);
-        box-shadow: 0 0 15px rgba(0, 245, 255, 0.3);
+        box-shadow: 0 0 15px color-mix(in srgb, var(--color-accent) 30%, transparent);
       }
     }
   }

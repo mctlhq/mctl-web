@@ -17,7 +17,7 @@
   transform: translate(-50%, -50%);
   width: 60vw;
   height: 60vw;
-  background: radial-gradient(circle, rgba(0, 245, 255, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 10%, transparent) 0%, transparent 70%);
   z-index: 0;
   pointer-events: none;
 }
@@ -34,7 +34,7 @@
   font-size: clamp(2.5rem, 4.5vw, 4.25rem);
   font-weight: 800;
   text-align: center;
-  color: #fff;
+  color: var(--color-text);
   margin-bottom: 1.5rem;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -99,11 +99,11 @@
   justify-content: center;
   font-size: 1.75rem;
   font-weight: 800;
-  box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
 .step-content { flex: 1; min-width: 0; }
-.step-content h3 { font-size: 1.75rem; margin-bottom: 1rem; color: #fff; }
+.step-content h3 { font-size: 1.75rem; margin-bottom: 1rem; color: var(--color-text); }
 .step-content p { color: var(--color-text-muted); margin-bottom: 1.5rem; line-height: 1.7; }
 
 // Pricing
@@ -141,7 +141,7 @@
 
 .pricing-card-featured {
   border-color: var(--color-accent);
-  box-shadow: 0 0 30px rgba(0, 245, 255, 0.15);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--color-accent) 15%, transparent);
   transform: scale(1.05);
 }
 
@@ -164,7 +164,7 @@
   letter-spacing: 1px;
 }
 
-.pricing-card h3 { font-size: 1.5rem; color: #fff; margin-bottom: 1rem; }
+.pricing-card h3 { font-size: 1.5rem; color: var(--color-text); margin-bottom: 1rem; }
 
 .pricing-price {
   font-size: 2rem;
