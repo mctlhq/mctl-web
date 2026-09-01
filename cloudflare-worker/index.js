@@ -42,12 +42,26 @@ const SESSION_TTL_SEC = 300;
 const SESSION_ID_RE = /^[0-9a-f]{64}$/;
 
 // Rate limit: max requests per IP per window (seconds)
+// Keyed by "METHOD path", not path alone, and matched against the method that
+// actually routes below.
+//
+// A path-only key counts requests the worker never serves. Since CORS blocks
+// *reading* a cross-origin response but not *sending* the request, a third-party
+// page can drain a visitor's bucket with nothing but image tags:
+// `<img src="https://mctl.ai/api/contact">` issues a GET, which no route
+// handles, yet under a path-only key it decremented the same budget the real
+// POST form spends. /api/contact allows 3 per 5 minutes, so three tags on any
+// page the victim loads locked them out of the contact form — and the victim
+// sees only a generic 429 from the legitimate site afterwards.
+//
+// With the method in the key, an unrouted method has its own budget that no
+// real user spends, so exhausting it costs an attacker a 404 and nothing else.
 const RATE_LIMITS = {
-  '/api/submit':  { max: 5,  windowSec: 300 },
-  '/api/contact': { max: 3,  windowSec: 300 },
-  '/api/github/login': { max: 10, windowSec: 60 },
-  '/api/github/session': { max: 20, windowSec: 60 },
-  '/api/github/check-team': { max: 20, windowSec: 60 },
+  'POST /api/submit':  { max: 5,  windowSec: 300 },
+  'POST /api/contact': { max: 3,  windowSec: 300 },
+  'GET /api/github/login': { max: 10, windowSec: 60 },
+  'POST /api/github/session': { max: 20, windowSec: 60 },
+  'POST /api/github/check-team': { max: 20, windowSec: 60 },
 };
 
 // Known bot User-Agent fragments — block before any processing.
@@ -95,22 +109,13 @@ export default {
       return new Response(null, { headers: corsHeaders(origin) });
     }
 
-    // Rate limiting for sensitive endpoints.
-    //
-    // TRANSITIONAL exemption — drop together with the GET shim below. The shim
-    // exists so the currently-deployed frontend keeps working until the
-    // POST-calling build is tagged, and that frontend reads a 429 (no
-    // `available` field) as "name taken" and blocks submission — the exact
-    // failure the shim is meant to prevent. Limiting it would leave the shim
-    // half-working for anyone editing repeatedly or sharing an IP.
-    // Safe to exempt: the shim returns a constant, never calls Backstage, and
-    // does no work worth throttling. The POST route stays limited.
-    const skipRateLimit =
-      request.method === 'GET' && path === '/api/github/check-team';
-    const limit = skipRateLimit ? null : RATE_LIMITS[path];
+    // Rate limiting for sensitive endpoints. See RATE_LIMITS on why the method
+    // is part of both the lookup and the counter key.
+    const rateKey = `${request.method} ${path}`;
+    const limit = RATE_LIMITS[rateKey];
     if (limit) {
       const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-      const limited = await checkRateLimit(clientIP, path, limit.max, limit.windowSec);
+      const limited = await checkRateLimit(clientIP, rateKey, limit.max, limit.windowSec);
       if (limited) {
         return jsonResponse(
           { error: 'Too many requests. Please try again later.' },
@@ -143,27 +148,6 @@ export default {
       return handleCheckTeam(request, env, origin);
     }
 
-    // TRANSITIONAL — remove once the POST-calling frontend is tagged and live.
-    //
-    // The Worker deploys on merge (deploy.yml, path-filtered on
-    // cloudflare-worker/**) while the frontend ships only on a semver tag
-    // (tag-deploy.yml). Between the two, the deployed SPA is still calling
-    // GET /api/github/check-team?name=..., and without this route it would get
-    // 404 — `teamAvailable` would never become true and RequestAccessForm
-    // would refuse every submission.
-    //
-    // It answers `{ available: true }` unconditionally and NEVER calls
-    // Backstage. That is deliberate: the whole point of this PR is that an
-    // unauthenticated caller must not learn whether a tenant exists, and a
-    // shim that proxied the real lookup would hand the enumeration oracle
-    // straight back. Optimistic-true is safe because it only relaxes a
-    // client-side hint — /api/submit still rejects a taken name server-side,
-    // so the worst case in this window is a user reaching submit and being
-    // told there that the name is taken.
-    if (request.method === 'GET' && path === '/api/github/check-team') {
-      return jsonResponse({ available: true }, 200, {}, origin);
-    }
-
     // Form submission
     if (request.method === 'POST' && path === '/api/submit') {
       return handleFormSubmit(request, env, origin);
@@ -183,9 +167,12 @@ export default {
 // Not perfectly accurate (distributed, eventually consistent) but provides
 // reasonable abuse protection without additional services (KV, D1).
 
-async function checkRateLimit(ip, path, maxRequests, windowSec) {
+async function checkRateLimit(ip, bucket, maxRequests, windowSec) {
   const cache = caches.default;
-  const key = `https://rate-limit.internal/${path}/${ip}`;
+  // Both parts are percent-encoded into one path segment each. The bucket now
+  // carries a method and a space ("POST /api/submit"), and interpolating that
+  // raw would leave the segment boundaries up to URL parsing rather than to us.
+  const key = `https://rate-limit.internal/${encodeURIComponent(bucket)}/${encodeURIComponent(ip)}`;
   const cacheReq = new Request(key);
 
   const cached = await cache.match(cacheReq);
