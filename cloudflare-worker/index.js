@@ -110,12 +110,14 @@ export default {
     }
 
     // Rate limiting for sensitive endpoints. See RATE_LIMITS on why the method
-    // is part of both the lookup and the counter key.
+    // is part of the lookup, and rateBucket below on why the initiator is part
+    // of the counter key but not of the lookup.
     const rateKey = `${request.method} ${path}`;
     const limit = RATE_LIMITS[rateKey];
     if (limit) {
       const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-      const limited = await checkRateLimit(clientIP, rateKey, limit.max, limit.windowSec);
+      const limited = await checkRateLimit(
+        clientIP, rateBucket(rateKey, request), limit.max, limit.windowSec);
       if (limited) {
         return jsonResponse(
           { error: 'Too many requests. Please try again later.' },
@@ -166,6 +168,35 @@ export default {
 // Simple per-IP rate limiter using Cloudflare Cache API.
 // Not perfectly accurate (distributed, eventually consistent) but provides
 // reasonable abuse protection without additional services (KV, D1).
+
+// Splits the counter by who caused the request, so traffic a third-party page
+// can make a visitor's browser send cannot spend the budget the visitor needs.
+//
+// Keying by method alone was not enough. A cross-origin form POST is a simple
+// request — form-encoded, no preflight — so the browser sends it with the right
+// method and it lands in the same bucket the real form uses. /api/contact
+// allows 3 per 5 minutes, so an auto-submitting hidden form on any page the
+// visitor loads used to cost them the contact form. The handler rejects the
+// body, but rejection happens after the counter has already been spent.
+//
+// Sec-Fetch-Site is the right signal because it is a forbidden header name:
+// page script cannot set or strip it, so a browser-driven request always
+// carries an honest value.
+//
+// A missing header shares the site's own bucket, deliberately. Spending the
+// *victim's* budget requires the victim's browser, and browsers always send
+// this header — so an absent one means a non-browser client (curl, uptime
+// checks, older agents) calling from its own address, where exhausting a
+// budget harms only itself. Bucketing those separately would buy nothing and
+// would break clients that predate the header.
+function rateBucket(rateKey, request) {
+  const site = request.headers.get('Sec-Fetch-Site');
+  if (!site || site === 'same-origin') return rateKey;
+  // Third-party-initiated traffic gets its own budget per initiator class.
+  // Legitimate cross-site callers (docs.mctl.ai redeeming a session, for
+  // example) are still limited — just not out of the same-origin allowance.
+  return `${rateKey} [${site}]`;
+}
 
 async function checkRateLimit(ip, bucket, maxRequests, windowSec) {
   const cache = caches.default;
