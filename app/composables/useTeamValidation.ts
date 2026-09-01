@@ -3,7 +3,17 @@ import { ref } from 'vue'
 const TEAM_REGEX = /^[a-z0-9][a-z0-9-]{0,62}$/
 const CHECK_TEAM_URL = 'https://mctl.ai/api/github/check-team'
 
-export function useTeamValidation() {
+interface GithubAuthIdentity {
+  login?: string
+  sig?: string
+}
+
+// check-team is identity-gated (see cloudflare-worker/index.js handleCheckTeam):
+// it requires the same signed { login, sig } handleFormSubmit already
+// validates, sent in the POST body — never the query string, since sig is an
+// unbounded bearer credential. `getAuthData` is read on every call so the
+// composable always uses the caller's current sign-in state.
+export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null | undefined) {
   const teamAvailable = ref(false)
   const teamError = ref('')
   const checking = ref(false)
@@ -15,6 +25,11 @@ export function useTeamValidation() {
       return 'Team name must be lowercase alphanumeric with hyphens (max 63 chars)'
     }
     return null
+  }
+
+  function hasIdentity(): boolean {
+    const authData = getAuthData ? getAuthData() : null
+    return !!(authData && authData.login && authData.sig)
   }
 
   function onInput(value: string) {
@@ -29,6 +44,11 @@ export function useTeamValidation() {
       return
     }
 
+    if (!hasIdentity()) {
+      teamError.value = 'js.team.sign_in_required'
+      return
+    }
+
     if (checkTimeout) clearTimeout(checkTimeout)
     if (value.length >= 2) {
       checkTimeout = setTimeout(() => {
@@ -38,11 +58,32 @@ export function useTeamValidation() {
   }
 
   async function checkAvailability(name: string) {
+    const authData = getAuthData ? getAuthData() : null
+    if (!authData || !authData.login || !authData.sig) {
+      teamAvailable.value = false
+      teamError.value = 'js.team.sign_in_required'
+      return
+    }
+
     checking.value = true
     teamError.value = ''
 
     try {
-      const res = await fetch(`${CHECK_TEAM_URL}?name=${encodeURIComponent(name)}`)
+      const res = await fetch(CHECK_TEAM_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          github_auth: { login: authData.login, sig: authData.sig },
+        }),
+      })
+
+      if (res.status === 401) {
+        teamAvailable.value = false
+        teamError.value = 'js.team.sign_in_required'
+        return
+      }
+
       const data = await res.json()
 
       if (data.available) {

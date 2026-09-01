@@ -14,6 +14,10 @@
  * - BACKSTAGE_LANDING_TOKEN: Shared secret for signing landing-page JWT tokens (HMAC-SHA256).
  *     Must match the BACKSTAGE_LANDING_TOKEN env var in the Backstage pod.
  * - RESEND_API_KEY: Resend.com API key for sending welcome emails
+ * - TURNSTILE_SECRET_KEY: Cloudflare Turnstile secret key, verified against
+ *     https://challenges.cloudflare.com/turnstile/v0/siteverify for /api/contact
+ *     and /api/submit. Public sitekey lives in the frontend build
+ *     (NUXT_PUBLIC_TURNSTILE_SITE_KEY), not here.
  *
  * Config vars (set via wrangler.toml [vars] — not secret):
  * - UNLIMITED_USERS: comma-separated GitHub logins exempt from tenant-provisioning limits
@@ -43,6 +47,7 @@ const RATE_LIMITS = {
   '/api/contact': { max: 3,  windowSec: 300 },
   '/api/github/login': { max: 10, windowSec: 60 },
   '/api/github/session': { max: 20, windowSec: 60 },
+  '/api/github/check-team': { max: 20, windowSec: 60 },
 };
 
 // Known bot User-Agent fragments — block before any processing.
@@ -120,9 +125,11 @@ export default {
       return handleGitHubSession(request, env, origin);
     }
 
-    // Check team availability (proxies to Backstage tenant API)
-    if (request.method === 'GET' && path === '/api/github/check-team') {
-      return handleCheckTeam(url, env, origin);
+    // Check team availability (proxies to Backstage tenant API).
+    // Identity-gated (github_auth in the JSON body) — POST only, never GET
+    // with query-string credentials. See handleCheckTeam.
+    if (request.method === 'POST' && path === '/api/github/check-team') {
+      return handleCheckTeam(request, env, origin);
     }
 
     // Form submission
@@ -736,9 +743,57 @@ function parseCookies(cookieHeader) {
 
 // ─── Check Team Availability ─────────────────────────────────────────────────
 // Checks Backstage tenant API — the single source of truth for provisioned tenants.
+//
+// Identity-gated: POST { name, github_auth: { login, sig } }, verified the same
+// way handleFormSubmit verifies github_auth. A verified caller gets today's
+// truthful available:true/false answer. Anyone else — missing github_auth,
+// malformed github_auth, or a signature that fails hmacVerify — gets a single
+// fixed 401 body, byte-identical regardless of the queried name, so anonymous
+// tenant-name enumeration is no longer possible. Credentials must never travel
+// in the query string (sig is an unbounded bearer — see hmacSign/hmacVerify
+// comments) — only the POST body is read here.
 
-async function handleCheckTeam(url, env, origin) {
-  const name = url.searchParams.get('name');
+const CHECK_TEAM_UNAUTHORIZED_BODY = { available: false, error: 'GitHub authentication required' };
+
+function checkTeamUnauthorized(origin) {
+  return jsonResponse(CHECK_TEAM_UNAUTHORIZED_BODY, 401, {}, origin);
+}
+
+export async function handleCheckTeam(request, env, origin) {
+  // Parse defensively: an unparsable body, a non-object body, a missing
+  // github_auth, or a github_auth missing login/sig must all reach the same
+  // 401 below — never a thrown TypeError (which the runtime would turn into
+  // an information-leaking 500).
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    body = null;
+  }
+  if (!body || typeof body !== 'object') {
+    body = {};
+  }
+
+  const githubAuth = body.github_auth;
+  const hasAuthShape =
+    githubAuth &&
+    typeof githubAuth === 'object' &&
+    typeof githubAuth.login === 'string' &&
+    githubAuth.login &&
+    typeof githubAuth.sig === 'string' &&
+    githubAuth.sig;
+
+  if (!hasAuthShape) {
+    return checkTeamUnauthorized(origin);
+  }
+
+  const validSig = await hmacVerify(githubAuth.login, githubAuth.sig, env.GITHUB_OAUTH_HMAC_KEY);
+  if (!validSig) {
+    return checkTeamUnauthorized(origin);
+  }
+
+  // ── Verified caller: today's truthful answer ─────────────────────────────
+  const name = typeof body.name === 'string' ? body.name : '';
   if (!name) {
     return jsonResponse({ error: 'Missing team name' }, 400, {}, origin);
   }
@@ -765,8 +820,8 @@ async function handleCheckTeam(url, env, origin) {
     if (res.ok) {
       return jsonResponse({ available: false, message: 'Team name is already taken' }, 200, {}, origin);
     }
-    const body = await res.text().catch(() => '');
-    console.error(`check-team: Backstage returned ${res.status} for "${name}": ${body}`);
+    const errBody = await res.text().catch(() => '');
+    console.error(`check-team: Backstage returned ${res.status} for "${name}": ${errBody}`);
     return jsonResponse({ error: 'Failed to check team availability' }, 500, {}, origin);
   } catch (e) {
     console.error('check-team: unexpected error:', e?.message ?? e);
@@ -774,12 +829,39 @@ async function handleCheckTeam(url, env, origin) {
   }
 }
 
+// ─── Turnstile verification ──────────────────────────────────────────────────
+
+const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+
+// Verifies a Turnstile token against Cloudflare's siteverify API. Never
+// throws — every failure mode (missing secret, missing token, network error,
+// Cloudflare-reported failure) resolves to { success: false, reason }.
+// `fetchImpl` is injectable so tests can stub the network call.
+export async function verifyTurnstileToken(token, secret, remoteip, fetchImpl = fetch) {
+  if (!secret) return { success: false, reason: 'not_configured' };
+  if (typeof token !== 'string' || !token) return { success: false, reason: 'missing_token' };
+
+  const body = new URLSearchParams({ secret, response: token });
+  if (remoteip) body.set('remoteip', remoteip);
+
+  try {
+    const res = await fetchImpl(TURNSTILE_VERIFY_URL, { method: 'POST', body });
+    if (!res.ok) return { success: false, reason: 'network_error' };
+    const data = await res.json();
+    if (data && data.success) return { success: true, reason: null };
+    const reason = (data && Array.isArray(data['error-codes']) && data['error-codes'][0]) || 'failed';
+    return { success: false, reason };
+  } catch (e) {
+    return { success: false, reason: 'network_error' };
+  }
+}
+
 // ─── Form Submit ─────────────────────────────────────────────────────────────
 
-async function handleFormSubmit(request, env, origin) {
+export async function handleFormSubmit(request, env, origin) {
   try {
     const data = await request.json();
-    const { github_auth, team, usecase } = data;
+    const { github_auth, team, usecase, turnstile_token } = data;
 
     // ── Validate GitHub auth (HMAC signature) ───────────────────────────────
     if (!github_auth || !github_auth.login || !github_auth.sig) {
@@ -800,6 +882,20 @@ async function handleFormSubmit(request, env, origin) {
     const teamNameRegex = /^[a-z0-9][a-z0-9-]{0,62}$/;
     if (!teamNameRegex.test(team)) {
       return jsonResponse({ success: false, message: 'Invalid team name format' }, 400, {}, origin);
+    }
+
+    // ── Turnstile verification (fail closed) ────────────────────────────────
+    if (!env.TURNSTILE_SECRET_KEY) {
+      console.error('submit: TURNSTILE_SECRET_KEY is not set');
+      return jsonResponse({ success: false, message: 'Server misconfiguration' }, 500, {}, origin);
+    }
+    const verification = await verifyTurnstileToken(
+      turnstile_token,
+      env.TURNSTILE_SECRET_KEY,
+      request.headers.get('CF-Connecting-IP'),
+    );
+    if (!verification.success) {
+      return jsonResponse({ success: false, message: 'Verification failed, please try again.' }, 400, {}, origin);
     }
 
     // ── Check if tenant already exists ─────────────────────────────────────
@@ -920,10 +1016,10 @@ async function handleFormSubmit(request, env, origin) {
 
 // ─── Contact Form ────────────────────────────────────────────────────────────
 
-async function handleContactForm(request, env, origin) {
+export async function handleContactForm(request, env, origin) {
   try {
     const data = await request.json();
-    const { name, email, message } = data;
+    const { name, email, message, turnstile_token } = data;
 
     // Basic validation
     if (!name || !email || !message) {
@@ -936,6 +1032,20 @@ async function handleContactForm(request, env, origin) {
 
     if (message.length < 10) {
       return jsonResponse({ success: false, message: 'Message is too short' }, 400, {}, origin);
+    }
+
+    // ── Turnstile verification (fail closed) ────────────────────────────────
+    if (!env.TURNSTILE_SECRET_KEY) {
+      console.error('contact: TURNSTILE_SECRET_KEY is not set');
+      return jsonResponse({ success: false, message: 'Server misconfiguration' }, 500, {}, origin);
+    }
+    const verification = await verifyTurnstileToken(
+      turnstile_token,
+      env.TURNSTILE_SECRET_KEY,
+      request.headers.get('CF-Connecting-IP'),
+    );
+    if (!verification.success) {
+      return jsonResponse({ success: false, message: 'Verification failed, please try again.' }, 400, {}, origin);
     }
 
     // Build Telegram message
