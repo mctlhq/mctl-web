@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: deploy-mctl-web
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write
@@ -18,28 +22,13 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # Uses mctl-agents, the backend-only automation App — deliberately
-      # NOT MCTL App (secrets.APP_ID). MCTL App is the App customers install
-      # themselves from mctl.ai/#request-access, and it is being narrowed to
-      # contents:read + metadata:read so its published least-privilege
-      # description is actually true (mctlhq/mctl-gitops#761). A GitHub App's
-      # permissions apply to every installation alike, so anything needing
-      # write — like actions:write on mctl-gitops to dispatch below — has to
-      # live on the internal App instead.
-      - name: Generate Platform App token
-        if: ${{ steps.release.outputs.release_created == 'true' }}
-        id: app
-        uses: actions/create-github-app-token@v3
-        with:
-          app-id: ${{ secrets.AGENTS_APP_ID }}
-          private-key: ${{ secrets.AGENTS_APP_PRIVATE_KEY }}
-          owner: mctlhq
-          repositories: mctl-gitops
-
+      # Note: `gh workflow run` is fire-and-forget — this step goes green once
+      # the dispatch is accepted, not when release-deploy actually succeeds.
+      # Watch the run in mctl-gitops Actions to confirm the build/bump landed.
       - name: Dispatch centralized release-deploy
         if: ${{ steps.release.outputs.release_created == 'true' }}
         env:
-          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
           TAG: ${{ steps.release.outputs.tag_name }}
         run: |
           gh workflow run release-deploy.yaml \

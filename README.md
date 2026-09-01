@@ -240,7 +240,7 @@ Worker OAuth helpers: `node --test cloudflare-worker/oauth.test.mjs`. Manual ver
 
 | Workflow     | Trigger                                     | Action                                            |
 | ------------ | ------------------------------------------- | ------------------------------------------------- |
-| `build.yml`  | Semver tags (`*.*.*`) + pull requests       | Docker build → GHCR push → GitOps update → Telegram |
+| `release-please.yml` | Merge of Release PR | Generates changelog, tags release, triggers GitOps deployment |
 | `deploy.yml` | Push to `main` (cloudflare-worker/** changes) | Deploy CF Worker via `wrangler deploy`            |
 
 ## Deployment
@@ -249,13 +249,15 @@ The site is served from a Docker image (`nginx:alpine`) published to `ghcr.io/mc
 
 ## Release Process
 
-```bash
-git tag 4.1.0 && git push origin 4.1.0
-# → GitHub Actions builds ghcr.io/mctlhq/mctl-web:4.1.0
-# → CI commits new tag to mctl-gitops → ArgoCD deploys
-```
+This repository uses **Google release-please** for automated semantic versioning.
+
+1. Merge standard `feat:` or `fix:` commits to `main`.
+2. A `release-please` pull request is automatically created.
+3. Merge the release pull request.
+4. `release-please` automatically tags the release and triggers `mctl-gitops` to deploy via ArgoCD.
 
 Worker changes deploy automatically on push to `main` when `cloudflare-worker/**` files change.
+
 
 ## Related Projects
 

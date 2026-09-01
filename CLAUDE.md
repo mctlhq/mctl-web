@@ -30,7 +30,7 @@ The git graph must show the "merge commit" pattern:
 ## Versioning & Deploy
 
 - Tag format: `MAJOR.MINOR.PATCH` (no `v` prefix)
-- Pushing a tag triggers `tag-deploy.yml` → builds image → deploys via ArgoCD
+- Uses release-please for automated versioning and changelog generation. Merging a Release PR triggers `release-please.yml` → deploys via ArgoCD
 - For manual deploy: `mctl_deploy_service` MCP tool (team=admins, service=mctl-web)
 
 ## Stack
