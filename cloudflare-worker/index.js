@@ -753,7 +753,12 @@ function parseCookies(cookieHeader) {
 // in the query string (sig is an unbounded bearer — see hmacSign/hmacVerify
 // comments) — only the POST body is read here.
 
-const CHECK_TEAM_UNAUTHORIZED_BODY = { available: false, error: 'GitHub authentication required' };
+// No `available` field: it is the same key a verified caller gets for a
+// *taken* name, so echoing it here tells an unauthenticated client
+// "that name is taken" whenever it reads `available` before checking the
+// status code. The 401 says nothing about the name, and its body should
+// not pretend otherwise.
+const CHECK_TEAM_UNAUTHORIZED_BODY = { error: 'GitHub authentication required' };
 
 function checkTeamUnauthorized(origin) {
   return jsonResponse(CHECK_TEAM_UNAUTHORIZED_BODY, 401, {}, origin);

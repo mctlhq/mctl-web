@@ -372,7 +372,7 @@ test('handleFormSubmit: missing github_auth -> 401, no Turnstile call needed', a
 
 // ─── T4: handleCheckTeam identity gate + non-disclosure ──────────────────────
 
-const UNAUTH_BODY_JSON = JSON.stringify({ available: false, error: 'GitHub authentication required' });
+const UNAUTH_BODY_JSON = JSON.stringify({ error: 'GitHub authentication required' });
 
 test('handleCheckTeam: verified caller gets truthful available:false for an existing tenant', async () => {
   const github_auth = await authFor('octocat');
