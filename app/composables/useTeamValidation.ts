@@ -71,6 +71,16 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
       return
     }
 
+    // Cancel any debounce still pending from the last keystroke *before*
+    // claiming the in-flight slot. Without this, a direct call from onSubmit
+    // is overtaken by the timer it never cleared: that later call aborts the
+    // request onSubmit is awaiting, the AbortError returns early leaving
+    // teamAvailable false, and the form silently declines to submit.
+    if (checkTimeout) {
+      clearTimeout(checkTimeout)
+      checkTimeout = null
+    }
+
     if (inFlight) inFlight.abort()
     const controller = new AbortController()
     inFlight = controller
