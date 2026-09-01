@@ -399,3 +399,15 @@
 @media (max-width: 380px) {
   .form-wrapper { padding: 1.25rem 0.75rem; }
 }
+
+// Badge for component names
+.component-name {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  color: var(--color-accent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+}
