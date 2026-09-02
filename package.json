@@ -19,7 +19,7 @@
     "yup": "^1.7.1"
   },
   "devDependencies": {
-    "sass": "^1.102.0",
+    "sass": "^1.103.1",
     "vite-svg-loader": "^5.1.2",
     "wrangler": "4.127.1"
   },
