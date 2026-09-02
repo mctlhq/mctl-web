@@ -22,7 +22,7 @@ const { t } = useI18n()
           >
             {{ t('hero.cta') }}
           </BaseButton>
-          <a class="hero-block__secondary" href="/docs">
+          <a class="hero-block__secondary" href="https://docs.mctl.ai">
             {{ t('hero.cta_secondary') }}
             <span aria-hidden="true">&#8594;</span>
           </a>
