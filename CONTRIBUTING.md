@@ -73,7 +73,7 @@ Common types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`.
 3. Make your changes and commit using conventional commits
 4. **Push** your branch and open a Pull Request against `main`
 5. Fill out the PR template
-6. PRs are merged via **squash merge**
+6. PRs are merged with a **merge commit** (`gh pr merge --merge --delete-branch`), never squash. The feature branch must stay visible in the git graph.
 
 ## Code Review
 
