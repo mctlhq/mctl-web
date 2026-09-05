@@ -17,12 +17,13 @@ jobs:
       issues: write
       id-token: write
     with:
-      # dependabot is listed so its PRs get reviewed automatically.
-      # Without it claude-code-action hard-fails with "Workflow initiated
-      # by non-human actor", and since branch protection requires an
-      # approving review, dependabot PRs then sit unmergeable until a
-      # maintainer triggers a review by hand.
-      allowed-bots: "mctl-claude-remote,github-actions,dependabot"
+      # dependabot and mctl-agents are listed so their PRs get reviewed
+      # automatically. Without the slug claude-code-action hard-fails with
+      # "Workflow initiated by non-human actor", and since branch protection
+      # requires an approving review, those PRs then sit unmergeable until a
+      # maintainer triggers a review by hand. release-please.yml mints its
+      # token from the AGENTS App, so every release PR here needs mctl-agents.
+      allowed-bots: "mctl-claude-remote,github-actions,dependabot,mctl-agents"
       conventions: |
         Follow the conventions in this repository's CLAUDE.md (TypeScript/
         Cloudflare Worker, conventional commits, English only, no emoji).
