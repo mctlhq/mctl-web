@@ -20,7 +20,7 @@ export default defineNuxtConfig({
         { property: 'og:type', content: 'website' },
         { property: 'og:title', content: 'MCTL — Kubernetes Platform for Growing Product Teams' },
         { property: 'og:description', content: 'Self-service Kubernetes for product teams. GitOps, secrets, team isolation — production-ready from day one. No platform team required.' },
-        { property: 'og:url', content: 'https://mctl.ai' },
+        { property: 'og:url', content: 'https://mctl.ai/' },
         { property: 'og:image', content: 'https://mctl.ai/img/og-image.svg' },
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: 'MCTL — Kubernetes Platform for Growing Product Teams' },
