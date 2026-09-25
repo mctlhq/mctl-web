@@ -6,21 +6,25 @@ compatibility_date = "2024-01-01"
 # TELEGRAM_BOT_TOKEN = "your-bot-token-here"
 # TELEGRAM_CHAT_ID = "your-chat-id-here"
 
+# Routes are NOT declared here. The five route objects of this worker are
+# owned by OpenTofu in mctlhq/mctl-gitops (infrastructure/cloudflare/zones/
+# mctl-ai|mctl-me|mctl-ru/workers.tf, mctlhq/mctl-gitops#1179):
+#   mctl.ai/api/*, mctl.me/*, *.mctl.me/*, mctl.ru/*, *.mctl.ru/*
+# Do not add a `routes` (or `route`) key back: `wrangler deploy` publishes
+# routes with PUT /workers/scripts/<name>/routes, which replaces every route of
+# the script and would overwrite the ones OpenTofu owns. Change a pattern in
+# mctl-gitops instead; the worker code here still decides what each pattern
+# does. This file keeps the script, its [vars], and (via `wrangler secret`)
+# its secrets.
+
+# With no routes, wrangler would otherwise default workers_dev to true and
+# preview_urls to unset. Both are stated explicitly, equal to the live values
+# read on 2026-09-25 (enabled: true, previews_enabled: true), so removing the
+# routes changes nothing on the next deploy.
+workers_dev = true
+preview_urls = true
+
 # Non-secret config vars — plain values, safe to keep in git.
 [vars]
 # GitHub logins exempt from tenant-provisioning limits, comma-separated.
 UNLIMITED_USERS = "mashkovd"
-
-# Routes:
-#   mctl.ai/api/*      — primary API endpoint
-#   mctl.me/*          — redirect root domain to mctl.ai
-#   *.mctl.me/*        — redirect subdomains to *.mctl.ai
-#   mctl.ru/*          — redirect root domain to mctl.ai
-#   *.mctl.ru/*        — redirect subdomains to *.mctl.ai
-routes = [
-  { pattern = "mctl.ai/api/*",  zone_name = "mctl.ai" },
-  { pattern = "mctl.me/*",      zone_name = "mctl.me" },
-  { pattern = "*.mctl.me/*",    zone_name = "mctl.me" },
-  { pattern = "mctl.ru/*",      zone_name = "mctl.ru" },
-  { pattern = "*.mctl.ru/*",    zone_name = "mctl.ru" }
-]
