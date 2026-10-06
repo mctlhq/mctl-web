@@ -1,5 +1,21 @@
 # Changelog
 
+## [7.5.4](https://github.com/mctlhq/mctl-web/compare/7.5.3...7.5.4) (2026-10-06)
+
+
+### Bug Fixes
+
+* **deps:** update svgo and other dependencies trivy flags ([5ca46c9](https://github.com/mctlhq/mctl-web/commit/5ca46c94036753c6624b66018a7fe06c2a293f04))
+* **deps:** update svgo to clear CVE-2026-84370 ([cd6176e](https://github.com/mctlhq/mctl-web/commit/cd6176e12a563be97f76ec618dde999406adec26)), closes [#119](https://github.com/mctlhq/mctl-web/issues/119)
+* **deps:** update the other dependencies trivy flags ([c98dad0](https://github.com/mctlhq/mctl-web/commit/c98dad08b7b0dc4d5125c55d1f25c51cd2617117))
+* stop the indexing losses Search Console reports for mctl.ai ([d6153ee](https://github.com/mctlhq/mctl-web/commit/d6153ee1eba0fc7c42eac4473c1cf6f5a8eaed86))
+* stop the indexing losses Search Console reports for mctl.ai ([ed6373a](https://github.com/mctlhq/mctl-web/commit/ed6373ab23de1260823f2665fac7e3cffac2f337))
+
+
+### Documentation
+
+* README describes the 404 behaviour, not the SPA fallback ([f06ca63](https://github.com/mctlhq/mctl-web/commit/f06ca638e8363f913491d3429d929b88a10fd02c))
+
 ## [7.5.3](https://github.com/mctlhq/mctl-web/compare/7.5.2...7.5.3) (2026-09-04)
 
 
