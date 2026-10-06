@@ -68,13 +68,23 @@ curl -X POST https://mctl-landing-form.<your-subdomain>.workers.dev \
 
 Ты должен получить сообщение в Telegram!
 
-## Custom Domain (опционально)
+## Routes — owned by mctl-gitops, not by this repo
 
-Если хочешь использовать `mctl.ai/api/submit`:
+The worker's five routes are OpenTofu resources in
+[`mctlhq/mctl-gitops`](https://github.com/mctlhq/mctl-gitops)
+(`infrastructure/cloudflare/zones/{mctl-ai,mctl-me,mctl-ru}/workers.tf`,
+mctlhq/mctl-gitops#1179):
 
-1. В Cloudflare Dashboard → Workers → mctl-landing-form
-2. Settings → Triggers → Add Route
-3. Route: `mctl.ai/api/*`
-4. Zone: `mctl.ai`
+| Pattern | Zone | What the worker does there |
+|---|---|---|
+| `mctl.ai/api/*` | `mctl.ai` | the form submit / provisioning API |
+| `mctl.me/*`, `*.mctl.me/*` | `mctl.me` | redirect to `mctl.ai` / `*.mctl.ai` |
+| `mctl.ru/*`, `*.mctl.ru/*` | `mctl.ru` | redirect to `mctl.ai` / `*.mctl.ai` |
 
-Тогда форма будет отправлять на `https://mctl.ai/api/submit`
+This repository owns the script, its `[vars]` and its secrets; `wrangler deploy`
+publishes those. Do **not** add `routes` to `wrangler.toml` and do not add a
+route in the dashboard: `wrangler deploy` publishes routes with a PUT that
+replaces every route of the script, and a dashboard route is drift that the
+nightly `cloudflare-drift.yml` in mctl-gitops reports. To add or change a
+pattern, open a PR in mctl-gitops; if the new pattern needs new handling, change
+`index.js` here in the same release.
