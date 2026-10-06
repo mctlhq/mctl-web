@@ -1,0 +1,15 @@
+# Findings accepted for a limited time. Every entry needs a reason and an
+# `exp:` date; after that date trivy reports it again and the check fails.
+#
+# simple-git 3.36.0 and @simple-git/argv-parser 1.1.1 (mctl-web#119).
+# Both arrive through @nuxt/devtools 3.4.x, which requires simple-git ^3.36.0.
+# The fix exists only in simple-git 4, and forcing it through `overrides`
+# breaks the build: `nuxt prepare` fails on devtools' default import.
+# Exposure is build-time only: devtools calls simple-git on the repository's
+# own checkout to name an analyze build, and nothing from it is copied into
+# the nginx image.
+# Remove these four lines when @nuxt/devtools depends on simple-git >= 4.0.1.
+CVE-2026-102826 exp:2026-12-06
+CVE-2026-102827 exp:2026-12-06
+CVE-2026-102828 exp:2026-12-06
+CVE-2026-102829 exp:2026-12-06

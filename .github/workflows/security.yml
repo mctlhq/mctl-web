@@ -26,3 +26,5 @@ jobs:
           ignore-unfixed: true
           version: v0.69.3
           # Fails on fixable HIGH/CRITICAL findings; ignore-unfixed skips CVEs with no upstream fix.
+          # Time-limited exceptions live in .trivyignore, each with a reason and an expiry date.
+          trivyignores: .trivyignore
