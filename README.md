@@ -37,7 +37,7 @@ mctl-web serves the public-facing website for mctl.ai — a landing page and doc
 | Styling    | SCSS partials, CSS variables, dark theme, JetBrains Mono      |
 | i18n       | Custom composable (`useI18n`) — en/ru, domain-aware           |
 | Worker     | Cloudflare Worker (Node.js runtime via wrangler)               |
-| Server     | nginx Alpine (SPA fallback, security headers, caching)         |
+| Server     | nginx Alpine (prerendered routes, real 404, security headers)  |
 | Container  | Docker multi-stage: node:22-alpine builder → nginx:alpine      |
 | CI/CD      | GitHub Actions → GHCR → ArgoCD (site), wrangler (worker)      |
 | Registry   | ghcr.io/mctlhq/mctl-web                                       |
@@ -93,7 +93,7 @@ mctl-web/
 │   └── README.md                   # Worker setup guide
 ├── nuxt.config.ts                  # ssr:false, prerender crawlLinks, head meta
 ├── Dockerfile                      # multi-stage: node builder → nginx:alpine
-├── nginx.conf                      # SPA fallback, immutable /_nuxt/ cache, headers
+├── nginx.conf                      # Prerendered routes, 404 page, /_nuxt/ cache, headers
 ├── .env.example
 └── .github/workflows/
     ├── build.yml                   # Docker build on semver tags/PRs
@@ -194,7 +194,7 @@ GitHub OAuth App settings — Homepage: `https://mctl.ai`, Callback: `https://mc
 
 ### nginx Configuration
 
-- SPA fallback: all routes served via `200.html` (Nuxt SPA entry)
+- No SPA fallback: every route is prerendered, unknown paths get `404` and `404.html`, and `/200.html` itself returns `404`
 - `/_nuxt/` assets: immutable 1-year cache
 - Security headers: HSTS (1 year), strict CSP, X-Frame-Options
 - Health endpoints: `/healthz`, `/readyz`

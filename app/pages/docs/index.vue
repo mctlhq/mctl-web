@@ -5,7 +5,7 @@ useHead({
     { name: 'description', content: 'Everything you need to understand, evaluate, and start using mctl. Self-service Kubernetes platform with GitOps, Vault, RBAC, and MCP tools.' },
     { property: 'og:title', content: 'MCTL Docs — Platform Documentation' },
     { property: 'og:description', content: 'Everything you need to understand, evaluate, and start using mctl. Self-service Kubernetes platform with GitOps, Vault, RBAC, and MCP tools.' },
-    { property: 'og:url', content: 'https://mctl.ai/docs' },
+    { property: 'og:url', content: 'https://mctl.ai/docs/' },
   ],
 })
 </script>
