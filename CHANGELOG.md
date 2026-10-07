@@ -1,5 +1,15 @@
 # Changelog
 
+## [7.5.5](https://github.com/mctlhq/mctl-web/compare/7.5.4...7.5.5) (2026-10-07)
+
+
+### Bug Fixes
+
+* **deps:** bump shell-quote to 1.12.0 for CVE-2026-102422 ([047f7e7](https://github.com/mctlhq/mctl-web/commit/047f7e7b6104d2a8f6447389d9f3e73541c5cce5))
+* **deps:** bump shell-quote to 1.12.0 for CVE-2026-102422 ([f8db9ac](https://github.com/mctlhq/mctl-web/commit/f8db9ac947b954aeef4352e525157d5ffa3e631e))
+* **worker:** retire the unused mcp and tg-mcp login flows ([36a170e](https://github.com/mctlhq/mctl-web/commit/36a170e59bfc692b83e72c404692c863c0f6ac2a))
+* **worker:** retire the unused mcp and tg-mcp login flows ([aedc909](https://github.com/mctlhq/mctl-web/commit/aedc909a4e1f2c5596c011180c59f453ae9dc88e))
+
 ## [7.5.4](https://github.com/mctlhq/mctl-web/compare/7.5.3...7.5.4) (2026-10-06)
 
 
