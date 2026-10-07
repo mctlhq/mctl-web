@@ -217,8 +217,8 @@ The MCP connector page (docs.mctl.ai/mcp/connecting) uses GitHub OAuth to issue 
       │  Click "Sign in"      │                        │
       │──────────────────────►│                        │
       │  GET /api/github/     │                        │
-      │  login?for=mcp        │                        │
-      │                       │  set __gh_flow=mcp     │
+      │  login?for=docs       │                        │
+      │                       │  set __gh_flow=docs    │
       │                       │  cookie + HMAC state   │
       │◄──────────────────────│                        │
       │  302 → github.com/    │                        │
