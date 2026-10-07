@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
+import worker, {
+  FRAGMENT_FLOW_TARGETS,
+  isFragmentFlow,
   buildSessionResponsePayload,
   decryptSessionPayload,
   encryptSessionPayload,
@@ -149,7 +151,7 @@ test('buildSessionResponsePayload passes token through for docs/mcp-shaped paylo
   assert.equal(result.token, payload.token);
 });
 
-test('buildSessionResponsePayload has no token key for tg-mcp-shaped payloads', () => {
+test('buildSessionResponsePayload has no token key for a payload without one', () => {
   const payload = {
     login: 'octocat',
     name: 'Octo Cat',
@@ -196,4 +198,129 @@ test('buildSessionResponsePayload passes through identity fields unchanged and i
   const result = buildSessionResponsePayload(payload);
   assert.deepEqual(result, payload);
   assert.equal('token' in result, false);
+});
+
+// ── Fragment flows (`?for=`) ────────────────────────────────────────────────
+
+function mockCache() {
+  const store = new Map();
+  return {
+    async match(req) {
+      return store.has(req.url) ? new Response(store.get(req.url)) : undefined;
+    },
+    async put(req, res) {
+      store.set(req.url, await res.clone().text());
+    },
+    async delete(req) {
+      store.delete(req.url);
+    },
+  };
+}
+
+async function withMockCache(fn) {
+  const original = globalThis.caches;
+  globalThis.caches = { default: mockCache() };
+  try {
+    return await fn();
+  } finally {
+    globalThis.caches = original;
+  }
+}
+
+const oauthEnv = () => ({
+  GITHUB_CLIENT_ID: 'client-id',
+  GITHUB_CLIENT_SECRET: 'client-secret',
+  GITHUB_OAUTH_HMAC_KEY: 'test-hmac-key',
+});
+
+const setCookies = (res) => res.headers.getSetCookie();
+const flowCookie = (res) =>
+  setCookies(res).find((c) => c.startsWith('__gh_flow=') && !c.includes('Max-Age=0'));
+
+test('docs is the only fragment flow', () => {
+  assert.deepEqual(Object.keys(FRAGMENT_FLOW_TARGETS), ['docs']);
+  assert.equal(isFragmentFlow('docs'), true);
+});
+
+test('retired and inherited names are not fragment flows', () => {
+  for (const flow of ['mcp', 'tg-mcp', '', null, undefined, 'constructor', '__proto__', 'toString']) {
+    assert.equal(isFragmentFlow(flow), false, `flow ${String(flow)}`);
+  }
+});
+
+test('login: for=docs records the flow in a cookie', async () => {
+  await withMockCache(async () => {
+    const res = await worker.fetch(
+      new Request('https://mctl.ai/api/github/login?for=docs'), oauthEnv());
+    assert.equal(res.status, 302);
+    assert.match(res.headers.get('Location'), /^https:\/\/github\.com\/login\/oauth\/authorize\?/);
+    assert.match(flowCookie(res) || '', /^__gh_flow=docs;/);
+  });
+});
+
+test('login: a retired or unknown flow takes the landing flow', async () => {
+  await withMockCache(async () => {
+    for (const flow of ['mcp', 'tg-mcp', 'constructor', 'nope']) {
+      const res = await worker.fetch(
+        new Request(`https://mctl.ai/api/github/login?for=${flow}`), oauthEnv());
+      assert.equal(res.status, 302, `for=${flow}`);
+      assert.equal(flowCookie(res), undefined, `for=${flow} must not set __gh_flow`);
+    }
+  });
+});
+
+function callbackError(flow) {
+  return worker.fetch(
+    new Request('https://mctl.ai/api/github/callback?error=access_denied', {
+      headers: { Cookie: `__gh_flow=${flow}` },
+    }),
+    oauthEnv(),
+  );
+}
+
+test('callback error: the docs flow returns to the docs page', async () => {
+  const res = await callbackError('docs');
+  assert.equal(res.status, 302);
+  assert.equal(
+    res.headers.get('Location'),
+    fragmentErrorLocation(FRAGMENT_FLOW_TARGETS.docs, 'ACCESS_DENIED'),
+  );
+});
+
+test('callback error: a retired or inherited flow cookie returns to the landing page', async () => {
+  for (const flow of ['mcp', 'tg-mcp', 'constructor', '__proto__']) {
+    const res = await callbackError(flow);
+    assert.equal(res.status, 302, `flow ${flow}`);
+    assert.equal(
+      res.headers.get('Location'),
+      landingErrorLocation('https://mctl.ai', 'ACCESS_DENIED'),
+      `flow ${flow}`,
+    );
+  }
+});
+
+test('the worker names no retired flow target', () => {
+  assert.equal(workerSrc.includes('labs-mctl-telegram.mctl.ai'), false);
+  assert.equal(/['"]tg-mcp['"]\s*:/.test(workerSrc), false);
+  assert.equal(/['"]mcp['"]\s*:/.test(workerSrc), false);
+});
+
+test('session redeem: the retired telegram origin is refused, docs is not', async () => {
+  const redeem = (origin) => worker.fetch(
+    new Request('https://mctl.ai/api/github/session', {
+      method: 'POST',
+      headers: { Origin: origin, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: 'not-a-session' }),
+    }),
+    oauthEnv(),
+  );
+  await withMockCache(async () => {
+    const refused = await redeem('https://labs-mctl-telegram.mctl.ai');
+    assert.equal(refused.status, 403);
+    assert.notEqual(
+      refused.headers.get('Access-Control-Allow-Origin'), 'https://labs-mctl-telegram.mctl.ai');
+    const docs = await redeem('https://docs.mctl.ai');
+    assert.notEqual(docs.status, 403);
+    assert.equal(docs.headers.get('Access-Control-Allow-Origin'), 'https://docs.mctl.ai');
+  });
 });

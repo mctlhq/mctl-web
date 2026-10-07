@@ -29,10 +29,11 @@ const BASE_DOMAIN = 'mctl.ai';
 const REDIRECT_SUFFIXES = ['.mctl.me', '.mctl.ru'];
 const ALLOWED_ORIGINS = new Set(['https://mctl.ai', 'http://localhost:3000']);
 // Origins allowed to redeem a one-time OAuth session (MCP connector pages).
+// One entry per page a fragment flow returns to: an origin listed here can
+// read a session that carries a GitHub token.
 const SESSION_ORIGINS = new Set([
   ...ALLOWED_ORIGINS,
   'https://docs.mctl.ai',
-  'https://labs-mctl-telegram.mctl.ai',
 ]);
 const LANDING_URL = `https://${BASE_DOMAIN}`;
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
@@ -334,9 +335,8 @@ export function redeemFromCookie(decrypted, consumed) {
 // Explicit allowlist for what `/api/github/session` returns to the browser.
 // `token` is on this list deliberately: it is the credential
 // docs.mctl.ai/mcp/connecting hands the user for api.mctl.ai/mcp, not an
-// incidental leak. It is absent from tg-mcp payloads (see
-// handleGitHubCallback), so those responses carry no token. Removing it from
-// here entirely requires mctl-api to issue its own scoped token first — see
+// incidental leak. Removing it from here entirely requires
+// docs.mctl.ai/mcp/connecting to stop handing out a GitHub token first — see
 // mctlhq/mctl-api#218. Any other field on the internal session payload
 // (e.g. sessionId, exp) is intentionally never exposed unless added here.
 const SESSION_RESPONSE_FIELDS = ['login', 'name', 'avatar_url', 'html_url', 'sig', 'token'];
@@ -555,10 +555,10 @@ export async function hmacVerify(data, signature, secret) {
 async function handleGitHubLogin(env, url, origin) {
   const flowParam = url && url.searchParams.get('for');
   // Flows that bypass the landing redirect and instead hand the caller a
-  // one-time session (HttpOnly cookie + opaque #session= id). `tg-mcp` is
-  // the Telegram MCP server at labs-mctl-telegram.mctl.ai (mctlhq/mctl-telegram).
-  const fragmentFlows = new Set(['mcp', 'docs', 'tg-mcp']);
-  const forDocs = fragmentFlows.has(flowParam);
+  // one-time session (HttpOnly cookie + opaque #session= id). Any other
+  // value of `for`, including the retired `mcp` and `tg-mcp`, takes the
+  // landing flow, which carries identity only and no token.
+  const forDocs = isFragmentFlow(flowParam);
 
   // Allow caller to specify where to redirect after auth (validated against allowlist)
   const redirectTo = url && url.searchParams.get('redirect_to');
@@ -663,12 +663,7 @@ async function handleGitHubCallback(url, request, env) {
   // Never put access_token in a URL (query or fragment). Store the payload
   // server-side and in an encrypted HttpOnly cookie; the redirect only
   // carries a one-time opaque session id in the fragment.
-  const fragmentTargets = {
-    docs:     'https://docs.mctl.ai/mcp/connecting',
-    'mcp':    'https://docs.mctl.ai/mcp/connecting',
-    'tg-mcp': 'https://labs-mctl-telegram.mctl.ai/telegram/connect',
-  };
-  if (fragmentTargets[ghFlow]) {
+  if (isFragmentFlow(ghFlow)) {
     const sessionId = newSessionId();
     const mcpPayload = {
       login:      user.login,
@@ -679,20 +674,19 @@ async function handleGitHubCallback(url, request, env) {
       sessionId,
       exp: Date.now() + SESSION_TTL_SEC * 1000,
     };
-    // `token` is only handed to flows that actually consume it.
-    // docs.mctl.ai/mcp/connecting requires it as the api.mctl.ai/mcp bearer;
-    // tg-mcp never calls /api/github/session, so it never gets one — the
-    // token then never reaches the Cache API entry or the encrypted cookie
-    // for that flow either. See mctlhq/mctl-api#218 for the follow-up that
-    // replaces this GitHub token with a scoped, revocable mctl-issued one.
-    if (ghFlow === 'docs' || ghFlow === 'mcp') {
+    // docs.mctl.ai/mcp/connecting, the only fragment flow left, requires the
+    // token as the api.mctl.ai/mcp bearer. A fragment flow added later must
+    // not inherit it by default: decide per flow whether it consumes one.
+    // See mctlhq/mctl-api#218 for the follow-up that replaces this GitHub
+    // token with a scoped, revocable mctl-issued one.
+    if (ghFlow === 'docs') {
       mcpPayload.token = accessToken;
     }
     await putOAuthSession(sessionId, mcpPayload);
     const encrypted = await encryptSessionPayload(mcpPayload, env.GITHUB_OAUTH_HMAC_KEY);
 
     const headers = redirectHeaders();
-    headers.set('Location', fragmentSuccessLocation(fragmentTargets[ghFlow], sessionId));
+    headers.set('Location', fragmentSuccessLocation(FRAGMENT_FLOW_TARGETS[ghFlow], sessionId));
     headers.append('Set-Cookie', clearState);
     headers.append('Set-Cookie', clearFlow);
     headers.append('Set-Cookie', clearOrigin);
@@ -724,18 +718,26 @@ async function handleGitHubCallback(url, request, env) {
   return new Response(null, { status: 302, headers });
 }
 
-// Fragment-flow error targets must match the success-flow `fragmentTargets`
-// map in handleGitHubCallback — otherwise OAuth failures send the user to the
-// landing page instead of the page that initiated the flow (regression caught
-// by Codex on PR #14: `?for=tg-mcp` ACCESS_DENIED was leaking back to landing).
-const FRAGMENT_ERROR_TARGETS = {
-  docs:     'https://docs.mctl.ai/mcp/connecting',
-  'mcp':    'https://docs.mctl.ai/mcp/connecting',
-  'tg-mcp': 'https://labs-mctl-telegram.mctl.ai/telegram/connect',
-};
+// The fragment flows and the page each one returns to. Login, the success
+// redirect and the error redirect all read this one map: when they each kept
+// their own copy, an OAuth failure in a flow missing from the error copy sent
+// the user to the landing page instead of the page that started the flow
+// (caught on PR #14).
+//
+// `mcp` and `tg-mcp` were removed on 2026-10-07: no repository in the org
+// requested either, and mctl-telegram signs people in by itself.
+export const FRAGMENT_FLOW_TARGETS = Object.freeze({
+  docs: 'https://docs.mctl.ai/mcp/connecting',
+});
+
+// Own-property check: `for` and the `__gh_flow` cookie are caller-controlled,
+// and a plain lookup would answer for `constructor` or `__proto__` too.
+export function isFragmentFlow(flow) {
+  return typeof flow === 'string' && Object.hasOwn(FRAGMENT_FLOW_TARGETS, flow);
+}
 
 function redirectWithError(errorCode, flow = '', baseUrl = LANDING_URL) {
-  const fragmentBase = FRAGMENT_ERROR_TARGETS[flow];
+  const fragmentBase = isFragmentFlow(flow) ? FRAGMENT_FLOW_TARGETS[flow] : null;
   const location = fragmentBase
     ? fragmentErrorLocation(fragmentBase, errorCode)
     : landingErrorLocation(baseUrl, errorCode);
