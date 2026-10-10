@@ -1,5 +1,13 @@
 # Changelog
 
+## [7.5.6](https://github.com/mctlhq/mctl-web/compare/7.5.5...7.5.6) (2026-10-10)
+
+
+### Bug Fixes
+
+* **worker:** stop handing GitHub tokens to docs and MCP clients ([c2750f1](https://github.com/mctlhq/mctl-web/commit/c2750f13a8f2ac638ac8df82dabab43d3af2af5e))
+* **worker:** stop handing GitHub tokens to docs and MCP clients ([a076534](https://github.com/mctlhq/mctl-web/commit/a07653439154ac4ff3f2b5a8e123d15d122f5233))
+
 ## [7.5.5](https://github.com/mctlhq/mctl-web/compare/7.5.4...7.5.5) (2026-10-07)
 
 
