@@ -4,7 +4,7 @@ Landing page for the mctl.ai platform.
 
 ## What It Does
 
-mctl-web serves the public-facing website for mctl.ai — a landing page and documentation. MCP connector setup is at docs.mctl.ai/mcp/connecting. The Nuxt 4 SPA runs in an nginx container while a Cloudflare Worker handles the serverless API (OAuth, form submissions, team checks).
+mctl-web serves the public-facing website for mctl.ai — a landing page and documentation. MCP connector setup is at docs.mctl.ai/mcp/connecting; MCP clients sign in through api.mctl.ai's own OAuth, not through this site. The Nuxt 4 SPA runs in an nginx container while a Cloudflare Worker handles the serverless API (OAuth, form submissions, team checks).
 
 ## Architecture
 
@@ -208,7 +208,9 @@ GitHub OAuth App settings — Homepage: `https://mctl.ai`, Callback: `https://mc
 
 ## OAuth Flow
 
-The MCP connector page (docs.mctl.ai/mcp/connecting) uses GitHub OAuth to issue a personal token. The GitHub `access_token` is never placed in a URL (query or fragment). After the callback, the Worker stores the payload server-side (Cache API, 5 min TTL) and in an encrypted HttpOnly cookie, then redirects to `docs.mctl.ai/mcp/connecting#session=<opaque-id>`. The connector page redeems the session with `POST /api/github/session`. Landing-page identity (no token) is delivered in the `#auth=` fragment so it never reaches server logs or Referer headers.
+The landing page's "Sign in with GitHub" (team signup) is the only GitHub OAuth flow. The Worker never hands the GitHub `access_token` to the browser: it uses it once to read the profile and verified email, then redirects back with identity only (login, name, email, avatar and an HMAC signature of the login) in the `#auth=` fragment, so it never reaches server logs or Referer headers. The signature lets `/api/github/check-team` and `/api/submit` trust the login.
+
+The `for=docs`, `for=mcp` and `for=tg-mcp` flows, which handed a GitHub token to the docs page and MCP connectors through `POST /api/github/session`, were removed (mctlhq/mctl-api#525): MCP clients sign in through `api.mctl.ai/mcp` directly. A `for` parameter is now ignored.
 
 ```
 ┌──────────┐        ┌──────────────────┐        ┌──────────┐
@@ -217,9 +219,9 @@ The MCP connector page (docs.mctl.ai/mcp/connecting) uses GitHub OAuth to issue 
       │  Click "Sign in"      │                        │
       │──────────────────────►│                        │
       │  GET /api/github/     │                        │
-      │  login?for=docs       │                        │
-      │                       │  set __gh_flow=docs    │
-      │                       │  cookie + HMAC state   │
+      │  login?redirect_to=…  │                        │
+      │                       │  HMAC state + origin   │
+      │                       │  cookies               │
       │◄──────────────────────│                        │
       │  302 → github.com/    │                        │
       │  login/oauth/authorize│                        │
@@ -230,18 +232,11 @@ The MCP connector page (docs.mctl.ai/mcp/connecting) uses GitHub OAuth to issue 
       │──────────────────────►│                        │
       │                       │  verify HMAC state     │
       │                       │  exchange code→token ──────────►│
+      │                       │  read profile + email  │
       │                       │◄──────────────────────────────│
-      │                       │  store session (cookie │
-      │                       │  + cache); sign login  │
       │◄──────────────────────│                        │
-      │  302 → docs.mctl.ai/  │                        │
-      │  mcp/connecting       │                        │
-      │  #session=<opaque-id> │                        │
-      │──────────────────────►│                        │
-      │  POST /api/github/    │                        │
-      │  session {code}       │                        │
-      │◄──────────────────────│                        │
-      │  JSON payload (once)  │                        │
+      │  302 → mctl.ai/#auth= │                        │
+      │  <identity + sig>     │                        │
 ```
 
 ## Security
@@ -250,8 +245,8 @@ The MCP connector page (docs.mctl.ai/mcp/connecting) uses GitHub OAuth to issue 
 | ---------------- | -------------------------------------------------------------------- |
 | CSRF             | State param signed with HMAC-SHA256, stored in HttpOnly cookie (5 min TTL) |
 | Identity         | GitHub login signed with HMAC — landing `#auth=` fragment cannot be forged |
-| Token exposure   | GitHub `access_token` never placed in a URL; one-time session via HttpOnly cookie and `POST /api/github/session` |
-| CORS             | Landing API restricted to `https://mctl.ai`; session redeem also allows docs/telegram origins |
+| Token exposure   | GitHub `access_token` never leaves the Worker; the browser receives signed identity only |
+| CORS             | Landing API restricted to `https://mctl.ai`                          |
 | CSP              | Strict Content-Security-Policy headers via nginx                     |
 | HSTS             | Enabled, max-age 1 year                                             |
 | Rate limiting    | 5 requests / 5 minutes on `/api/submit`                             |

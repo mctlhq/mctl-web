@@ -28,19 +28,9 @@ const BASE_DOMAIN = 'mctl.ai';
 // Root domain redirects (mctl.me, mctl.ru) are handled by CF Redirect Rules — no Worker invocation.
 const REDIRECT_SUFFIXES = ['.mctl.me', '.mctl.ru'];
 const ALLOWED_ORIGINS = new Set(['https://mctl.ai', 'http://localhost:3000']);
-// Origins allowed to redeem a one-time OAuth session (MCP connector pages).
-// One entry per page a fragment flow returns to: an origin listed here can
-// read a session that carries a GitHub token.
-const SESSION_ORIGINS = new Set([
-  ...ALLOWED_ORIGINS,
-  'https://docs.mctl.ai',
-]);
 const LANDING_URL = `https://${BASE_DOMAIN}`;
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
 const BACKSTAGE_APP_URL = 'https://app.mctl.ai';
-const SESSION_COOKIE = '__gh_session';
-const SESSION_TTL_SEC = 300;
-const SESSION_ID_RE = /^[0-9a-f]{64}$/;
 
 // Rate limit: max requests per IP per window (seconds)
 // Keyed by "METHOD path", not path alone, and matched against the method that
@@ -61,7 +51,6 @@ const RATE_LIMITS = {
   'POST /api/submit':  { max: 5,  windowSec: 300 },
   'POST /api/contact': { max: 3,  windowSec: 300 },
   'GET /api/github/login': { max: 10, windowSec: 60 },
-  'POST /api/github/session': { max: 20, windowSec: 60 },
   'POST /api/github/check-team': { max: 20, windowSec: 60 },
 };
 
@@ -104,9 +93,6 @@ export default {
 
     // CORS preflight
     if (request.method === 'OPTIONS') {
-      if (path === '/api/github/session') {
-        return new Response(null, { status: 204, headers: sessionCorsHeaders(origin) });
-      }
       return new Response(null, { headers: corsHeaders(origin) });
     }
 
@@ -137,11 +123,6 @@ export default {
     // GitHub OAuth: callback
     if (request.method === 'GET' && path === '/api/github/callback') {
       return handleGitHubCallback(url, request, env);
-    }
-
-    // GitHub OAuth: one-time session redeem (never put access_token in a URL)
-    if (request.method === 'POST' && path === '/api/github/session') {
-      return handleGitHubSession(request, env, origin);
     }
 
     // Check team availability (proxies to Backstage tenant API).
@@ -208,8 +189,8 @@ function rateBucket(rateKey, request) {
   const site = request.headers.get('Sec-Fetch-Site');
   if (!site || site === 'same-origin') return rateKey;
   // Third-party-initiated traffic gets its own budget per initiator class.
-  // Legitimate cross-site callers (docs.mctl.ai redeeming a session, for
-  // example) are still limited — just not out of the same-origin allowance.
+  // Legitimate cross-site callers are still limited — just not out of the
+  // same-origin allowance.
   const cls = FETCH_SITE_CLASSES.has(site) ? site : 'cross-site';
   return `${rateKey} [${cls}]`;
 }
@@ -256,180 +237,12 @@ function jsonResponse(body, status = 200, extraHeaders = {}, origin = '') {
   });
 }
 
-function sessionCorsHeaders(origin = '') {
-  const allowedOrigin = SESSION_ORIGINS.has(origin) ? origin : 'https://mctl.ai';
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin',
-  };
-}
-
-function sessionJsonResponse(body, status, origin) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      ...sessionCorsHeaders(origin),
-      'Content-Type': 'application/json',
-      'Cache-Control': 'private, no-store',
-    },
-  });
-}
-
-export function isSessionId(value) {
-  return typeof value === 'string' && SESSION_ID_RE.test(value);
-}
-
-export function newSessionId() {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
-}
-
 export function landingSuccessLocation(baseUrl, encodedAuth) {
   return `${baseUrl}/#auth=${encodedAuth}`;
 }
 
 export function landingErrorLocation(baseUrl, errorCode) {
   return `${baseUrl}/#auth_error=${errorCode}`;
-}
-
-export function fragmentSuccessLocation(target, sessionId) {
-  return `${target}#session=${sessionId}`;
-}
-
-export function fragmentErrorLocation(target, errorCode) {
-  return `${target}#auth_error=${errorCode}`;
-}
-
-function sessionCacheRequest(id) {
-  return new Request(`https://oauth-session.internal/${id}`);
-}
-
-export async function putOAuthSession(id, payload, ttlSec = SESSION_TTL_SEC) {
-  const cache = caches.default;
-  await cache.put(sessionCacheRequest(id), new Response(JSON.stringify(payload), {
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': `s-maxage=${ttlSec}`,
-    },
-  }));
-}
-
-export function sessionIsLive(payload) {
-  if (!payload || typeof payload !== 'object') return false;
-  if (typeof payload.exp === 'number' && Date.now() > payload.exp) return false;
-  return true;
-}
-
-// Cookie is only a pointer to the one-time cache entry. Decrypt success
-// alone must not return the GitHub token; the cache consume must hit.
-export function redeemFromCookie(decrypted, consumed) {
-  if (!sessionIsLive(decrypted) || !sessionIsLive(consumed)) return null;
-  return consumed;
-}
-
-// Explicit allowlist for what `/api/github/session` returns to the browser.
-// `token` is on this list deliberately: it is the credential
-// docs.mctl.ai/mcp/connecting hands the user for api.mctl.ai/mcp, not an
-// incidental leak. Removing it from here entirely requires
-// docs.mctl.ai/mcp/connecting to stop handing out a GitHub token first — see
-// mctlhq/mctl-api#218. Any other field on the internal session payload
-// (e.g. sessionId, exp) is intentionally never exposed unless added here.
-const SESSION_RESPONSE_FIELDS = ['login', 'name', 'avatar_url', 'html_url', 'sig', 'token'];
-
-export function buildSessionResponsePayload(payload) {
-  const out = {};
-  for (const key of SESSION_RESPONSE_FIELDS) {
-    if (key in payload) out[key] = payload[key];
-  }
-  return out;
-}
-
-export async function takeOAuthSession(id) {
-  if (!isSessionId(id)) return null;
-  const cache = caches.default;
-  const req = sessionCacheRequest(id);
-  const hit = await cache.match(req);
-  if (!hit) return null;
-  await cache.delete(req);
-  try {
-    return await hit.json();
-  } catch {
-    return null;
-  }
-}
-
-function bytesToB64url(bytes) {
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function b64urlToBytes(value) {
-  const pad = '='.repeat((4 - (value.length % 4)) % 4);
-  const bin = atob(value.replace(/-/g, '+').replace(/_/g, '/') + pad);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
-async function aesKeyFromSecret(secret) {
-  // Domain-separate AES key material from HMAC signing of the same root secret.
-  const hash = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(`mctl-oauth-session-v1:${secret}`),
-  );
-  return crypto.subtle.importKey('raw', hash, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
-}
-
-export async function encryptSessionPayload(payload, secret) {
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await aesKeyFromSecret(secret);
-  const ciphertext = new Uint8Array(await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    new TextEncoder().encode(JSON.stringify(payload)),
-  ));
-  const packed = new Uint8Array(iv.length + ciphertext.length);
-  packed.set(iv, 0);
-  packed.set(ciphertext, iv.length);
-  return bytesToB64url(packed);
-}
-
-export async function decryptSessionPayload(token, secret) {
-  try {
-    const packed = b64urlToBytes(token);
-    if (packed.length < 13) return null;
-    const iv = packed.slice(0, 12);
-    const ciphertext = packed.slice(12);
-    const key = await aesKeyFromSecret(secret);
-    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
-    return JSON.parse(new TextDecoder().decode(plain));
-  } catch {
-    return null;
-  }
-}
-
-function sessionCookieHeader(value, maxAge, withDomain) {
-  const parts = [
-    `${SESSION_COOKIE}=${value}`,
-    'HttpOnly',
-    'Secure',
-    'SameSite=Lax',
-    `Max-Age=${maxAge}`,
-    'Path=/',
-  ];
-  if (withDomain) parts.push('Domain=.mctl.ai');
-  return parts.join('; ');
-}
-
-function appendClearSessionCookies(headers) {
-  headers.append('Set-Cookie', sessionCookieHeader('', 0, false));
-  headers.append('Set-Cookie', sessionCookieHeader('', 0, true));
 }
 
 function redirectHeaders() {
@@ -553,12 +366,10 @@ export async function hmacVerify(data, signature, secret) {
 // ─── GitHub OAuth: Login ─────────────────────────────────────────────────────
 
 async function handleGitHubLogin(env, url, origin) {
-  const flowParam = url && url.searchParams.get('for');
-  // Flows that bypass the landing redirect and instead hand the caller a
-  // one-time session (HttpOnly cookie + opaque #session= id). Any other
-  // value of `for`, including the retired `mcp` and `tg-mcp`, takes the
-  // landing flow, which carries identity only and no token.
-  const forDocs = isFragmentFlow(flowParam);
+  // Landing flow only: it carries identity and never a GitHub token. The
+  // `for=` flows that handed a token to docs.mctl.ai (`docs`) and to MCP
+  // connectors (`mcp`, `tg-mcp`) are gone, and any `for` value is ignored:
+  // MCP clients sign in through api.mctl.ai's own OAuth (mctlhq/mctl-api#525).
 
   // Allow caller to specify where to redirect after auth (validated against allowlist)
   const redirectTo = url && url.searchParams.get('redirect_to');
@@ -581,11 +392,6 @@ async function handleGitHubLogin(env, url, origin) {
   const headers = new Headers();
   headers.set('Location', githubAuthUrl.toString());
   headers.append('Set-Cookie', `__gh_state=${state}.${stateSig}; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
-  if (forDocs) {
-    // Cookie value carries which fragment-flow we're in so the callback knows
-    // which downstream URL to redirect to.
-    headers.append('Set-Cookie', `__gh_flow=${flowParam}; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
-  }
   headers.append('Set-Cookie', `__gh_origin=${safeOrigin}; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`);
 
   return new Response(null, { status: 302, headers });
@@ -600,20 +406,19 @@ async function handleGitHubCallback(url, request, env) {
 
   // Parse cookies early so we know where to redirect errors
   const cookies = parseCookies(request.headers.get('Cookie') || '');
-  const ghFlow = cookies['__gh_flow'] || '';
   const ghOrigin = cookies['__gh_origin'] || '';
   const baseUrl = ghOrigin && ALLOWED_ORIGINS.has(ghOrigin) ? ghOrigin : LANDING_URL;
 
-  if (error) return redirectWithError('ACCESS_DENIED', ghFlow, baseUrl);
-  if (!code || !state) return redirectWithError('MISSING_PARAMS', ghFlow, baseUrl);
+  if (error) return redirectWithError('ACCESS_DENIED', baseUrl);
+  if (!code || !state) return redirectWithError('MISSING_PARAMS', baseUrl);
 
   // Validate state from cookie
   const stateCookie = cookies['__gh_state'];
-  if (!stateCookie) return redirectWithError('INVALID_STATE', ghFlow, baseUrl);
+  if (!stateCookie) return redirectWithError('INVALID_STATE', baseUrl);
 
   const [cookieState, cookieSig] = stateCookie.split('.');
   if (cookieState !== state || !await hmacVerify(cookieState, cookieSig, env.GITHUB_OAUTH_HMAC_KEY)) {
-    return redirectWithError('INVALID_STATE', ghFlow, baseUrl);
+    return redirectWithError('INVALID_STATE', baseUrl);
   }
 
   // Exchange code for access token
@@ -630,10 +435,10 @@ async function handleGitHubCallback(url, request, env) {
       }),
     });
     const tokenData = await tokenResponse.json();
-    if (tokenData.error) return redirectWithError('TOKEN_EXCHANGE', ghFlow, baseUrl);
+    if (tokenData.error) return redirectWithError('TOKEN_EXCHANGE', baseUrl);
     accessToken = tokenData.access_token;
   } catch (e) {
-    return redirectWithError('TOKEN_EXCHANGE', ghFlow, baseUrl);
+    return redirectWithError('TOKEN_EXCHANGE', baseUrl);
   }
 
   // Fetch user profile and emails
@@ -643,58 +448,21 @@ async function handleGitHubCallback(url, request, env) {
       githubAPI('/user', accessToken),
       githubAPI('/user/emails', accessToken),
     ]);
-    if (!userRes.ok || !emailsRes.ok) return redirectWithError('PROFILE_FETCH', ghFlow, baseUrl);
+    if (!userRes.ok || !emailsRes.ok) return redirectWithError('PROFILE_FETCH', baseUrl);
     user = await userRes.json();
     emails = await emailsRes.json();
   } catch (e) {
-    return redirectWithError('PROFILE_FETCH', ghFlow, baseUrl);
+    return redirectWithError('PROFILE_FETCH', baseUrl);
   }
 
   const primaryEmail = emails.find(e => e.primary && e.verified);
   const email = primaryEmail ? primaryEmail.email : (user.email || '');
 
   const clearState = '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
-  const clearFlow  = '__gh_flow=;  HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
   const clearOrigin = '__gh_origin=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
 
   const sig = await hmacSign(user.login, env.GITHUB_OAUTH_HMAC_KEY);
 
-  // ── Fragment-redirect flows ─────────────────────────────────────────
-  // Never put access_token in a URL (query or fragment). Store the payload
-  // server-side and in an encrypted HttpOnly cookie; the redirect only
-  // carries a one-time opaque session id in the fragment.
-  if (isFragmentFlow(ghFlow)) {
-    const sessionId = newSessionId();
-    const mcpPayload = {
-      login:      user.login,
-      name:       user.name || '',
-      avatar_url: user.avatar_url || '',
-      html_url:   user.html_url || '',
-      sig,
-      sessionId,
-      exp: Date.now() + SESSION_TTL_SEC * 1000,
-    };
-    // docs.mctl.ai/mcp/connecting, the only fragment flow left, requires the
-    // token as the api.mctl.ai/mcp bearer. A fragment flow added later must
-    // not inherit it by default: decide per flow whether it consumes one.
-    // See mctlhq/mctl-api#218 for the follow-up that replaces this GitHub
-    // token with a scoped, revocable mctl-issued one.
-    if (ghFlow === 'docs') {
-      mcpPayload.token = accessToken;
-    }
-    await putOAuthSession(sessionId, mcpPayload);
-    const encrypted = await encryptSessionPayload(mcpPayload, env.GITHUB_OAUTH_HMAC_KEY);
-
-    const headers = redirectHeaders();
-    headers.set('Location', fragmentSuccessLocation(FRAGMENT_FLOW_TARGETS[ghFlow], sessionId));
-    headers.append('Set-Cookie', clearState);
-    headers.append('Set-Cookie', clearFlow);
-    headers.append('Set-Cookie', clearOrigin);
-    headers.append('Set-Cookie', sessionCookieHeader(encrypted, SESSION_TTL_SEC, true));
-    return new Response(null, { status: 302, headers });
-  }
-
-  // ── Normal landing flow ──────────────────────────────────────────────────
   // Identity only (no access_token). Delivered in the URL fragment so it
   // never reaches server logs or Referer headers. Query-string ?auth= is
   // intentionally not used.
@@ -713,90 +481,17 @@ async function handleGitHubCallback(url, request, env) {
   const headers = redirectHeaders();
   headers.set('Location', landingSuccessLocation(baseUrl, encoded));
   headers.append('Set-Cookie', clearState);
-  headers.append('Set-Cookie', clearFlow);
   headers.append('Set-Cookie', clearOrigin);
   return new Response(null, { status: 302, headers });
 }
 
-// The fragment flows and the page each one returns to. Login, the success
-// redirect and the error redirect all read this one map: when they each kept
-// their own copy, an OAuth failure in a flow missing from the error copy sent
-// the user to the landing page instead of the page that started the flow
-// (caught on PR #14).
-//
-// `mcp` and `tg-mcp` were removed on 2026-10-07: no repository in the org
-// requested either, and mctl-telegram signs people in by itself.
-export const FRAGMENT_FLOW_TARGETS = Object.freeze({
-  docs: 'https://docs.mctl.ai/mcp/connecting',
-});
-
-// Own-property check: `for` and the `__gh_flow` cookie are caller-controlled,
-// and a plain lookup would answer for `constructor` or `__proto__` too.
-export function isFragmentFlow(flow) {
-  return typeof flow === 'string' && Object.hasOwn(FRAGMENT_FLOW_TARGETS, flow);
-}
-
-function redirectWithError(errorCode, flow = '', baseUrl = LANDING_URL) {
-  const fragmentBase = isFragmentFlow(flow) ? FRAGMENT_FLOW_TARGETS[flow] : null;
-  const location = fragmentBase
-    ? fragmentErrorLocation(fragmentBase, errorCode)
-    : landingErrorLocation(baseUrl, errorCode);
-
+function redirectWithError(errorCode, baseUrl = LANDING_URL) {
   const headers = redirectHeaders();
-  headers.set('Location', location);
+  headers.set('Location', landingErrorLocation(baseUrl, errorCode));
   headers.append('Set-Cookie', '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/');
-  headers.append('Set-Cookie', '__gh_flow=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/');
   headers.append('Set-Cookie', '__gh_origin=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/');
-  appendClearSessionCookies(headers);
 
   return new Response(null, { status: 302, headers });
-}
-
-async function handleGitHubSession(request, env, origin) {
-  if (!SESSION_ORIGINS.has(origin)) {
-    return sessionJsonResponse({ error: 'Origin not allowed' }, 403, origin);
-  }
-
-  let body = {};
-  const contentType = request.headers.get('Content-Type') || '';
-  if (contentType.includes('application/json')) {
-    try {
-      body = await request.json();
-    } catch {
-      body = {};
-    }
-  }
-
-  let payload = null;
-  if (isSessionId(body.code)) {
-    const consumed = await takeOAuthSession(body.code);
-    if (sessionIsLive(consumed)) payload = consumed;
-  }
-
-  const cookies = parseCookies(request.headers.get('Cookie') || '');
-  const cookieVal = cookies[SESSION_COOKIE] || '';
-  if (!payload && cookieVal) {
-    const decrypted = await decryptSessionPayload(cookieVal, env.GITHUB_OAUTH_HMAC_KEY);
-    let consumed = null;
-    if (decrypted && isSessionId(decrypted.sessionId)) {
-      consumed = await takeOAuthSession(decrypted.sessionId);
-    }
-    payload = redeemFromCookie(decrypted, consumed);
-  }
-
-  const headers = new Headers(sessionCorsHeaders(origin));
-  headers.set('Content-Type', 'application/json');
-  headers.set('Cache-Control', 'private, no-store');
-  appendClearSessionCookies(headers);
-
-  if (!sessionIsLive(payload)) {
-    return new Response(JSON.stringify({ error: 'Session expired or missing' }), {
-      status: 401,
-      headers,
-    });
-  }
-
-  return new Response(JSON.stringify(buildSessionResponsePayload(payload)), { status: 200, headers });
 }
 
 function parseCookies(cookieHeader) {

@@ -870,9 +870,9 @@ test('same-site keeps its own budget, separate from cross-site', async () => {
   const ip = '198.51.100.99';
   try {
     await withGlobalFetch(stub, async () => {
-      // docs.mctl.ai redeeming a session is same-site, not same-origin. The
-      // allowlist must not collapse it into cross-site, or one noisy embedder
-      // would starve the other.
+      // A request from another *.mctl.ai host is same-site, not same-origin.
+      // The allowlist must not collapse it into cross-site, or one noisy
+      // embedder would starve the other.
       const post = (site) => worker.fetch(
         new Request('https://mctl.ai/api/contact', {
           method: 'POST',
