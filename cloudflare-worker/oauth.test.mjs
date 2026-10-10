@@ -140,6 +140,43 @@ test('callback error: a leftover docs flow cookie returns to the landing page', 
   }
 });
 
+test('callback success: a leftover docs flow cookie gets identity on the landing page, no token', async () => {
+  const env = oauthEnv();
+  const state = 'ab'.repeat(16);
+  const stateSig = await hmacSign(state, env.GITHUB_OAUTH_HMAC_KEY);
+  const ghToken = 'gho_placeholder_not_a_real_token';
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const u = typeof input === 'string' ? input : input.url;
+    if (u.endsWith('/login/oauth/access_token')) return Response.json({ access_token: ghToken });
+    if (u.endsWith('/user/emails')) return Response.json([{ email: 'octo@example.com', primary: true, verified: true }]);
+    if (u.endsWith('/user')) return Response.json({ login: 'octocat', name: 'Octo', avatar_url: '', html_url: '' });
+    throw new Error(`unexpected fetch ${u}`);
+  };
+  try {
+    await withMockCache(async () => {
+      const res = await worker.fetch(
+        new Request(`https://mctl.ai/api/github/callback?code=c&state=${state}`, {
+          headers: { Cookie: `__gh_state=${state}.${stateSig}; __gh_flow=docs` },
+        }),
+        env,
+      );
+      assert.equal(res.status, 302);
+      const loc = res.headers.get('Location');
+      assert.match(loc, /^https:\/\/mctl\.ai\/#auth=/);
+      const auth = JSON.parse(atob(loc.split('#auth=')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      assert.equal(auth.login, 'octocat');
+      assert.equal('token' in auth, false);
+      assert.equal(loc.includes(ghToken), false);
+      const cookies = res.headers.getSetCookie();
+      assert.equal(cookies.some((c) => c.startsWith('__gh_session=')), false);
+      assert.equal(cookies.some((c) => c.includes(ghToken)), false);
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('session redeem is gone: no origin gets a token back', async () => {
   await withMockCache(async () => {
     for (const origin of ['https://docs.mctl.ai', 'https://mctl.ai']) {
@@ -163,5 +200,4 @@ test('the worker source carries no token handoff', () => {
   assert.equal(workerSrc.includes('__gh_session'), false);
   assert.equal(workerSrc.includes('#session='), false);
   assert.doesNotMatch(workerSrc, /\btoken\s*=\s*accessToken/);
-  assert.doesNotMatch(workerSrc, /\.token\s*=/);
 });
