@@ -26,6 +26,7 @@ const {
   token: turnstileToken,
   loadFailed: turnstileLoadFailed,
   state: turnstileState,
+  missingTokenMessageKey,
   render: renderTurnstile,
   reset: resetTurnstile,
 } = useTurnstile();
@@ -60,6 +61,13 @@ watch(
   },
 );
 
+// A verification message describes a missing token; once one arrives (the
+// invisible challenge finished, or an expired one refreshed itself) the
+// message is stale.
+watch(turnstileToken, (value) => {
+  if (value) turnstileStatus.value = null;
+});
+
 function onRetryTurnstile() {
   turnstileStatus.value = null;
   resetTurnstile();
@@ -72,17 +80,11 @@ const onSubmit = handleSubmit(async (formData) => {
   // widget is still loading, has expired, or errored, and a submit button
   // that does nothing at all is indistinguishable from a broken form.
   if (!turnstileToken.value) {
-    // Distinguish "you haven't solved it yet" from "it will never load":
-    // the second is not something the user can fix by trying again, and
-    // telling them to complete a challenge that isn't on screen is worse
-    // than saying nothing.
-    // With appearance 'interaction-only' the widget is invisible while it
-    // solves, so "complete the challenge" would name something not on screen.
-    turnstileStatus.value = turnstileLoadFailed.value
-      ? t('js.submit.verification_unavailable')
-      : turnstileState.value === 'pending'
-        ? t('js.submit.verification_pending')
-        : t('js.submit.verification_required');
+    // Distinguish "still verifying" from "it will never load". Expired and
+    // failed challenges are explained by BaseTurnstileNotice, so the status
+    // line stays empty for them instead of contradicting it.
+    const key = missingTokenMessageKey();
+    turnstileStatus.value = key ? t(key) : null;
     return;
   }
 

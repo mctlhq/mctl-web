@@ -30,6 +30,15 @@ const { submitAccessRequest } = useApi();
 
 const formStatus = ref<{ message: string; type: 'success' | 'error' } | null>(null);
 
+// Verification messages live apart from formStatus so that clearing them when
+// a token arrives cannot wipe an API or sign-in error.
+const verificationStatus = ref<string | null>(null);
+const displayStatus = computed(() =>
+  verificationStatus.value
+    ? { message: verificationStatus.value, type: 'error' as const }
+    : formStatus.value,
+);
+
 const isSubmitting = ref(false);
 
 const showSuccessModal = ref(false);
@@ -39,6 +48,7 @@ const {
   token: turnstileToken,
   loadFailed: turnstileLoadFailed,
   state: turnstileState,
+  missingTokenMessageKey,
   render: renderTurnstile,
   reset: resetTurnstile,
 } = useTurnstile();
@@ -63,12 +73,20 @@ function handleTeamInput(value: string | number | undefined) {
   onInput(String(value ?? ''));
 }
 
+watch(turnstileToken, (value) => {
+  if (value) verificationStatus.value = null;
+});
+
 function onRetryTurnstile() {
-  formStatus.value = null;
+  verificationStatus.value = null;
   resetTurnstile();
 }
 
 const onSubmit = handleSubmit(async (formData) => {
+  // Every attempt starts with a clean verification line, so an earlier
+  // "still verifying" cannot mask a sign-in or availability error below.
+  verificationStatus.value = null;
+
   if (!props.authData) {
     formStatus.value = { message: t('js.submit.github_required'), type: 'error' };
     return;
@@ -80,16 +98,12 @@ const onSubmit = handleSubmit(async (formData) => {
   }
 
   if (!turnstileToken.value) {
-    // See ContactForm: a widget that failed to load is not a challenge the
-    // user can complete, so it gets its own message.
-    formStatus.value = {
-      message: turnstileLoadFailed.value
-        ? t('js.submit.verification_unavailable')
-        : turnstileState.value === 'pending'
-          ? t('js.submit.verification_pending')
-          : t('js.submit.verification_required'),
-      type: 'error',
-    };
+    // See ContactForm: expired and failed challenges are explained by
+    // BaseTurnstileNotice; only "still verifying" and "never loaded" get a
+    // status line.
+    formStatus.value = null;
+    const key = missingTokenMessageKey();
+    verificationStatus.value = key ? t(key) : null;
     return;
   }
 
@@ -126,7 +140,7 @@ const onSubmit = handleSubmit(async (formData) => {
   <BaseForm
     :submit-text="t('form.submit')"
     :is-loading="isSubmitting"
-    :status="formStatus"
+    :status="displayStatus"
     class="request-access-form"
     @submit="onSubmit"
   >

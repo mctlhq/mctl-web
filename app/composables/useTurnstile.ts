@@ -124,6 +124,16 @@ export function useTurnstile() {
     })
   }
 
+  // The form-level message for a submit attempted without a token, or null
+  // when BaseTurnstileNotice already explains the state (expired, error).
+  // Never "complete the challenge": with appearance 'interaction-only' there
+  // is usually nothing on screen to complete.
+  function missingTokenMessageKey(): string | null {
+    if (loadFailed.value) return 'js.submit.verification_unavailable'
+    if (state.value === 'pending') return 'js.submit.verification_pending'
+    return null
+  }
+
   function reset() {
     if (import.meta.server) return
     token.value = ''
@@ -153,6 +163,7 @@ export function useTurnstile() {
     token,
     loadFailed,
     state,
+    missingTokenMessageKey,
     render,
     reset,
     remove,
