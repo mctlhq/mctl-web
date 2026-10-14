@@ -92,8 +92,10 @@ useHead({
 
         <h2>5. Third-Party Services</h2>
         <p>
-          Sign-in to the platform is handled by ZITADEL (auth.mctl.ai), which we
-          host ourselves; it is not a separate processor. The following organizations process data
+          Users who already have a platform account sign in to the portal and mctl-api
+          through ZITADEL (auth.mctl.ai), which we host ourselves; it is not a separate
+          processor. Requesting a workspace on this website uses GitHub OAuth, described
+          in section 2.1. The following organizations process data
           on our behalf or as independent platforms we rely on:
         </p>
         <ul>
