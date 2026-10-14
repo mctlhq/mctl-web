@@ -11,7 +11,7 @@ interface Props {
 }
 const props = defineProps<Props>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const runtimeConfig = useRuntimeConfig();
 
 const schema = yup.object({
@@ -30,6 +30,15 @@ const { submitAccessRequest } = useApi();
 
 const formStatus = ref<{ message: string; type: 'success' | 'error' } | null>(null);
 
+// Verification messages live apart from formStatus so that clearing them when
+// a token arrives cannot wipe an API or sign-in error.
+const verificationStatus = ref<string | null>(null);
+const displayStatus = computed(() =>
+  verificationStatus.value
+    ? { message: verificationStatus.value, type: 'error' as const }
+    : formStatus.value,
+);
+
 const isSubmitting = ref(false);
 
 const showSuccessModal = ref(false);
@@ -38,13 +47,15 @@ const turnstileEl = ref<HTMLElement | null>(null);
 const {
   token: turnstileToken,
   loadFailed: turnstileLoadFailed,
+  state: turnstileState,
+  missingTokenMessageKey,
   render: renderTurnstile,
   reset: resetTurnstile,
 } = useTurnstile();
 
 onMounted(() => {
   if (turnstileEl.value) {
-    renderTurnstile(turnstileEl.value, runtimeConfig.public.turnstileSiteKey);
+    renderTurnstile(turnstileEl.value, runtimeConfig.public.turnstileSiteKey, locale.value);
   }
 });
 
@@ -62,7 +73,20 @@ function handleTeamInput(value: string | number | undefined) {
   onInput(String(value ?? ''));
 }
 
+watch(turnstileToken, (value) => {
+  if (value) verificationStatus.value = null;
+});
+
+function onRetryTurnstile() {
+  verificationStatus.value = null;
+  resetTurnstile();
+}
+
 const onSubmit = handleSubmit(async (formData) => {
+  // Every attempt starts with a clean verification line, so an earlier
+  // "still verifying" cannot mask a sign-in or availability error below.
+  verificationStatus.value = null;
+
   if (!props.authData) {
     formStatus.value = { message: t('js.submit.github_required'), type: 'error' };
     return;
@@ -74,14 +98,12 @@ const onSubmit = handleSubmit(async (formData) => {
   }
 
   if (!turnstileToken.value) {
-    // See ContactForm: a widget that failed to load is not a challenge the
-    // user can complete, so it gets its own message.
-    formStatus.value = {
-      message: turnstileLoadFailed.value
-        ? t('js.submit.verification_unavailable')
-        : t('js.submit.verification_required'),
-      type: 'error',
-    };
+    // See ContactForm: expired and failed challenges are explained by
+    // BaseTurnstileNotice; only "still verifying" and "never loaded" get a
+    // status line.
+    formStatus.value = null;
+    const key = missingTokenMessageKey();
+    verificationStatus.value = key ? t(key) : null;
     return;
   }
 
@@ -99,7 +121,7 @@ const onSubmit = handleSubmit(async (formData) => {
       formStatus.value = null;
       showSuccessModal.value = true;
     } else {
-      formStatus.value = { message: result.message || 'Error', type: 'error' };
+      formStatus.value = { message: result.message || t('js.submit.request_failed'), type: 'error' };
     }
   } catch {
     formStatus.value = { message: t('js.submit.network_error'), type: 'error' }
@@ -118,7 +140,7 @@ const onSubmit = handleSubmit(async (formData) => {
   <BaseForm
     :submit-text="t('form.submit')"
     :is-loading="isSubmitting"
-    :status="formStatus"
+    :status="displayStatus"
     class="request-access-form"
     @submit="onSubmit"
   >
@@ -148,6 +170,10 @@ const onSubmit = handleSubmit(async (formData) => {
     </BaseFormField>
 
     <div ref="turnstileEl" class="request-access-form__turnstile" />
+    <BaseTurnstileNotice
+      :state="turnstileState"
+      @retry="onRetryTurnstile"
+    />
   </BaseForm>
 
   <SuccessModal v-model="showSuccessModal" />

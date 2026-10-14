@@ -9,7 +9,7 @@ const { user, authData, errorCode, logout } = useAuth();
 
 const { baseUrlFront } = runtimeConfig.public;
 
-const githubLoginUrl = `https://mctl.ai/api/github/login?redirect_to=${encodeURIComponent(baseUrlFront)}`;
+const githubLoginUrl = `${apiUrl('/github/login')}?redirect_to=${encodeURIComponent(baseUrlFront)}`;
 
 const authError = ref<string | null>(null);
 

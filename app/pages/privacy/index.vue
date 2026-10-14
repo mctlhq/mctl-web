@@ -14,7 +14,7 @@ useHead({
     <div class="container">
       <p class="section-tag">Legal</p>
       <h1>Privacy Policy</h1>
-      <p class="subtitle">Effective date: August 24, 2026</p>
+      <p class="subtitle">Effective date: October 14, 2026</p>
     </div>
   </section>
 
@@ -41,7 +41,7 @@ useHead({
         <ul>
           <li>GitHub username and user ID</li>
           <li>Display name and avatar URL (public profile)</li>
-          <li>Primary verified email address (<code>user:email</code> scope)</li>
+          <li>Email address (<code>user:email</code> scope): your primary verified address, or your public profile email if none is verified</li>
         </ul>
         <p>
           We do not request access to your repositories, organizations, or any code.
@@ -59,11 +59,18 @@ useHead({
         </ul>
         <p>We do not record the content of your source code or environment variable values.</p>
 
-        <h3>2.3 Session Tokens</h3>
+        <h3>2.3 Sessions and Tokens</h3>
         <p>
-          OAuth access tokens issued by the Service are short-lived (1-hour TTL).
-          Tokens are stored in your browser's <code>localStorage</code> or <code>sessionStorage</code>
-          and are never persisted server-side beyond the duration of the request.
+          OAuth access tokens issued by the API and MCP connector are short-lived
+          (1 hour by default). Refresh tokens are valid for up to 30 days; the server
+          keeps only a hash of each refresh token, so it can rotate and revoke them.
+          Your MCP client or the <code>mctl</code> CLI stores the tokens it receives.
+        </p>
+        <p>
+          The developer portal (app.mctl.ai) keeps a server-side session, referenced by a cookie
+          in your browser. On this website, the GitHub profile you sign in with (username, name,
+          email and avatar) is kept in your browser's <code>localStorage</code> for up to 8 hours
+          so you can finish the workspace request.
         </p>
 
         <h2>3. How We Use Your Data</h2>
@@ -77,15 +84,18 @@ useHead({
 
         <h2>4. Data Retention</h2>
         <ul>
-          <li><strong>Access tokens</strong> — 1-hour TTL; not stored server-side after token validation</li>
+          <li><strong>Access tokens</strong> — 1 hour by default; not stored server-side after validation</li>
+          <li><strong>Refresh tokens</strong> — up to 30 days; stored server-side as a hash until they expire or are revoked</li>
           <li><strong>Audit logs</strong> — retained for 90 days, then automatically purged</li>
           <li><strong>Profile data</strong> (username, email) — retained while your account is active; deleted within 30 days of an account deletion request</li>
         </ul>
 
         <h2>5. Third-Party Services</h2>
         <p>
-          GitHub sign-in is brokered by Dex, which we host in-cluster. Dex is
-          not a separate processor. The following organizations process data
+          Users who already have a platform account sign in to the portal and mctl-api
+          through ZITADEL (auth.mctl.ai), which we host ourselves; it is not a separate
+          processor. Requesting a workspace on this website uses GitHub OAuth, described
+          in section 2.1. The following organizations process data
           on our behalf or as independent platforms we rely on:
         </p>
         <ul>

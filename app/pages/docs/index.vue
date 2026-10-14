@@ -82,7 +82,7 @@ useHead({
           <h3>AI-first Teams</h3>
           <p>
             You want infrastructure managed through natural language. mctl exposes
-            20+ MCP tools that let Claude, Cursor, VS Code Copilot, or any MCP client
+            MCP tools that let Claude, Cursor, VS Code Copilot, or any MCP client
             deploy services, manage previews, provision databases, and monitor resources
             through conversation.
           </p>
@@ -138,7 +138,7 @@ useHead({
       <div class="docs-text">
         <p>
           Every action — whether triggered by a git push, a portal click, an API call,
-          or an AI prompt — flows through mctl-api, which orchestrates Argo Workflows
+          or an AI prompt — flows through mctl-api or the portal, and both start Argo Workflows
           to make changes in the mctl-gitops repository. ArgoCD watches the repo and
           reconciles the cluster state. This means every change is a git commit, every
           deploy is traceable, and rollbacks are a one-line revert.
@@ -167,8 +167,8 @@ useHead({
           <h3>Control Plane</h3>
           <p>
             Go REST API and MCP server. Receives commands from the portal, CLI, AI clients,
-            or direct HTTP calls. Authenticates via GitHub OAuth or Dex SSO. Routes operations
-            to Argo Workflows for execution. Exposes 20+ MCP tools for AI-driven management.
+            or direct HTTP calls. Authenticates every request against the platform's identity provider. Routes operations
+            to Argo Workflows for execution. Exposes MCP tools for AI-driven management.
           </p>
         </div>
         <div v-reveal class="component-card">
@@ -230,7 +230,8 @@ useHead({
           <span class="interface-url">api.mctl.ai</span>
           <p>
             Direct HTTP access to every platform operation. Use from CI/CD pipelines,
-            scripts, or custom tooling. Authenticate with GitHub token or Dex JWT.
+            scripts, or custom tooling. Authenticate with an MCTL OAuth token from
+            <code>mctl auth login</code>.
           </p>
         </div>
         <div v-reveal class="interface-card">
@@ -256,7 +257,9 @@ useHead({
           <div class="step-content">
             <h3>Developer</h3>
             <p>
-              Sign in with GitHub at mctl.ai. Pick a template from the service catalog.
+              Request a workspace at mctl.ai. Portal sign-in for self-service accounts is not
+              available yet, so <a href="/#contact" style="color:var(--color-accent)">contact us</a> for access.
+              In the portal, pick a template from the service catalog.
               Configure your service (name, database, domain). Deploy — your namespace,
               CI/CD pipeline, and TLS certificate are provisioned automatically.
             </p>
@@ -282,7 +285,8 @@ useHead({
             <h3>AI User</h3>
             <p>
               Go to <a href="https://docs.mctl.ai/mcp/connecting" style="color:var(--color-accent)">docs.mctl.ai/mcp/connecting</a>,
-              sign in with GitHub and add MCTL to your AI client. Start prompting: "deploy my-app
+              add MCTL to your AI client and sign in with a platform account; self-service
+              accounts cannot sign in yet. Start prompting: "deploy my-app
               to staging", "show service status", "create a preview for PR #42".
             </p>
           </div>
