@@ -751,13 +751,9 @@ export async function handleFormSubmit(request, env, origin) {
       console.error(`submit: Telegram notification ${telegramStatus} for team ${team}`);
     }
 
-    // ── Send welcome email ───────────────────────────────────────────────────
-    const emailStatus = workflowSubmitted
-      ? await sendWelcomeEmail(env, { email, name: name || login, team })
-      : 'skipped';
-
     // ── Response ─────────────────────────────────────────────────────────────
     if (workflowSubmitted) {
+      const emailStatus = await sendWelcomeEmail(env, { email, name: name || login, team });
       return jsonResponse({
         success: true,
         message: `Provisioning request for "${team}" accepted. Portal sign-in for self-service accounts is not available yet.`,
@@ -897,7 +893,7 @@ export function renderWelcomeEmail({ name, team, year = new Date().getUTCFullYea
 <body style="margin:0;padding:0;background:${c.paper};font-family:${EMAIL_FONT};color:${c.ink}">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${c.paper};padding:40px 16px">
     <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${c.card};border:1px solid ${c.line};border-radius:12px">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background:${c.card};border:1px solid ${c.line};border-radius:12px">
         <tr><td style="padding:28px 32px 20px;border-bottom:1px solid ${c.line}">
           <span style="font-size:20px;font-weight:700;letter-spacing:1px;color:${c.ink}"><span style="color:${c.accent}">M</span>CTL</span>
         </td></tr>

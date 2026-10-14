@@ -173,6 +173,19 @@ test('submit: Telegram non-2xx -> still 200 success', async () => {
   assert.equal(body.success, true);
 });
 
+test('submit: no Telegram config -> Telegram not called, still 200 success', async () => {
+  const { res, body, calls } = await submit({}, { TELEGRAM_BOT_TOKEN: '', TELEGRAM_CHAT_ID: '' });
+  assert.equal(res.status, 200);
+  assert.equal(body.success, true);
+  assert.equal(calls.telegram, 0);
+  assert.equal(body.emailStatus, 'accepted');
+});
+
+test('renderWelcomeEmail: card keeps a fixed width attribute for Outlook', () => {
+  const { html } = renderWelcomeEmail({ name: 'Ada', team: 'my-team' });
+  assert.match(html, /width="560"[^>]*max-width:560px/);
+});
+
 test('submit: no RESEND_API_KEY -> emailStatus skipped, Resend not called', async () => {
   const { body, calls } = await submit({}, { RESEND_API_KEY: '' });
   assert.equal(body.success, true);
