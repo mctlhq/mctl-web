@@ -106,10 +106,20 @@ Facts this design relies on:
   - Login V2 does not run Actions v1 in the external authentication flow; those
     triggers exist only in the Login V1 handlers (`internal/api/ui/login/custom_action.go`).
     Hooks on an IdP login are Actions v2 executions: a response execution on
-    `UserService/RetrieveIdentityProviderIntent`, a request execution on
-    `UserService/AddHumanUser` that can interrupt creation, and the
-    `preuserinfo` / `preaccesstoken` functions at token time. Actions v1 is
-    planned to be removed in ZITADEL v5.
+    `UserService/RetrieveIdentityProviderIntent`, request executions on the user
+    creation methods, and the `preuserinfo` / `preaccesstoken` functions at token
+    time. Actions v1 is planned to be removed in ZITADEL v5.
+  - Execution conditions select an API method, a service, a function or an event;
+    there is no organization filter (`proto/zitadel/action/v2/execution.proto`).
+    Every execution is instance-wide, so a hook that is down or rejects with
+    `interruptOnError` affects admins and every other org too, not only
+    `customers`.
+  - Login V2 has two creation paths for an IdP user: automatic creation calls
+    `CreateUser` (`apps/login/src/lib/server/idp-intent.ts:675`), and the
+    "complete registration" form calls `AddHumanUser` (`lib/server/register.ts`).
+  - A repeat sign-in with auto-update calls `UpdateUser`, and Login V2 logs a
+    failed update and continues the login (`idp-intent.ts:470-483`). That update
+    does not change the username.
   - The GitHub provider takes the public profile email from `GET /user` first and
     reads `GET /user/emails` only when that is empty. It reports every GitHub
     email as verified (`internal/idp/providers/github/session.go`, `github.go`).
@@ -160,40 +170,65 @@ Because of the Login V2 facts in section 4, the earlier Actions v1 design does
 not work, and ZITADEL's own GitHub email is not trustworthy. B1 is preceded by a
 spike.
 
-- **B0. Spike (no customer impact).** In a throwaway org without project grants,
-  with a test GitHub account, confirm and record here:
-  1. Whether a response execution on `RetrieveIdentityProviderIntent` that fills
-     the name, email and verified flag lets Login V2 create the user without the
-     "complete registration" form, and which username and email state the
-     resulting user has.
-  2. That the intent response carries the GitHub access token and numeric id, so
-     the hook can call `GET /user/emails` itself.
-  3. That a request execution on `AddHumanUser` with `interruptOnError` blocks
-     creation, and what the person sees.
-  4. That a `preaccesstoken` / `preuserinfo` function can read the stored GitHub
-     id and the client id and set or refuse claims.
-  5. That an unreachable hook refuses the sign-in rather than creating a user
-     without checks.
-  If item 1 fails, B1 is redesigned before any code (for example a custom
-  registration step), not worked around.
+- **B0. Spike.** On a separate ZITADEL instance of the same version (v4.19.2,
+  Login V2), not on production: executions are instance-wide, so a throwaway org
+  on production does not isolate the experiment, and a failing hook there could
+  lock out admins. The spike instance has two orgs, a `customers` org with the
+  GitHub IdP and an admin-like org with a local user, plus a web client and a
+  portal-like client. With test GitHub accounts, confirm and record here:
+  1. **Creation without the form.** Whether a response execution on
+     `RetrieveIdentityProviderIntent` that fills the name, email and verified flag
+     makes Login V2 take the automatic `CreateUser` path instead of the "complete
+     registration" form, and which username and email state the user gets.
+  2. **GitHub data in the hook.** The intent response carries the GitHub access
+     token and numeric id, so the hook can call `GET /user/emails` itself.
+  3. **Every creation path is blocked.** A request execution with
+     `interruptOnError` on `CreateUser` blocks the automatic path, and one on
+     `AddHumanUser` blocks the form path, so a refused person cannot create an
+     account through the other path either. Record what the person sees.
+  4. **Repeat sign-in.** After a GitHub rename, and with the hook made to fail
+     during `UpdateUser`, a repeat sign-in must not end with a token that carries
+     stale trusted data. Login V2 continues past a failed update, so either the
+     token-time function re-checks against the stored identity and refuses, or
+     the update path is proven to stop the login. Also record that the username
+     does not change on rename.
+  5. **ID token, not only userinfo.** The claims C0 needs are present in the
+     signed ID token issued to the web client and to the portal client, not only
+     in an access token or `/userinfo`. A refusing or failing token-time hook
+     prevents that ID token from being issued.
+  6. **Failure blast radius.** With the hook unreachable: customer sign-in and
+     creation are refused; the admin-like org's local login, token issuance and
+     user creation by a service account (the zitadel-iac path) are recorded. If
+     they are blocked too, B1 needs a design that does not put admin sign-in
+     behind the hook (for example `interruptOnError` off for paths that admins
+     use, with the refusal enforced at token time and in C0), and that design is
+     tested again in B0.
+  If item 1, 3, 4 or 5 fails, B1 is redesigned before any code (for example a
+  custom registration step), not worked around.
 - **B1.** Org `customers` with the `mctl.ai` domain; GitHub IdP with auto-creation
   and auto-update, linking and auto-linking off; an org login policy that restates
   every field because it replaces the instance policy: GitHub as the only IdP,
   `user_login=false`, `force_mfa=false` with `force_mfa_local_only=true`, and
   passkeys not allowed. `allow_register` only if B0 shows the creation path needs it.
-  - An identity hook, an Actions v2 target with signed payloads, scoped to the
-    GitHub IdP of `customers`. On the intent response it reads the numeric id,
-    fetches the verified email (rule below), sets the name (falling back to the
-    login when GitHub has none) and the username `<login>@mctl.ai`. It stores
-    `github_id` and `github_login` on every sign-in. Creation is interrupted when
-    there is no verified email or the login is reserved by an existing admin or
-    tenant user or is a service login. The hook fails closed.
-  - A token-time function emits `mctl:org`, `mctl:idp`, `mctl:github_id` and
-    `mctl:github_login` only for listed client ids, and only `mctl:refused` when
-    the id is missing or the login is reserved.
-  - Where the hook runs is an owner decision (section 6). The recommendation is
-    mctl-api, which already owns principals and is a hard dependency of customer
-    sign-in anyway.
+  - An identity hook, an Actions v2 target with signed payloads. Because
+    executions are instance-wide, the hook itself passes through every request
+    that is not for the GitHub IdP of `customers`. On the intent response it reads
+    the numeric id, fetches the verified email (rule below), sets the name
+    (falling back to the login when GitHub has none) and the username
+    `<login>@mctl.ai`. On every creation path it refuses a person with no
+    verified email, or whose login is reserved by an existing admin or tenant
+    user or is a service login. How it behaves when unreachable is set by B0
+    item 6, not assumed.
+  - A token-time function puts `mctl:org`, `mctl:idp`, `mctl:github_id` and
+    `mctl:github_login` into the ID token only for listed client ids, and only
+    `mctl:refused` when the id is missing or the login is reserved. Because a
+    failed update does not stop a repeat sign-in, the token-time function is
+    where stale data is caught; claims are never taken on trust from a previous
+    update alone.
+  - Where the hook runs is an owner decision (section 6). The preliminary choice
+    is mctl-api: a dedicated endpoint that checks the ZITADEL payload signature
+    and the request age, and does not depend on a user OIDC sign-in to handle the
+    call. The final choice waits for B0 items 5 and 6.
   - A separate `mctl-web` project and OIDC client, and a separate `mctl-web-dev`
     project that no production allowlist accepts.
   - No project grants to the portal or mctl-api yet: customer accounts cannot use
@@ -223,7 +258,10 @@ spike.
     8. A GitHub account with a hidden email signs up with its verified address;
        one with no verified email is stopped with the instruction above and no
        user is created.
-    9. With the hook unreachable, sign-in is refused and no user is created.
+    9. With the hook unreachable, customer sign-in is refused and no customer
+       is created, and admin sign-in behaves as B0 item 6 decided.
+    10. A repeat sign-in after a failed profile update never yields an ID token
+        with stale `mctl:github_login` or a missing refusal.
 - **B1b.** Grant the `customers` org access to the portal and mctl-api projects.
 
 ### Stage C: principals, portal, website session
@@ -296,7 +334,8 @@ and not an existing tenant user.
 4. Confirm the ordering condition: C0 is verified before B1b and before the
    mctl-api#377 switch, and the switch moves if C0 is not ready.
 5. Name the test group by GitHub login, including a new non-admin account.
-6. Where the identity hook runs (recommended: mctl-api).
+6. Where the identity hook runs. Preliminary: mctl-api, final after B0.
+7. A separate ZITADEL v4.19.2 instance for B0 (where it runs, for how long).
 
 ## 7. Done criterion
 
