@@ -2,54 +2,29 @@
 const { t } = useI18n();
 
 const open = defineModel<boolean>({ default: false });
+
+// The Worker answers as soon as the provisioning workflow is submitted, not
+// when it finishes, so this modal reports an accepted request and nothing
+// more. It does not poll, promise a duration, or link to services the new
+// account cannot sign in to yet.
+function goToContact() {
+  open.value = false;
+}
 </script>
 
 <template>
   <BaseModal
     v-model="open"
-    :title="t('modal.team_created')"
+    :title="t('modal.request_accepted')"
     align="center"
     max-width="480px"
   >
     <div class="request-access-success">
-      <div class="request-access-success__steps">
-        <div class="request-access-success__step">
-          <span class="request-access-success__step-num">1</span>
-          <p>{{ t('modal.step1') }}</p>
-        </div>
-        <div class="request-access-success__step">
-          <span class="request-access-success__step-num">2</span>
-          <div>
-            <p>{{ t('modal.step2') }}</p>
-            <div class="request-access-success__links">
-              <a
-                href="https://app.mctl.ai/"
-                target="_blank"
-                rel="noopener"
-                class="btn btn-outline"
-              >
-                {{ t('modal.portal') }}
-              </a>
-              <a
-                href="https://ops.mctl.ai/"
-                target="_blank"
-                rel="noopener"
-                class="btn btn-outline"
-              >
-                {{ t('modal.argocd') }}
-              </a>
-              <a
-                href="https://workflows.mctl.ai/"
-                target="_blank"
-                rel="noopener"
-                class="btn btn-outline"
-              >
-                {{ t('modal.workflows') }}
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+      <p>{{ t('modal.provisioning') }}</p>
+      <p>
+        {{ t('modal.signin_unavailable') }}
+        <a href="/#contact" @click="goToContact">{{ t('modal.contact') }}</a>
+      </p>
       <button
         type="button"
         class="btn btn-primary request-access-success__close"
@@ -63,81 +38,22 @@ const open = defineModel<boolean>({ default: false });
 
 <style lang="scss" scoped>
 .request-access-success {
-  &__steps {
-    margin-bottom: 1.5rem;
-    text-align: left;
+  text-align: left;
+
+  p {
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--color-text);
   }
 
-  &__step {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-start;
-    margin-bottom: 1.25rem;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-
-    p {
-      margin: 0;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      color: var(--color-text);
-    }
-
-    a {
-      color: var(--color-accent);
-    }
-  }
-
-  &__step-num {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: var(--color-accent);
-    color: var(--color-bg);
-    font-weight: 700;
-    font-size: 0.85rem;
-  }
-
-  &__links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 0.75rem;
-
-    :deep(.btn) {
-      font-size: 0.85rem;
-      padding: 0.5rem 1rem;
-    }
+  a {
+    color: var(--color-accent);
   }
 
   &__close {
     width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .request-access-success {
-    &__links {
-      flex-direction: column;
-
-      :deep(.btn) {
-        width: 100%;
-        box-sizing: border-box;
-        text-align: center;
-      }
-    }
-
-    &__step-num {
-      width: 28px;
-      height: 28px;
-      font-size: 0.85rem;
-    }
+    margin-top: 0.5rem;
   }
 }
 </style>

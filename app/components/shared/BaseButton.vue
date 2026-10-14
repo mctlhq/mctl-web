@@ -34,7 +34,7 @@ const { variant = 'primary', size = 'md', block = false } = defineProps<BaseButt
   border-style: solid;
   border-radius: 4px;
   cursor: pointer;
-  transition: all .3s ease;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
 
   &--variant {
     &--primary {
@@ -45,7 +45,6 @@ const { variant = 'primary', size = 'md', block = false } = defineProps<BaseButt
       &:hover {
         background-color: transparent;
         color: var(--color-accent);
-        box-shadow: 0 0 20px color-mix(in srgb, var(--color-accent) 50%, transparent);
       }
     }
 
@@ -57,7 +56,6 @@ const { variant = 'primary', size = 'md', block = false } = defineProps<BaseButt
       &:hover {
         background-color: var(--color-accent);
         color: var(--color-bg);
-        box-shadow: 0 0 15px color-mix(in srgb, var(--color-accent) 30%, transparent);
       }
     }
   }
@@ -74,6 +72,11 @@ const { variant = 'primary', size = 'md', block = false } = defineProps<BaseButt
 
   &--block {
     width: 100%;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
 
   &:disabled {

@@ -33,13 +33,18 @@ function onSubmit(event: SubmitEvent) {
           <span v-if="isLoading">{{ t('js.submit.processing') }}</span>
           <span v-else>{{ submitText || 'Submit' }}</span>
         </BaseButton>
-        <BaseFormStatus
-          v-if="status"
-          :type="status.type"
-          class="base-form__status"
-        >
-          {{ status.message }}
-        </BaseFormStatus>
+        <!-- The live region stays mounted and only its content changes:
+             a region inserted together with its text is often not announced,
+             which would leave a successful send silent for screen readers. -->
+        <div class="base-form__live" aria-live="polite" aria-atomic="true">
+          <BaseFormStatus
+            v-if="status"
+            :type="status.type"
+            class="base-form__status"
+          >
+            {{ status.message }}
+          </BaseFormStatus>
+        </div>
       </slot>
     </footer>
   </form>

@@ -73,13 +73,13 @@ const modelValue = defineModel<string | number>();
     width: 100%;
     appearance: none;
     background: var(--color-bg);
-    border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+    border: 1px solid var(--color-line-strong);
     border-radius: 6px;
     color: var(--color-text);
-    font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
+    font-family: var(--font-display, 'Onest', system-ui, -apple-system, sans-serif);
     font-size: 16px;
     padding: 14px;
-    transition: all .3s ease;
+    transition: border-color .2s ease, box-shadow .2s ease;
 
     &:focus {
       outline: none;

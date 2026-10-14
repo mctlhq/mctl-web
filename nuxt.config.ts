@@ -37,7 +37,9 @@ export default defineNuxtConfig({
           rel: 'stylesheet',
           href: 'https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap',
         },
-        { rel: 'stylesheet', href: 'https://ui.mctl.ai/mctl.css' },
+        // Pinned: the unversioned URL is a moving target, so a design-system
+        // release could restyle the site without a change here. Bump on purpose.
+        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.5.0/mctl.css' },
       ],
     },
   },
@@ -65,6 +67,17 @@ export default defineNuxtConfig({
     // Public keys that are exposed to the client
     public: {
       baseUrlFront: import.meta.env.NUXT_PUBLIC_FRONT_BASE || '',
+      // Base URL of the Worker routes (`/api/*`). A dev server must never post
+      // real forms to production: that creates real tenant requests and real
+      // Telegram/email notifications. So the default follows the environment,
+      // like the Turnstile key below: production builds use mctl.ai, anything
+      // else uses a local `wrangler dev` (port 8787). An explicit
+      // NUXT_PUBLIC_API_BASE (a mock or a preview Worker) wins over both.
+      apiBase:
+        import.meta.env.NUXT_PUBLIC_API_BASE
+        || (process.env.NODE_ENV === 'production'
+          ? 'https://mctl.ai/api'
+          : 'http://localhost:8787/api'),
       // The production sitekey's hostname allowlist excludes localhost, so a
       // single hardcoded fallback makes both gated forms unusable for anyone
       // running `npm run dev` or the Docker workflow without an env file —

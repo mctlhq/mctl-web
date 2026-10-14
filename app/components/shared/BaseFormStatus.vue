@@ -9,8 +9,7 @@ defineProps<Props>();
   <div
     class="base-form-status"
     :class="`base-form-status--type--${type}`"
-    role="alert"
-    aria-live="assertive"
+    :role="type === 'error' ? 'alert' : undefined"
   >
     <slot />
   </div>
@@ -26,13 +25,13 @@ defineProps<Props>();
 
   &--type--success {
     color: var(--color-success);
-    background-color: rgba(63, 185, 80, 0.1);
+    background-color: color-mix(in srgb, var(--color-success) 10%, transparent);
     border: 1px solid var(--color-success);
   }
 
   &--type--error {
     color: var(--color-error);
-    background-color: rgba(248, 81, 73, 0.1);
+    background-color: color-mix(in srgb, var(--color-error) 10%, transparent);
     border: 1px solid var(--color-error);
   }
 }

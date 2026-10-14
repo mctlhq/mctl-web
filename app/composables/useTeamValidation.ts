@@ -1,7 +1,6 @@
 import { ref } from 'vue'
 
 const TEAM_REGEX = /^[a-z0-9][a-z0-9-]{0,62}$/
-const CHECK_TEAM_URL = 'https://mctl.ai/api/github/check-team'
 
 interface GithubAuthIdentity {
   login?: string
@@ -14,6 +13,7 @@ interface GithubAuthIdentity {
 // unbounded bearer credential. `getAuthData` is read on every call so the
 // composable always uses the caller's current sign-in state.
 export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null | undefined) {
+  const checkTeamUrl = apiUrl('/github/check-team')
   const teamAvailable = ref(false)
   const teamError = ref('')
   const checking = ref(false)
@@ -105,7 +105,7 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
     teamError.value = ''
 
     try {
-      const res = await fetch(CHECK_TEAM_URL, {
+      const res = await fetch(checkTeamUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

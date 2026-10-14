@@ -7,7 +7,18 @@ interface TurnstileRenderOptions {
   callback: (token: string) => void
   'expired-callback'?: () => void
   'error-callback'?: () => void
+  theme?: 'auto' | 'light' | 'dark'
+  size?: 'normal' | 'flexible' | 'compact'
+  appearance?: 'always' | 'execute' | 'interaction-only'
+  language?: string
 }
+
+// What the form should tell the user about the challenge. `pending` covers
+// both "still loading" and "solving invisibly"; only the two failure states
+// below get visible copy, because with `appearance: 'interaction-only'` the
+// widget itself is hidden unless a human check is actually needed, and an
+// expired or failed challenge would otherwise leave no trace on the page.
+export type TurnstileState = 'pending' | 'ready' | 'expired' | 'error'
 
 interface TurnstileApi {
   render: (container: string | HTMLElement, options: TurnstileRenderOptions) => string
@@ -51,12 +62,13 @@ export function useTurnstile() {
   const token = ref('')
   const widgetId = ref<string | null>(null)
   const loadFailed = ref(false)
+  const state = ref<TurnstileState>('pending')
 
   // Set when the component unmounts while `render()` is still awaiting the
   // script, so the late resolution does not render into a detached container.
   let cancelled = false
 
-  async function render(container: string | HTMLElement, sitekey: string) {
+  async function render(container: string | HTMLElement, sitekey: string, language?: string) {
     if (import.meta.server) return
     if (!sitekey) {
       // Reached only via a misbuild — an empty NUXT_PUBLIC_TURNSTILE_SITE_KEY
@@ -89,14 +101,25 @@ export function useTurnstile() {
     loadFailed.value = false
     widgetId.value = window.turnstile.render(container, {
       sitekey,
+      // Follow the OS colour scheme, fill the form's width, and stay out of
+      // sight unless Cloudflare needs an interaction.
+      theme: 'auto',
+      size: 'flexible',
+      appearance: 'interaction-only',
+      ...(language ? { language } : {}),
       callback: (t: string) => {
         token.value = t
+        state.value = 'ready'
       },
       'expired-callback': () => {
+        // The widget refreshes an expired token by itself; the state tells the
+        // form to say so instead of failing the next submit silently.
         token.value = ''
+        state.value = 'expired'
       },
       'error-callback': () => {
         token.value = ''
+        state.value = 'error'
       },
     })
   }
@@ -104,6 +127,7 @@ export function useTurnstile() {
   function reset() {
     if (import.meta.server) return
     token.value = ''
+    state.value = 'pending'
     if (window.turnstile && widgetId.value) {
       window.turnstile.reset(widgetId.value)
     }
@@ -128,6 +152,7 @@ export function useTurnstile() {
   return {
     token,
     loadFailed,
+    state,
     render,
     reset,
     remove,

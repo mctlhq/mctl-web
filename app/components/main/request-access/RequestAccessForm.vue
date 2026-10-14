@@ -11,7 +11,7 @@ interface Props {
 }
 const props = defineProps<Props>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const runtimeConfig = useRuntimeConfig();
 
 const schema = yup.object({
@@ -38,13 +38,14 @@ const turnstileEl = ref<HTMLElement | null>(null);
 const {
   token: turnstileToken,
   loadFailed: turnstileLoadFailed,
+  state: turnstileState,
   render: renderTurnstile,
   reset: resetTurnstile,
 } = useTurnstile();
 
 onMounted(() => {
   if (turnstileEl.value) {
-    renderTurnstile(turnstileEl.value, runtimeConfig.public.turnstileSiteKey);
+    renderTurnstile(turnstileEl.value, runtimeConfig.public.turnstileSiteKey, locale.value);
   }
 });
 
@@ -99,7 +100,7 @@ const onSubmit = handleSubmit(async (formData) => {
       formStatus.value = null;
       showSuccessModal.value = true;
     } else {
-      formStatus.value = { message: result.message || 'Error', type: 'error' };
+      formStatus.value = { message: result.message || t('js.submit.request_failed'), type: 'error' };
     }
   } catch {
     formStatus.value = { message: t('js.submit.network_error'), type: 'error' }
@@ -148,6 +149,10 @@ const onSubmit = handleSubmit(async (formData) => {
     </BaseFormField>
 
     <div ref="turnstileEl" class="request-access-form__turnstile" />
+    <BaseTurnstileNotice
+      :state="turnstileState"
+      @retry="resetTurnstile"
+    />
   </BaseForm>
 
   <SuccessModal v-model="showSuccessModal" />

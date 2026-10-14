@@ -4,7 +4,13 @@ export function useContactForm() {
 
   const { submitContactForm: submitContactFormApi } = useApi();
 
-  async function submitContactForm(formData: { name: string; email: string; message: string; turnstile_token: string }) {
+  // Resolves to true only when the Worker accepted the message (2xx and
+  // `success: true`, see useApi). The caller clears the form on true and
+  // keeps the user's text on false so nothing typed is lost to an error.
+  async function submitContactForm(
+    formData: { name: string; email: string; message: string; turnstile_token: string },
+    messages: { failed: string; network: string },
+  ): Promise<boolean> {
     try {
       error.value = null;
       isLoading.value = true;
@@ -12,12 +18,15 @@ export function useContactForm() {
       const result = await submitContactFormApi(formData);
 
       if (!result.success) {
-        error.value = new Error(result.message || 'Failed to send message');
+        error.value = new Error(result.message || messages.failed);
+        return false;
       }
+      return true;
     } catch (err) {
-      error.value = err as Error;
+      error.value = new Error(messages.network);
 
       console.error('Error submitting contact form:', err);
+      return false;
     } finally {
       isLoading.value = false;
     }
