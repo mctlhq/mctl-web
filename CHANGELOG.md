@@ -1,5 +1,30 @@
 # Changelog
 
+## [7.6.0](https://github.com/mctlhq/mctl-web/compare/7.5.6...7.6.0) (2026-10-14)
+
+
+### Features
+
+* **forms:** success state, accepted-only status, Turnstile, styles ([79ab247](https://github.com/mctlhq/mctl-web/commit/79ab247e54713a6958c8c83215fb2d364fce0bbb))
+* **forms:** success state, accepted-only status, Turnstile, styles ([8afad47](https://github.com/mctlhq/mctl-web/commit/8afad47c0f4333756253d0481fdb5ee8963d14ef))
+* **worker:** welcome email redesign and provider status ([544ebad](https://github.com/mctlhq/mctl-web/commit/544ebad678e8a8b65c21f9d756378c37ecf748c7))
+* **worker:** welcome email redesign and provider status ([4a26913](https://github.com/mctlhq/mctl-web/commit/4a26913d34b34be6f5c287003aacb105eecdbe42))
+
+
+### Bug Fixes
+
+* **content:** align site copy with verified platform behavior ([369179a](https://github.com/mctlhq/mctl-web/commit/369179a2f284c032fec265e15084730059b71296))
+* **content:** align site copy with verified platform behavior (onboarding review A1) ([1963ae6](https://github.com/mctlhq/mctl-web/commit/1963ae6182384bf6ecc6ca00f4890bad84428567))
+* **content:** drop self-service MCTL account sign-in claims ([0727ec7](https://github.com/mctlhq/mctl-web/commit/0727ec71b0a2a7d3cbb2415b78c300d5651f7de0))
+* **forms:** modal contact link, verification copy, banner lifecycle ([eaa2617](https://github.com/mctlhq/mctl-web/commit/eaa2617a0ba53e842e6c19c1b38a42debb0889b2))
+* **forms:** verification line defers to the notice and self-clears ([d9968a5](https://github.com/mctlhq/mctl-web/commit/d9968a5cb9e4ec842ab276f2d4f3102f18efa16e))
+* **worker:** Outlook card width, drop dead email status arm ([5411bd4](https://github.com/mctlhq/mctl-web/commit/5411bd455f12ccb090aa214a4ae504cf26ca0b7e))
+
+
+### Documentation
+
+* add site onboarding review and claims register ([484d6ab](https://github.com/mctlhq/mctl-web/commit/484d6aba5fcbc6cb946e6f2bd114c91559c40864))
+
 ## [7.5.6](https://github.com/mctlhq/mctl-web/compare/7.5.5...7.5.6) (2026-10-10)
 
 
