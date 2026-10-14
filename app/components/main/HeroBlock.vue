@@ -47,10 +47,13 @@ const { t } = useI18n()
             &check; deployed to <span class="hero-terminal__accent">my-team</span> namespace
           </p>
           <p class="hero-terminal__line">
-            <span class="hero-terminal__prompt">$</span> mctl ask <span class="hero-terminal__str">"roll my-app back to v1.4.2"</span>
+            <span class="hero-terminal__prompt">&rsaquo;</span> <span class="hero-terminal__str">"roll my-app back to the previous release"</span>
+          </p>
+          <p class="hero-terminal__line hero-terminal__line--muted">
+            &rarr; MCP tool mctl_rollback_service &middot; team my-team
           </p>
           <p class="hero-terminal__line hero-terminal__line--ok">
-            &check; rollback live at <span class="hero-terminal__accent">app.mctl.ai</span><span class="hero-terminal__cursor"></span>
+            &check; rollback synced in <span class="hero-terminal__accent">my-team</span> namespace<span class="hero-terminal__cursor"></span>
           </p>
         </div>
       </div>
