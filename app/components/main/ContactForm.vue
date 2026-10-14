@@ -39,7 +39,7 @@ const sent = ref(false);
 const formStatus = computed(() => {
   if (turnstileStatus.value) return { message: turnstileStatus.value, type: 'error' as const };
   if (error.value) return { message: error.value.message, type: 'error' as const };
-  if (sent.value) return { message: t('contact.success'), type: 'success' as const };
+  if (sent.value) return { message: t('js.contact.success'), type: 'success' as const };
   return null;
 });
 
@@ -48,6 +48,22 @@ onMounted(() => {
     renderTurnstile(turnstileEl.value, runtimeConfig.public.turnstileSiteKey, locale.value);
   }
 });
+
+// The confirmation describes the message that was just sent. It goes away as
+// soon as the user starts a new one (any field becomes non-empty; resetForm
+// itself empties them, so it does not clear the banner it precedes) or tries
+// to submit the empty form.
+watch(
+  () => [name.value, email.value, message.value],
+  (values) => {
+    if (values.some(Boolean)) sent.value = false;
+  },
+);
+
+function onRetryTurnstile() {
+  turnstileStatus.value = null;
+  resetTurnstile();
+}
 
 const onSubmit = handleSubmit(async (formData) => {
   // Gate, don't replace: existing validation/submit logic is unchanged,
@@ -60,9 +76,13 @@ const onSubmit = handleSubmit(async (formData) => {
     // the second is not something the user can fix by trying again, and
     // telling them to complete a challenge that isn't on screen is worse
     // than saying nothing.
+    // With appearance 'interaction-only' the widget is invisible while it
+    // solves, so "complete the challenge" would name something not on screen.
     turnstileStatus.value = turnstileLoadFailed.value
       ? t('js.submit.verification_unavailable')
-      : t('js.submit.verification_required');
+      : turnstileState.value === 'pending'
+        ? t('js.submit.verification_pending')
+        : t('js.submit.verification_required');
     return;
   }
 
@@ -87,6 +107,8 @@ const onSubmit = handleSubmit(async (formData) => {
     // siteverify — not only on failure.
     resetTurnstile();
   }
+}, () => {
+  sent.value = false;
 });
 </script>
 
@@ -132,7 +154,7 @@ const onSubmit = handleSubmit(async (formData) => {
     <div ref="turnstileEl" class="contact-form__turnstile" />
     <BaseTurnstileNotice
       :state="turnstileState"
-      @retry="resetTurnstile"
+      @retry="onRetryTurnstile"
     />
   </BaseForm>
 </template>

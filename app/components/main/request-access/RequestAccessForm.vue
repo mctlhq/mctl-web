@@ -63,6 +63,11 @@ function handleTeamInput(value: string | number | undefined) {
   onInput(String(value ?? ''));
 }
 
+function onRetryTurnstile() {
+  formStatus.value = null;
+  resetTurnstile();
+}
+
 const onSubmit = handleSubmit(async (formData) => {
   if (!props.authData) {
     formStatus.value = { message: t('js.submit.github_required'), type: 'error' };
@@ -80,7 +85,9 @@ const onSubmit = handleSubmit(async (formData) => {
     formStatus.value = {
       message: turnstileLoadFailed.value
         ? t('js.submit.verification_unavailable')
-        : t('js.submit.verification_required'),
+        : turnstileState.value === 'pending'
+          ? t('js.submit.verification_pending')
+          : t('js.submit.verification_required'),
       type: 'error',
     };
     return;
@@ -151,7 +158,7 @@ const onSubmit = handleSubmit(async (formData) => {
     <div ref="turnstileEl" class="request-access-form__turnstile" />
     <BaseTurnstileNotice
       :state="turnstileState"
-      @retry="resetTurnstile"
+      @retry="onRetryTurnstile"
     />
   </BaseForm>
 

@@ -8,8 +8,14 @@ export interface SubmitResult {
 // (or from a composable's body), not from an async handler: the runtime
 // config is only guaranteed to resolve inside the Nuxt app context.
 export function apiUrl(path: string): string {
-  const base = String(useRuntimeConfig().public.apiBase || '').replace(/\/+$/, '')
-  return `${base}${path}`
+  const raw = String(useRuntimeConfig().public.apiBase || '')
+  if (!raw) {
+    // Reached only via a misbuild: a defined-but-empty NUXT_PUBLIC_API_BASE
+    // overrides the nuxt.config.ts default. Requests then go to a
+    // root-relative path that nginx answers with the SPA shell.
+    console.error('[api] no apiBase configured; requests will use a root-relative path')
+  }
+  return `${raw.replace(/\/+$/, '')}${path}`
 }
 
 // A request counts as accepted only when the HTTP status is 2xx AND the body
