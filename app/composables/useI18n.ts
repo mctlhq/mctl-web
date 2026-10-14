@@ -50,12 +50,10 @@ const translations: Record<string, Record<string, string>> = {
     'form.submit': 'Submit Request',
 
     // Success Modal
-    'modal.team_created': 'Team Created!',
-    'modal.step1': 'Your Kubernetes namespace is being provisioned \u2014 this takes ~2 minutes.',
-    'modal.step2': 'Sign in with your GitHub account to access:',
-    'modal.portal': 'Portal \u2014 app.mctl.ai',
-    'modal.argocd': 'ArgoCD \u2014 ops.mctl.ai',
-    'modal.workflows': 'Workflows \u2014 workflows.mctl.ai',
+    'modal.request_accepted': 'Provisioning request accepted',
+    'modal.provisioning': 'Your workspace is being provisioned automatically. There is nothing else you need to do now.',
+    'modal.signin_unavailable': 'Portal sign-in for self-service accounts is not available yet. Questions?',
+    'modal.contact': 'Contact us',
     'modal.close': 'Got it',
 
     // Why MCTL
@@ -205,13 +203,19 @@ const translations: Record<string, Record<string, string>> = {
     'js.team.rate_limited': 'Too many checks — wait a moment and try again.',
     'js.team.sign_in_required': 'Sign in with GitHub to check availability.',
     'js.submit.github_required': 'Sign in with GitHub first.',
-    'js.submit.verification_required': 'Please complete the verification challenge.',
+    'js.submit.verification_pending': 'Verification is still running. Try again in a few seconds.',
     'js.submit.verification_unavailable': 'The verification challenge could not load. Disable your ad blocker or reload the page.',
     'js.submit.processing': 'Processing...',
     'js.submit.network_error': 'Network error. Please try again.',
+    'js.contact.success': 'Message sent. We will reply to the email address you entered.',
+    'js.submit.request_failed': 'The request could not be submitted. Please try again.',
+    'js.turnstile.expired': 'The verification expired and is refreshing. Submit again in a moment.',
+    'js.turnstile.error': 'The verification could not be completed.',
+    'js.turnstile.retry': 'Try again',
     'js.contact.fill_all': 'Please fill in all fields.',
     'js.contact.sending': 'Sending...',
     'js.contact.network_error': 'Network error. Please try again.',
+    'js.contact.send_failed': 'The message could not be sent. Please try again.',
 
     // Validation forms
     'validation.required': 'This field is required',
@@ -256,12 +260,10 @@ const translations: Record<string, Record<string, string>> = {
     'form.submit': '\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u044f\u0432\u043a\u0443',
 
     // Success Modal
-    'modal.team_created': '\u041a\u043e\u043c\u0430\u043d\u0434\u0430 \u0441\u043e\u0437\u0434\u0430\u043d\u0430!',
-    'modal.step1': '\u0412\u0430\u0448 Kubernetes namespace \u0440\u0430\u0437\u0432\u043e\u0440\u0430\u0447\u0438\u0432\u0430\u0435\u0442\u0441\u044f \u2014 \u044d\u0442\u043e \u0437\u0430\u0439\u043c\u0451\u0442 ~2 \u043c\u0438\u043d\u0443\u0442\u044b.',
-    'modal.step2': '\u0412\u043e\u0439\u0434\u0438\u0442\u0435 \u0447\u0435\u0440\u0435\u0437 GitHub, \u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043f\u0430\u0441\u0442\u044c \u0432:',
-    'modal.portal': '\u041f\u043e\u0440\u0442\u0430\u043b \u2014 app.mctl.ai',
-    'modal.argocd': 'ArgoCD \u2014 ops.mctl.ai',
-    'modal.workflows': 'Workflows \u2014 workflows.mctl.ai',
+    'modal.request_accepted': '\u0417\u0430\u043f\u0440\u043e\u0441 \u043d\u0430 \u0441\u043e\u0437\u0434\u0430\u043d\u0438\u0435 \u043f\u0440\u0438\u043d\u044f\u0442',
+    'modal.provisioning': '\u0412\u0430\u0448\u0435 \u0440\u0430\u0431\u043e\u0447\u0435\u0435 \u043f\u0440\u043e\u0441\u0442\u0440\u0430\u043d\u0441\u0442\u0432\u043e \u0441\u043e\u0437\u0434\u0430\u0451\u0442\u0441\u044f \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438. \u0421\u0435\u0439\u0447\u0430\u0441 \u043e\u0442 \u0432\u0430\u0441 \u0431\u043e\u043b\u044c\u0448\u0435 \u043d\u0438\u0447\u0435\u0433\u043e \u043d\u0435 \u0442\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044f.',
+    'modal.signin_unavailable': '\u0412\u0445\u043e\u0434 \u0432 \u043f\u043e\u0440\u0442\u0430\u043b \u0434\u043b\u044f \u0441\u0430\u043c\u043e\u0441\u0442\u043e\u044f\u0442\u0435\u043b\u044c\u043d\u043e \u0441\u043e\u0437\u0434\u0430\u043d\u043d\u044b\u0445 \u0430\u043a\u043a\u0430\u0443\u043d\u0442\u043e\u0432 \u043f\u043e\u043a\u0430 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d. \u0415\u0441\u0442\u044c \u0432\u043e\u043f\u0440\u043e\u0441\u044b?',
+    'modal.contact': '\u041d\u0430\u043f\u0438\u0448\u0438\u0442\u0435 \u043d\u0430\u043c',
     'modal.close': '\u041f\u043e\u043d\u044f\u0442\u043d\u043e',
 
     // Why MCTL
@@ -411,13 +413,19 @@ const translations: Record<string, Record<string, string>> = {
     'js.team.wrong-format': '\u041d\u0435\u0432\u0435\u0440\u043d\u044b\u0439 \u0444\u043e\u0440\u043c\u0430\u0442 \u0438\u043c\u0435\u043d\u0438 \u043a\u043e\u043c\u0430\u043d\u0434\u044b.',
     'js.team.rate_limited': '\u0421\u043b\u0438\u0448\u043a\u043e\u043c \u043c\u043d\u043e\u0433\u043e \u043f\u0440\u043e\u0432\u0435\u0440\u043e\u043a \u2014 \u043f\u043e\u0434\u043e\u0436\u0434\u0438\u0442\u0435 \u043d\u0435\u043c\u043d\u043e\u0433\u043e \u0438 \u043f\u043e\u0432\u0442\u043e\u0440\u0438\u0442\u0435.',
     'js.submit.github_required': '\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0432\u043e\u0439\u0434\u0438\u0442\u0435 \u0447\u0435\u0440\u0435\u0437 GitHub.',
-    'js.submit.verification_required': '\u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u043f\u0440\u043e\u0439\u0434\u0438\u0442\u0435 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0443.',
+    'js.submit.verification_pending': '\u041f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u0435\u0449\u0451 \u0438\u0434\u0451\u0442. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0447\u0435\u0440\u0435\u0437 \u043f\u0430\u0440\u0443 \u0441\u0435\u043a\u0443\u043d\u0434.',
     'js.submit.verification_unavailable': '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0443. \u041e\u0442\u043a\u043b\u044e\u0447\u0438\u0442\u0435 \u0431\u043b\u043e\u043a\u0438\u0440\u043e\u0432\u0449\u0438\u043a \u0440\u0435\u043a\u043b\u0430\u043c\u044b \u0438\u043b\u0438 \u043f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0443.',
     'js.submit.processing': '\u041e\u0442\u043f\u0440\u0430\u0432\u043b\u044f\u0435\u043c...',
     'js.submit.network_error': '\u041e\u0448\u0438\u0431\u043a\u0430 \u0441\u0435\u0442\u0438 \u2014 \u043f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437.',
+    'js.contact.success': '\u0421\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435 \u043e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u043e. \u041c\u044b \u043e\u0442\u0432\u0435\u0442\u0438\u043c \u043d\u0430 \u0443\u043a\u0430\u0437\u0430\u043d\u043d\u044b\u0439 \u0432\u0430\u043c\u0438 \u0430\u0434\u0440\u0435\u0441.',
+    'js.submit.request_failed': '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u043f\u0440\u043e\u0441. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437.',
+    'js.turnstile.expired': '\u0421\u0440\u043e\u043a \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0438 \u0438\u0441\u0442\u0451\u043a, \u043e\u043d\u0430 \u043e\u0431\u043d\u043e\u0432\u043b\u044f\u0435\u0442\u0441\u044f. \u041e\u0442\u043f\u0440\u0430\u0432\u044c\u0442\u0435 \u0444\u043e\u0440\u043c\u0443 \u0435\u0449\u0451 \u0440\u0430\u0437 \u0447\u0435\u0440\u0435\u0437 \u043d\u0435\u0441\u043a\u043e\u043b\u044c\u043a\u043e \u0441\u0435\u043a\u0443\u043d\u0434.',
+    'js.turnstile.error': '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u0440\u043e\u0439\u0442\u0438 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0443.',
+    'js.turnstile.retry': '\u041f\u043e\u0432\u0442\u043e\u0440\u0438\u0442\u044c',
     'js.contact.fill_all': '\u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u0437\u0430\u043f\u043e\u043b\u043d\u0438\u0442\u0435 \u0432\u0441\u0435 \u043f\u043e\u043b\u044f.',
     'js.contact.sending': '\u041e\u0442\u043f\u0440\u0430\u0432\u043b\u044f\u0435\u043c...',
     'js.contact.network_error': '\u041e\u0448\u0438\u0431\u043a\u0430 \u0441\u0435\u0442\u0438 \u2014 \u043f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437.',
+    'js.contact.send_failed': '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437.',
 
     // Validation forms
     'validation.required': 'Это обязательное поле',

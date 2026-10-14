@@ -4,7 +4,7 @@ import * as yup from 'yup';
 
 import type { ContactFormData } from '@/types';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const runtimeConfig = useRuntimeConfig();
 
 const schema = yup.object({
@@ -13,7 +13,7 @@ const schema = yup.object({
   message: yup.string().required().max(500),
 });
 
-const { defineField, errors, handleSubmit } = useForm<ContactFormData>({ validationSchema: schema });
+const { defineField, errors, handleSubmit, resetForm } = useForm<ContactFormData>({ validationSchema: schema });
 
 const [name, nameProps] = defineField('name');
 const [email, emailProps] = defineField('email');
@@ -25,25 +25,53 @@ const turnstileEl = ref<HTMLElement | null>(null);
 const {
   token: turnstileToken,
   loadFailed: turnstileLoadFailed,
+  state: turnstileState,
+  missingTokenMessageKey,
   render: renderTurnstile,
   reset: resetTurnstile,
 } = useTurnstile();
 
 const turnstileStatus = ref<string | null>(null);
+const sent = ref(false);
 
-// The submit error and the verification message share one status slot, so a
-// stale "complete the challenge" line cannot sit next to a fresh API error.
+// The submit error, the verification message and the confirmation share one
+// status slot, so a stale "complete the challenge" line cannot sit next to a
+// fresh API error, and an old confirmation cannot outlive a new attempt.
 const formStatus = computed(() => {
   if (turnstileStatus.value) return { message: turnstileStatus.value, type: 'error' as const };
   if (error.value) return { message: error.value.message, type: 'error' as const };
+  if (sent.value) return { message: t('js.contact.success'), type: 'success' as const };
   return null;
 });
 
 onMounted(() => {
   if (turnstileEl.value) {
-    renderTurnstile(turnstileEl.value, runtimeConfig.public.turnstileSiteKey);
+    renderTurnstile(turnstileEl.value, runtimeConfig.public.turnstileSiteKey, locale.value);
   }
 });
+
+// The confirmation describes the message that was just sent. It goes away as
+// soon as the user starts a new one (any field becomes non-empty; resetForm
+// itself empties them, so it does not clear the banner it precedes) or tries
+// to submit the empty form.
+watch(
+  () => [name.value, email.value, message.value],
+  (values) => {
+    if (values.some(Boolean)) sent.value = false;
+  },
+);
+
+// A verification message describes a missing token; once one arrives (the
+// invisible challenge finished, or an expired one refreshed itself) the
+// message is stale.
+watch(turnstileToken, (value) => {
+  if (value) turnstileStatus.value = null;
+});
+
+function onRetryTurnstile() {
+  turnstileStatus.value = null;
+  resetTurnstile();
+}
 
 const onSubmit = handleSubmit(async (formData) => {
   // Gate, don't replace: existing validation/submit logic is unchanged,
@@ -52,20 +80,28 @@ const onSubmit = handleSubmit(async (formData) => {
   // widget is still loading, has expired, or errored, and a submit button
   // that does nothing at all is indistinguishable from a broken form.
   if (!turnstileToken.value) {
-    // Distinguish "you haven't solved it yet" from "it will never load":
-    // the second is not something the user can fix by trying again, and
-    // telling them to complete a challenge that isn't on screen is worse
-    // than saying nothing.
-    turnstileStatus.value = turnstileLoadFailed.value
-      ? t('js.submit.verification_unavailable')
-      : t('js.submit.verification_required');
+    // Distinguish "still verifying" from "it will never load". Expired and
+    // failed challenges are explained by BaseTurnstileNotice, so the status
+    // line stays empty for them instead of contradicting it.
+    const key = missingTokenMessageKey();
+    turnstileStatus.value = key ? t(key) : null;
     return;
   }
 
   turnstileStatus.value = null;
+  sent.value = false;
 
   try {
-    await submitContactForm({ ...formData, turnstile_token: turnstileToken.value });
+    const ok = await submitContactForm(
+      { ...formData, turnstile_token: turnstileToken.value },
+      { failed: t('js.contact.send_failed'), network: t('js.contact.network_error') },
+    );
+    if (ok) {
+      // Clear only after the Worker accepted the message; on any failure the
+      // user's text stays in place for another attempt.
+      resetForm();
+      sent.value = true;
+    }
   } finally {
     // Turnstile tokens are single-use; siteverify consumes one on success
     // too, and this form stays mounted after a successful send, so the
@@ -73,6 +109,8 @@ const onSubmit = handleSubmit(async (formData) => {
     // siteverify — not only on failure.
     resetTurnstile();
   }
+}, () => {
+  sent.value = false;
 });
 </script>
 
@@ -116,6 +154,10 @@ const onSubmit = handleSubmit(async (formData) => {
     </BaseFormField>
 
     <div ref="turnstileEl" class="contact-form__turnstile" />
+    <BaseTurnstileNotice
+      :state="turnstileState"
+      @retry="onRetryTurnstile"
+    />
   </BaseForm>
 </template>
 
