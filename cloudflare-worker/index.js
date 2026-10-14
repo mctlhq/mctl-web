@@ -741,32 +741,23 @@ export async function handleFormSubmit(request, env, origin) {
       `⏰ ${new Date().toISOString().replace(/[-.]/g, '\\$&')}`,
     ].filter(Boolean).join('\n');
 
-    const telegramUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
-    await fetch(telegramUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: env.TELEGRAM_CHAT_ID,
-        text: msg,
-        parse_mode: 'MarkdownV2',
-        disable_web_page_preview: true,
-      }),
-    });
-
-    // ── Send welcome email ───────────────────────────────────────────────────
-    if (workflowSubmitted && email) {
-      try {
-        await sendWelcomeEmail(env, { email, name: name || login, team, login, workflowSubmitted });
-      } catch (e) {
-        console.error('Welcome email error:', e);
-      }
+    // The notifications are side effects of an already-submitted workflow.
+    // Each one reports its own status and none may turn an accepted tenant
+    // request into an error: before this, a Telegram network exception fell
+    // through to the outer catch and answered 500 for a workspace that was
+    // in fact being provisioned, inviting a duplicate request.
+    const telegramStatus = await sendTelegram(env, msg);
+    if (telegramStatus !== 'accepted') {
+      console.error(`submit: Telegram notification ${telegramStatus} for team ${team}`);
     }
 
     // ── Response ─────────────────────────────────────────────────────────────
     if (workflowSubmitted) {
+      const emailStatus = await sendWelcomeEmail(env, { email, name: name || login, team });
       return jsonResponse({
         success: true,
-        message: `Team "${team}" is being provisioned! Sign in to app.mctl.ai with your GitHub account — your workspace will be ready in ~2 minutes.`,
+        message: `Provisioning request for "${team}" accepted. Portal sign-in for self-service accounts is not available yet.`,
+        emailStatus,
       }, 200, {}, origin);
     } else {
       return jsonResponse({
@@ -869,103 +860,142 @@ function escHtml(text) {
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-async function sendWelcomeEmail(env, { email, name, team, login, workflowSubmitted }) {
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#0a0e14;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0e14;padding:40px 20px">
+// Palette from mctl-design tokens, the same values zitadel-iac's branding.tf
+// gives auth.mctl.ai: paper surface, ink text, terracottaDeep accent (the
+// step that is AA on paper). Email clients ignore external CSS and most
+// ignore <style>, so every rule is inline, and the font stack falls back to
+// system fonts because Onest is not available in a mail client.
+const EMAIL_COLORS = {
+  paper: '#f1ede4',
+  card: '#ffffff',
+  ink: '#15181d',
+  muted: '#5b6068',
+  line: '#e2ddd2',
+  accent: '#b83d28',
+};
+const EMAIL_FONT = "Onest,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+const CONTACT_URL = 'https://mctl.ai/#contact';
+
+// Pure: returns the subject, HTML and plain-text parts of the welcome email.
+// It states only what is true when the Worker sends it — the provisioning
+// workflow was submitted — and makes no promise about sign-in, timing or
+// follow-up, because portal sign-in for self-service accounts does not exist
+// yet. `team` is already validated against the team-name regex; `name` comes
+// from the GitHub profile and is escaped.
+export function renderWelcomeEmail({ name, team, year = new Date().getUTCFullYear() }) {
+  const c = EMAIL_COLORS;
+  const subject = `Your MCTL workspace "${team}" is being provisioned`;
+  const greeting = name ? `Hi ${name},` : 'Hi,';
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${escHtml(subject)}</title></head>
+<body style="margin:0;padding:0;background:${c.paper};font-family:${EMAIL_FONT};color:${c.ink}">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${c.paper};padding:40px 16px">
     <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#111820;border:1px solid rgba(0,245,255,0.2);border-radius:12px;overflow:hidden">
-
-        <!-- Header -->
-        <tr><td style="padding:32px 40px 24px;border-bottom:1px solid rgba(0,245,255,0.1)">
-          <span style="font-size:24px;font-weight:700;letter-spacing:1px">
-            <span style="color:#00f5ff">M</span><span style="color:#ffffff">CTL</span>
-          </span>
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background:${c.card};border:1px solid ${c.line};border-radius:12px">
+        <tr><td style="padding:28px 32px 20px;border-bottom:1px solid ${c.line}">
+          <span style="font-size:20px;font-weight:700;letter-spacing:1px;color:${c.ink}"><span style="color:${c.accent}">M</span>CTL</span>
         </td></tr>
-
-        <!-- Body -->
-        <tr><td style="padding:32px 40px">
-          <h1 style="color:#ffffff;font-size:22px;margin:0 0 8px">Welcome, ${escHtml(name)}!</h1>
-          <p style="color:#8b949e;font-size:15px;line-height:1.6;margin:0 0 28px">
-            Your team <strong style="color:#00f5ff">${escHtml(team)}</strong> has been created${workflowSubmitted ? ' and your Kubernetes namespace is being provisioned' : ''}. Follow these steps to get started:
+        <tr><td style="padding:28px 32px">
+          <p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:${c.ink}">${escHtml(greeting)}</p>
+          <p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:${c.ink}">
+            Your workspace <strong>${escHtml(team)}</strong> is being provisioned.
           </p>
-
-          <!-- Step 1 -->
-          <table cellpadding="0" cellspacing="0" style="margin-bottom:24px;width:100%">
-            <tr>
-              <td width="36" valign="top">
-                <div style="width:28px;height:28px;border-radius:50%;background:#00f5ff;color:#0a0e14;font-weight:700;font-size:14px;line-height:28px;text-align:center">1</div>
-              </td>
-              <td style="padding-left:12px">
-                <p style="color:#ffffff;font-size:15px;margin:0 0 4px;line-height:1.5">
-                  <strong>Wait for namespace provisioning</strong> (~2 min)
-                </p>
-                <p style="color:#8b949e;font-size:13px;margin:0;line-height:1.5">
-                  ArgoCD will automatically provision your Kubernetes namespace, resource quotas, and network policies.
-                </p>
-              </td>
-            </tr>
-          </table>
-
-          <!-- Step 2 -->
-          <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;width:100%">
-            <tr>
-              <td width="36" valign="top">
-                <div style="width:28px;height:28px;border-radius:50%;background:#00f5ff;color:#0a0e14;font-weight:700;font-size:14px;line-height:28px;text-align:center">2</div>
-              </td>
-              <td style="padding-left:12px">
-                <p style="color:#ffffff;font-size:15px;margin:0 0 12px;line-height:1.5">
-                  <strong>Sign in with your GitHub account</strong> to access:
-                </p>
-                <table cellpadding="0" cellspacing="0"><tr>
-                  <td style="padding-right:10px">
-                    <a href="https://app.mctl.ai/" style="display:inline-block;padding:10px 20px;border:1px solid #00f5ff;color:#00f5ff;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px">
-                      Portal — app.mctl.ai
-                    </a>
-                  </td>
-                  <td>
-                    <a href="https://ops.mctl.ai/" style="display:inline-block;padding:10px 20px;border:1px solid #00f5ff;color:#00f5ff;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px">
-                      ArgoCD — ops.mctl.ai
-                    </a>
-                  </td>
-                </tr></table>
-              </td>
-            </tr>
-          </table>
-
-          <div style="border-top:1px solid rgba(0,245,255,0.1);padding-top:20px">
-            <p style="color:#8b949e;font-size:13px;margin:0;line-height:1.5">
-              Questions? Reply to this email or reach us at
-              <a href="https://mctl.ai/#contact" style="color:#00f5ff;text-decoration:none">mctl.ai/contact</a>
-            </p>
-          </div>
+          <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:${c.ink}">
+            Portal sign-in for self-service accounts is not available yet. If you have questions, contact us.
+          </p>
+          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:6px;background:${c.accent}">
+            <a href="${CONTACT_URL}" style="display:inline-block;padding:12px 24px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px">Contact us</a>
+          </td></tr></table>
         </td></tr>
-
-        <!-- Footer -->
-        <tr><td style="padding:20px 40px;border-top:1px solid rgba(0,245,255,0.1)">
-          <p style="color:#484f58;font-size:12px;margin:0">© 2025 MCTL. All rights reserved.</p>
+        <tr><td style="padding:16px 32px;border-top:1px solid ${c.line}">
+          <p style="margin:0;font-size:12px;line-height:1.5;color:${c.muted}">You received this email because a workspace was requested on mctl.ai with this address. &copy; ${year} MCTL</p>
         </td></tr>
-
       </table>
     </td></tr>
   </table>
 </body>
 </html>`;
 
-  await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: 'MCTL <noreply@mctl.ai>',
-      to: [email],
-      subject: `Your team "${team}" is being provisioned — sign in to get started`,
-      html,
-    }),
-  });
+  const text = [
+    greeting,
+    '',
+    `Your workspace "${team}" is being provisioned.`,
+    '',
+    'Portal sign-in for self-service accounts is not available yet. If you have questions, contact us:',
+    CONTACT_URL,
+    '',
+    '--',
+    'You received this email because a workspace was requested on mctl.ai with this address.',
+    `(c) ${year} MCTL`,
+  ].join('\n');
+
+  return { subject, html, text };
+}
+
+// Delivery status of a side notification. "accepted" means the provider
+// answered 2xx — not that the message was delivered. "failed" covers both a
+// non-2xx answer and a network exception. "skipped" means nothing was sent
+// (no recipient or no API key), which is distinct from a failure.
+async function sendWelcomeEmail(env, { email, name, team }, fetchImpl = fetch) {
+  if (!email) return 'skipped';
+  if (!env.RESEND_API_KEY) {
+    console.error('Welcome email: RESEND_API_KEY is not set');
+    return 'skipped';
+  }
+  const { subject, html, text } = renderWelcomeEmail({ name, team });
+  try {
+    const res = await fetchImpl('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'MCTL <noreply@mctl.ai>',
+        to: [email],
+        subject,
+        html,
+        text,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.error(`Welcome email: Resend answered ${res.status}: ${body.slice(0, 500)}`);
+      return 'failed';
+    }
+    return 'accepted';
+  } catch (e) {
+    console.error('Welcome email: request to Resend failed:', e);
+    return 'failed';
+  }
+}
+
+async function sendTelegram(env, text, fetchImpl = fetch) {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+    console.error('Telegram: bot token or chat id is not set');
+    return 'skipped';
+  }
+  try {
+    const res = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: env.TELEGRAM_CHAT_ID,
+        text,
+        parse_mode: 'MarkdownV2',
+        disable_web_page_preview: true,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.error(`Telegram: answered ${res.status}: ${body.slice(0, 500)}`);
+      return 'failed';
+    }
+    return 'accepted';
+  } catch (e) {
+    console.error('Telegram: request failed:', e);
+    return 'failed';
+  }
 }
