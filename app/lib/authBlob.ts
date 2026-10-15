@@ -63,9 +63,10 @@ export function readStored(raw: unknown): StoredAuth | null {
   return { identity, clientExp: exp }
 }
 
-// The signed expiry wins when present; otherwise the client TTL decides.
-// A v2 identity whose `exp` is missing or not a number is treated as expired:
-// the Worker would reject it anyway.
+// Whichever expiry comes first decides: the client TTL always applies, and a
+// v2 identity is also dropped at its signed `exp` (both are 8 hours today, so
+// the signed one normally decides). A v2 identity whose `exp` is missing or
+// not a number is treated as expired: the Worker would reject it anyway.
 export function isExpired(stored: StoredAuth, now: number): boolean {
   if (now >= stored.clientExp) return true
   if (stored.identity.v === 2) {
