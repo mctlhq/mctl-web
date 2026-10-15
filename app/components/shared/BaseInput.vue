@@ -72,19 +72,19 @@ const modelValue = defineModel<string | number>();
   &__input {
     width: 100%;
     appearance: none;
-    background: var(--color-bg);
-    border: 1px solid var(--color-line-strong);
+    background: var(--control-bg);
+    border: 1px solid var(--control-border);
     border-radius: 6px;
     color: var(--color-text);
     font-family: var(--font-display, 'Onest', system-ui, -apple-system, sans-serif);
-    font-size: 16px;
+    font-size: var(--text-body-size);
     padding: 14px;
     transition: border-color .2s ease, box-shadow .2s ease;
 
     &:focus {
       outline: none;
       border-color: var(--color-accent);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 10%, transparent);
+      box-shadow: var(--control-focus-shadow);
     }
   }
 

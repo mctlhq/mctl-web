@@ -58,8 +58,8 @@ defineProps<Props>();
 
     color: var(--color-bg);
     border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: var(--text-micro-size);
+    font-weight: var(--mctl-typography-font-weight-bold);
     text-transform: uppercase;
     letter-spacing: 1px;
 
@@ -67,20 +67,20 @@ defineProps<Props>();
   }
 
   &__title {
-    font-size: 1.5rem;
+    font-size: var(--text-title-size);
   }
 
   &__price {
     display: block;
     margin-bottom: 0.5rem;
 
-    font-size: 2rem;
-    font-weight: 800;
+    font-size: var(--mctl-typography-font-size-3xl);
+    font-weight: var(--mctl-typography-font-weight-extrabold);
     color: var(--color-accent);
   }
 
   &__desc {
-    font-size: .9rem;
+    font-size: var(--text-small-size);
     color: var(--color-text-muted);
     margin-bottom: 2rem;
   }
@@ -96,14 +96,14 @@ defineProps<Props>();
     padding: 0.5rem 0;
 
     color: var(--color-text-muted);
-    font-size: 0.9rem;
+    font-size: var(--text-small-size);
 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--surface-line);
 
     &::before {
       content: '\2713';
       color: var(--color-accent);
-      font-weight: 700;
+      font-weight: var(--mctl-typography-font-weight-bold);
       flex-shrink: 0;
     }
   }

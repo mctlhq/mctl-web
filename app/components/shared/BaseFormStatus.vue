@@ -20,7 +20,7 @@ defineProps<Props>();
   padding: 16px;
   border-radius: 6px;
 
-  font-size: 0.9rem;
+  font-size: var(--text-small-size);
   word-break: break-word;
 
   &--type--success {

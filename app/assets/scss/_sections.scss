@@ -31,8 +31,8 @@
 }
 
 .hero-content h1 {
-  font-size: clamp(2.5rem, 4.5vw, 4.25rem);
-  font-weight: 800;
+  font-size: var(--text-hero-size);
+  font-weight: var(--mctl-typography-font-weight-extrabold);
   text-align: center;
   color: var(--color-text);
   margin-bottom: 1.5rem;
@@ -81,9 +81,9 @@
     text-align: center;
     padding: 2rem 1.5rem;
   }
-  .workflow-step .step-content h3 { font-size: 1.25rem; }
+  .workflow-step .step-content h3 { font-size: var(--mctl-typography-font-size-xl); }
   .workflow-step .step-content p { margin-bottom: 1rem; }
-  .workflow-step .code-block { font-size: 0.75rem; padding: 0.75rem; }
+  .workflow-step .code-block { font-size: var(--text-micro-size); padding: 0.75rem; }
   .workflow-step:hover { transform: translateY(-6px); }
 }
 
@@ -97,13 +97,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
-  font-weight: 800;
+  font-size: var(--mctl-typography-font-size-3xl);
+  font-weight: var(--mctl-typography-font-weight-extrabold);
   box-shadow: 0 0 20px color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
 .step-content { flex: 1; min-width: 0; }
-.step-content h3 { font-size: 1.75rem; margin-bottom: 1rem; color: var(--color-text); }
+.step-content h3 { font-size: var(--mctl-typography-font-size-3xl); margin-bottom: 1rem; color: var(--color-text); }
 .step-content p { color: var(--color-text-muted); margin-bottom: 1.5rem; line-height: 1.7; }
 
 // Pricing
@@ -136,7 +136,7 @@
 
 .pricing-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-overlay);
 }
 
 .pricing-card-featured {
@@ -158,23 +158,23 @@
   color: var(--color-bg);
   padding: 0.25rem 1rem;
   border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: var(--text-micro-size);
+  font-weight: var(--mctl-typography-font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-.pricing-card h3 { font-size: 1.5rem; color: var(--color-text); margin-bottom: 1rem; }
+.pricing-card h3 { font-size: var(--text-title-size); color: var(--color-text); margin-bottom: 1rem; }
 
 .pricing-price {
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: var(--mctl-typography-font-size-3xl);
+  font-weight: var(--mctl-typography-font-weight-extrabold);
   color: var(--color-accent);
   margin-bottom: 0.5rem;
 }
 
 .pricing-desc {
-  font-size: 0.9rem;
+  font-size: var(--text-small-size);
   color: var(--color-text-muted);
   margin-bottom: 2rem;
 }
@@ -189,8 +189,8 @@
 .pricing-features li {
   padding: 0.5rem 0;
   color: var(--color-text-muted);
-  font-size: 0.9rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: var(--text-small-size);
+  border-bottom: 1px solid var(--surface-line);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -199,7 +199,7 @@
 .pricing-features li::before {
   content: '\2713';
   color: var(--color-accent);
-  font-weight: 700;
+  font-weight: var(--mctl-typography-font-weight-bold);
   flex-shrink: 0;
 }
 
@@ -213,7 +213,7 @@
 .contact-content { max-width: 700px; margin: 0 auto; }
 
 .contact-intro {
-  font-size: 1.1rem;
+  font-size: var(--mctl-typography-font-size-lg);
   color: var(--color-text-muted);
   margin-bottom: 3rem;
   line-height: 1.7;
@@ -234,8 +234,7 @@
 
 // Responsive
 @media (max-width: 1100px) {
-  .hero-content h1 { font-size: 3.5rem; }
-  .subtitle { font-size: 1.2rem; }
+  .subtitle { font-size: var(--mctl-typography-font-size-xl); }
   .features-grid { grid-template-rows: none; }
   .feature-card { grid-row: auto; display: flex; flex-direction: column; }
   .problems-grid { grid-template-columns: repeat(3, 1fr); }
@@ -250,8 +249,7 @@
 
 @media (max-width: 768px) {
   .hero { min-height: auto; padding: 7rem 0 3.5rem; }
-  .hero-content h1 { font-size: 2.2rem; }
-  .subtitle { font-size: 0.95rem; line-height: 1.5; margin-bottom: 2rem; }
+  .subtitle { font-size: var(--text-label-size); line-height: 1.5; margin-bottom: 2rem; }
 
   .problems { padding: 4rem 0; }
   .problems-grid { grid-template-columns: 1fr; gap: 1.25rem; }
@@ -265,8 +263,8 @@
 
   .how-it-works { padding: 4rem 0; }
   .workflow-step { flex-direction: column; gap: 1.5rem; text-align: center; padding: 2rem 1.5rem; }
-  .workflow-step .step-number { width: 54px; height: 54px; font-size: 1.3rem; }
-  .step-content h3 { font-size: 1.4rem; }
+  .workflow-step .step-number { width: 54px; height: 54px; font-size: var(--mctl-typography-font-size-xl); }
+  .step-content h3 { font-size: var(--text-title-size); }
 
   .tech-stack { padding: 4rem 0; }
   .tech-logos { gap: 2rem; }

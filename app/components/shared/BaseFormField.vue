@@ -54,7 +54,7 @@ const modelValue = defineModel<string | number>();
     margin-top: 8px;
 
     color: var(--color-error);
-    font-size: 12px;
+    font-size: var(--text-micro-size);
   }
 
   &__info {
@@ -62,7 +62,7 @@ const modelValue = defineModel<string | number>();
     margin-top: 8px;
 
     color: var(--color-text-muted);
-    font-size: 12px;
+    font-size: var(--text-micro-size);
   }
 }
 </style>

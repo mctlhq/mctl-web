@@ -137,7 +137,7 @@ watch(open, async (isOpen) => {
   padding: 1rem;
   box-sizing: border-box;
 
-  background: rgba(0, 0, 0, 0.75);
+  background: var(--overlay-scrim);
 
   &__panel {
     box-sizing: border-box;
@@ -164,8 +164,8 @@ watch(open, async (isOpen) => {
   &__title {
     margin: 0;
     color: var(--color-text);
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: var(--mctl-typography-font-size-xl);
+    font-weight: var(--mctl-typography-font-weight-semibold);
     line-height: 1.3;
   }
 
@@ -176,7 +176,7 @@ watch(open, async (isOpen) => {
 
     :deep(p) {
       margin: 0 0 1rem;
-      font-size: 0.95rem;
+      font-size: var(--text-label-size);
       line-height: 1.5;
       color: var(--color-text);
 

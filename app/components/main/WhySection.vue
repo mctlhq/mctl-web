@@ -59,17 +59,17 @@ const cards = [
     &:hover {
       border-color: var(--color-accent);
       transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px color-mix(in srgb, var(--color-accent) 10%, transparent);
+      box-shadow: var(--shadow-overlay);
     }
   }
 
   &__card-title {
-    font-size: 18px;
+    font-size: var(--mctl-typography-font-size-lg);
     margin-bottom: 12px;
   }
 
   &__card-description {
-    font-size: 0.85rem;
+    font-size: var(--text-small-size);
     color: var(--color-text-muted);
     line-height: 1.6;
   }

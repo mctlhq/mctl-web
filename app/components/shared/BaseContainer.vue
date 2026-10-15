@@ -19,7 +19,7 @@ const { size = 'lg' } = defineProps<BaseContainerProps>();
   padding: 0 var(--site-gutter, 20px);
 }
 
-@media (min-width: 1400px) {
+@media (min-width: 1440px) {
   .base-container {
     &--size {
       &--md {

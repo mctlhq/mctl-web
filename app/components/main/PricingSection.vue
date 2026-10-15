@@ -112,7 +112,7 @@ const plans = [
     margin-top: 2.5rem;
     text-align: center;
     color: var(--color-text-muted);
-    font-size: 0.95rem;
+    font-size: var(--text-label-size);
   }
 
   &__custom-link {
@@ -122,7 +122,7 @@ const plans = [
     margin-left: 0.5rem;
 
     color: var(--color-accent);
-    font-weight: 500;
+    font-weight: var(--mctl-typography-font-weight-medium);
     transition: gap 0.25s ease;
 
     span { transition: transform 0.25s ease; }

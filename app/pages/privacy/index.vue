@@ -185,15 +185,17 @@ useHead({
 }
 
 .privacy-hero h1 {
-  font-size: clamp(2rem, 5vw, 3rem);
-  font-weight: 700;
+  font-size: var(--text-prose-title-size);
+  font-weight: var(--text-prose-title-weight);
+  line-height: var(--text-prose-title-leading);
+  letter-spacing: var(--text-prose-title-tracking);
   margin: 0.5rem 0;
   color: var(--color-text);
 }
 
 .privacy-hero .subtitle {
   color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-small-size);
   margin-top: 0.5rem;
 }
 
@@ -205,12 +207,13 @@ useHead({
   max-width: 720px;
   margin: 0 auto;
   color: var(--color-text-muted);
-  line-height: 1.75;
+  font-size: var(--text-prose-size);
+  line-height: var(--text-prose-leading);
 }
 
 .privacy-content h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: var(--mctl-typography-font-size-xl);
+  font-weight: var(--mctl-typography-font-weight-semibold);
   color: var(--color-text);
   margin: 2.5rem 0 0.75rem;
   padding-top: 0.5rem;
@@ -218,21 +221,21 @@ useHead({
 }
 
 .privacy-content h3 {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: var(--text-body-size);
+  font-weight: var(--mctl-typography-font-weight-semibold);
   color: var(--color-text);
   margin: 1.5rem 0 0.5rem;
 }
 
 .privacy-content p {
   margin: 0.75rem 0;
-  font-size: 0.9rem;
+  font-size: var(--text-small-size);
 }
 
 .privacy-content ul {
   list-style: disc;
   margin: 0.75rem 0 0.75rem 1.25rem;
-  font-size: 0.9rem;
+  font-size: var(--text-small-size);
 }
 
 .privacy-content li {
@@ -249,7 +252,7 @@ useHead({
 }
 
 .privacy-content code {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.82em;
   background: var(--color-bg-secondary);
   padding: 0.1em 0.35em;

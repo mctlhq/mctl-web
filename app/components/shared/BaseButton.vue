@@ -24,12 +24,12 @@ const { variant = 'primary', size = 'md', block = false } = defineProps<BaseButt
   justify-content: center;
   gap: 8px;
 
-  font-family: inherit;
-  font-size: inherit;
-  font-weight: 500;
+  font-family: var(--font-display);
+  font-size: var(--text-label-size);
+  font-weight: var(--mctl-typography-font-weight-medium);
   color: var(--color-text);
 
-  background-color: var(--color-primary);
+  background-color: var(--control-bg);
   border-width: 1px;
   border-style: solid;
   border-radius: 4px;

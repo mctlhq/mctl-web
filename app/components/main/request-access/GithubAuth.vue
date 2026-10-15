@@ -64,7 +64,7 @@ const { t } = useI18n();
   &__disclaimer {
     margin: 10px 0 20px;
 
-    font-size: 12px;
+    font-size: var(--text-micro-size);
     line-height: 1.5;
     color: var(--color-text-muted);
   }
@@ -99,7 +99,7 @@ const { t } = useI18n();
     strong {
       display: block;
       color: var(--color-text);
-      font-size: 1rem;
+      font-size: var(--text-body-size);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -108,7 +108,7 @@ const { t } = useI18n();
     a {
       display: block;
       color: var(--color-accent);
-      font-size: 0.9rem;
+      font-size: var(--text-small-size);
       text-decoration: none;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -128,7 +128,7 @@ const { t } = useI18n();
     border-radius: 4px;
     cursor: pointer;
     font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
-    font-size: 1.2rem;
+    font-size: var(--mctl-typography-font-size-xl);
     line-height: 1;
     transition: all 0.3s ease;
     flex-shrink: 0;
