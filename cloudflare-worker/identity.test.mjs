@@ -130,9 +130,10 @@ function stubFetch() {
   const calls = { resend: [], telegram: [], backstagePost: [], backstageGet: 0 };
   const fetchStub = async (input, init = {}) => {
     const url = typeof input === 'string' ? input : input.url;
-    if (url.includes('challenges.cloudflare.com')) return Response.json({ success: true });
-    if (url.includes('api.resend.com')) { calls.resend.push(JSON.parse(init.body)); return Response.json({ id: 'x' }); }
-    if (url.includes('api.telegram.org')) { calls.telegram.push(JSON.parse(init.body)); return Response.json({ ok: true }); }
+    const host = new URL(url).hostname;
+    if (host === 'challenges.cloudflare.com') return Response.json({ success: true });
+    if (host === 'api.resend.com') { calls.resend.push(JSON.parse(init.body)); return Response.json({ id: 'x' }); }
+    if (host === 'api.telegram.org') { calls.telegram.push(JSON.parse(init.body)); return Response.json({ ok: true }); }
     if (url.endsWith('/api/tenant-management/tenants') && init.method === 'POST') {
       calls.backstagePost.push(JSON.parse(init.body));
       return Response.json({ workflowName: 'create-tenant-x' }, { status: 202 });
