@@ -132,6 +132,57 @@ Facts this design relies on:
     `force_mfa_local_only`, and the instance policy has `force_mfa = true`, so
     today every GitHub login would be asked for a second factor.
 
+### Worked example: what a new customer gets
+
+GitHub user `github_user` signs in on mctl.ai and asks for
+workspace `acme`:
+
+1. ZITADEL creates account `github_user@mctl.ai` in org `customers`. This is
+   only a login name: **no mailbox is created**, and mail goes to the verified
+   GitHub address.
+2. mctl-api resolves the account to a principal through the numeric GitHub id.
+3. The create-tenant workflow (stage C2) writes `members: [{userId: github_user,
+   principalId: <prn>, role: owner, catalogKey: principal}]` to
+   `tenants/acme/values.yaml`. The tenant chart creates the namespaces `acme` and
+   `acme-preview`. The portal names the catalog user by `principalId`; `userId`
+   is display only.
+4. `github_user` signs in to the portal and connects an MCP client as owner of
+   `acme`. In v1 that is all they get: no Argo CD, Argo Workflows, kubectl,
+   Vault or Grafana access.
+
+Access per resource in v1. Paths are in mctl-gitops `platform-gitops/` at
+`ad93116` unless they name another repo.
+
+| Resource | Granted automatically in v1 | Mechanism and source |
+| --- | --- | --- |
+| ZITADEL account `<login>@mctl.ai` | Yes | Created on first GitHub sign-in (stage B) |
+| Mailbox `<login>@mctl.ai` | No | Not created; forwarding is out of the first release |
+| Portal `app.mctl.ai` | Yes, after C2 and B1b | Catalog user and group membership keyed by `principalId` (`catalogKey: principal`, stage C2) |
+| MCP `api.mctl.ai/mcp` and mctl-api | Yes, after C0 and B1b | `members` matched by `principalId` only; the caller's principal comes from C0 |
+| Namespaces `<ws>`, `<ws>-preview` | Yes (as resources, not as kubectl access) | Tenant chart; preview behind `tenant.preview.enabled`, default `true` (`helm-charts/tenant/values.yaml:122-123`) |
+| ResourceQuota, LimitRange, NetworkPolicies | Yes | `helm-charts/tenant/templates/{resourcequota,limitrange,networkpolicy}.yaml` |
+| Vault paths and ESO store | Yes, for workloads only | Policies and Kubernetes auth roles in `wft-create-tenant.yaml:539-614`; `SecretStore tenant-store` |
+| Vault human login | No | Opt-in `vault: true` per user (`zitadel-iac/iac/vault.tf:79-80`) |
+| Workflow service accounts and RBAC | Yes, for workloads only | `helm-charts/tenant/templates/argo-workflow.yaml` |
+| Argo CD `ops.mctl.ai` | No | Per-tenant CSV `argocd/rbac/tenants/<t>.csv` exists, but the role reaches a user only with `argocd: true` (`zitadel-iac/iac/argocd.tf:94`) |
+| Argo Workflows `workflows.mctl.ai` | No | `sso-team-<t>`, view only, but `sso-team-logs` also allows `secrets: get` in the namespace; opt-in `workflows: true` (`workflows.tf:79`) |
+| kubectl | No | Chart `kubectlAccess.enabled: false` (`values.yaml:149-150`) and per-user `kubectl: true` (`kubernetes.tf:92-93`) |
+| Grafana | No | Admins only (`zitadel-iac/iac/grafana.tf:3-9`) |
+| Databases and applications | No | Tenant creation deploys no workload; separate operations |
+
+The opt-in flags above are read from Vault `secret/platform/zitadel/users/<tenant>`,
+which zitadel-iac uses for tenant orgs. Customer accounts live in org `customers`
+and are not in that path, so none of these flags can reach them in v1. The
+`members` list is read only by the portal and mctl-api; zitadel-iac, the tenant
+chart and Argo CD RBAC never read it.
+
+Starting state, for contrast (legacy, login-keyed, still used by admins and
+existing tenants): the portal keys catalog users by `userId` and reads only
+`userId` and `role` (`mctl-portal plugins/tenant-backend/src/tenantSync.ts:206-211`,
+`catalogEntities.ts:129-155`), and mctl-api matches `members` by GitHub login or
+`principalId` (`mctl-api internal/gitops/reader.go:94-200`). Customer accounts
+must never be matched by login; that is what stages C0 and C2 change.
+
 ## 5. Stages
 
 ### Stage A: website only (done)
@@ -336,11 +387,49 @@ and not an existing tenant user.
 - **D1.** Login and message texts for the `customers` org in the site's tone.
   Confirm in practice that auto-creation with a verified email sends no mail, and
   attach samples of any email that does go out.
+- **D2. Two customer emails and a portal access page.** Today
+  `renderWelcomeEmail` in `cloudflare-worker/index.js` goes out when the request
+  is accepted, before the workspace exists, and lists no resources. Split it:
+  - "Request accepted", sent by the Worker on submit: what was asked for, that
+    provisioning has started, a contact link.
+  - "Workspace ready": account `<login>@mctl.ai`, role, portal link, MCP
+    endpoint, environments, and only the access that was actually granted. Text
+    is built from the verified state, never from a fixed list.
+  - Readiness is a separate check, not the create-tenant workflow's last step.
+    That step only waits for the tenant app to be Synced/Healthy, which proves
+    neither that the portal has synced the catalog nor that the person can sign
+    in. Before sending, confirm: the tenant infrastructure; the membership as the
+    portal and mctl-api see it for this principal; and each capability the email
+    will list. A failed or partial check is unknown, never ready: no email is
+    sent and the check retries.
+  - Email delivery is decoupled from provisioning: a failed send never marks the
+    workspace failed, and resending is idempotent (one "ready" email per tenant
+    and principal, keyed so a retry cannot send a duplicate).
+  - A portal page Workspace → Access reads the same source. The email is a
+    snapshot of verified access at send time; the page shows the current state.
+    After a revocation the old email stays as it was, so it says "as of <date>"
+    and points to the Access page for the current list.
 
 ### Out of the first release
 
-- Argo CD, Argo Workflows and kubectl grants for self-service owners. These need
-  revocation and tenant-deletion handling first.
+- **Stage E: access grants and revocation** for self-service members, after the
+  public flip:
+  - Argo CD: view own apps and logs, sync, restart (the existing per-tenant CSV).
+  - Argo Workflows: view only; no creation from the UI. Drop `secrets: get` from
+    the role a customer would get, or give customers a separate role without it.
+  - kubectl: only on explicit grant, never namespace admin.
+  - Grants are keyed by principal, not by login, and come from one source that
+    the portal Access page also reads.
+  - Removing a member, disabling the account or deleting the tenant revokes
+    every grant. The stage defines a maximum revocation time per surface and
+    proves it, because a refused new sign-in is not enough. For each kind of
+    revocation the test holds sessions and credentials opened before it: an Argo
+    CD session, an Argo Workflows session, a previously issued kubectl token,
+    portal and MCP sessions. Each must lose access within the stated bound. The
+    check is accepted only when proven both ways: access present after a grant,
+    absent within the bound after each revocation.
+  - The customer Workflows role is reviewed as a whole for any read of Secrets,
+    not only the `secrets: get` in `sso-team-logs`.
 - Forwarding `<login>@mctl.ai` as a real mailbox.
 - Passkeys or other local sign-in for customer accounts.
 - Moving existing login-keyed users to principal-keyed catalog entities.
