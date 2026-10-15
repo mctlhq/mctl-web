@@ -150,7 +150,7 @@ test('callback success: a leftover docs flow cookie gets identity on the landing
     const u = typeof input === 'string' ? input : input.url;
     if (u.endsWith('/login/oauth/access_token')) return Response.json({ access_token: ghToken });
     if (u.endsWith('/user/emails')) return Response.json([{ email: 'octo@example.com', primary: true, verified: true }]);
-    if (u.endsWith('/user')) return Response.json({ login: 'octocat', name: 'Octo', avatar_url: '', html_url: '' });
+    if (u.endsWith('/user')) return Response.json({ id: 583231, login: 'octocat', name: 'Octo', avatar_url: '', html_url: '' });
     throw new Error(`unexpected fetch ${u}`);
   };
   try {

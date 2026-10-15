@@ -10,7 +10,8 @@
  * - TELEGRAM_CHAT_ID: Telegram chat ID
  * - GITHUB_CLIENT_ID: GitHub OAuth App client ID
  * - GITHUB_CLIENT_SECRET: GitHub OAuth App client secret
- * - GITHUB_OAUTH_HMAC_KEY: random 32+ char string for signing auth data
+ * - GITHUB_OAUTH_HMAC_KEY: random 32+ char string for signing auth data (state
+ *     cookie and the v2 identity, see signIdentity)
  * - BACKSTAGE_LANDING_TOKEN: Shared secret for signing landing-page JWT tokens (HMAC-SHA256).
  *     Must match the BACKSTAGE_LANDING_TOKEN env var in the Backstage pod.
  * - RESEND_API_KEY: Resend.com API key for sending welcome emails
@@ -363,6 +364,89 @@ export async function hmacVerify(data, signature, secret) {
   return timingSafeEqualBytes(expectedBytes, providedBytes);
 }
 
+// ─── Signed GitHub identity (v2, mctl-web#133) ───────────────────────────────
+//
+// After GitHub sign-in the browser holds an identity object and sends it back
+// in `github_auth` on /api/github/check-team and /api/submit. Until #133 the
+// HMAC covered only `login` and never expired, so `email` and `name` were
+// whatever the request body said (the welcome email went to that address) and
+// a leaked {login, sig} pair worked forever.
+//
+// v2 signs every field the Worker acts on, plus an expiry, and the handlers
+// use only the signed values. Display-only fields (avatar_url, html_url) ride
+// along unsigned and are never trusted: html_url is rebuilt from the login.
+// The canonical form is a JSON array in fixed order, so field boundaries are
+// unambiguous and the encoding is deterministic.
+// Not exported: the Workers runtime treats every named export of the main
+// module as an entrypoint and refuses to start on a non-function one.
+const IDENTITY_VERSION = 2;
+const IDENTITY_TTL_SECONDS = 8 * 60 * 60;
+const IDENTITY_DOMAIN = 'mctl-web:github-identity:v2';
+const GITHUB_LOGIN_RE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
+
+function identityCanonical({ github_id, login, email, name, exp }) {
+  return JSON.stringify([IDENTITY_DOMAIN, github_id, login, email, name, exp]);
+}
+
+export async function signIdentity({ github_id, login, email, name, avatar_url = '' }, secret, nowSeconds) {
+  const exp = nowSeconds + IDENTITY_TTL_SECONDS;
+  const signed = { github_id, login, email, name, exp };
+  return {
+    v: IDENTITY_VERSION,
+    ...signed,
+    avatar_url,
+    html_url: `https://github.com/${login}`,
+    sig: await hmacSign(identityCanonical(signed), secret),
+  };
+}
+
+// Result codes, sent to the client in the 401 body where noted:
+// - missing:      no github_auth, or no login/sig at all (401, no code)
+// - auth_format:  anything but a well-formed v2 object, including every v1
+//                 blob (401, code) — the client clears it and asks for a new
+//                 sign-in
+// - auth_invalid: a well-formed v2 object whose signature does not verify
+// - auth_expired: a valid signature past `exp` (401, code)
+// Signature is checked before expiry, so an unsigned `exp` cannot steer the
+// answer.
+export async function verifyIdentity(raw, secret, nowSeconds) {
+  if (
+    !raw || typeof raw !== 'object' || Array.isArray(raw) ||
+    typeof raw.login !== 'string' || !raw.login ||
+    typeof raw.sig !== 'string' || !raw.sig
+  ) {
+    return { ok: false, reason: 'missing' };
+  }
+  const { v, github_id, login, email, name, exp, sig } = raw;
+  const wellFormed =
+    v === IDENTITY_VERSION &&
+    Number.isSafeInteger(github_id) && github_id > 0 &&
+    GITHUB_LOGIN_RE.test(login) &&
+    typeof email === 'string' && email.includes('@') &&
+    typeof name === 'string' &&
+    Number.isSafeInteger(exp);
+  if (!wellFormed) {
+    return { ok: false, reason: 'auth_format' };
+  }
+  const signed = { github_id, login, email, name, exp };
+  if (!await hmacVerify(identityCanonical(signed), sig, secret)) {
+    return { ok: false, reason: 'auth_invalid' };
+  }
+  if (exp <= nowSeconds) {
+    return { ok: false, reason: 'auth_expired' };
+  }
+  return { ok: true, identity: signed };
+}
+
+// base64url over the UTF-8 bytes. btoa() alone throws on any character above
+// U+00FF, so a GitHub display name in Cyrillic or CJK used to fail sign-in.
+export function encodeIdentity(identity) {
+  const bytes = new TextEncoder().encode(JSON.stringify(identity));
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 // ─── GitHub OAuth: Login ─────────────────────────────────────────────────────
 
 async function handleGitHubLogin(env, url, origin) {
@@ -455,28 +539,40 @@ async function handleGitHubCallback(url, request, env) {
     return redirectWithError('PROFILE_FETCH', baseUrl);
   }
 
-  const primaryEmail = emails.find(e => e.primary && e.verified);
-  const email = primaryEmail ? primaryEmail.email : (user.email || '');
+  if (
+    !user || typeof user !== 'object' ||
+    !Number.isSafeInteger(user.id) || user.id <= 0 ||
+    typeof user.login !== 'string' || !GITHUB_LOGIN_RE.test(user.login) ||
+    !Array.isArray(emails)
+  ) {
+    return redirectWithError('PROFILE_FETCH', baseUrl);
+  }
+
+  // Only the primary address GitHub reports as verified. The public profile
+  // email (`user.email`) is whatever the person typed into their profile and
+  // GitHub does not verify it, so it is never a fallback: with no verified
+  // primary address, sign-in stops and the page says how to fix it.
+  const primaryEmail = emails.find(e => e && e.primary === true && e.verified === true &&
+      typeof e.email === 'string' && e.email.includes('@'));
+  if (!primaryEmail) {
+    return redirectWithError('EMAIL_UNVERIFIED', baseUrl);
+  }
 
   const clearState = '__gh_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
   const clearOrigin = '__gh_origin=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
 
-  const sig = await hmacSign(user.login, env.GITHUB_OAUTH_HMAC_KEY);
-
   // Identity only (no access_token). Delivered in the URL fragment so it
   // never reaches server logs or Referer headers. Query-string ?auth= is
   // intentionally not used.
-  const userData = {
+  const userData = await signIdentity({
+    github_id: user.id,
     login: user.login,
-    name: user.name || '',
-    email,
-    avatar_url: user.avatar_url || '',
-    html_url: user.html_url || '',
-    sig,
-  };
+    email: primaryEmail.email,
+    name: typeof user.name === 'string' ? user.name : '',
+    avatar_url: typeof user.avatar_url === 'string' ? user.avatar_url : '',
+  }, env.GITHUB_OAUTH_HMAC_KEY, Math.floor(Date.now() / 1000));
 
-  const encoded = btoa(JSON.stringify(userData))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const encoded = encodeIdentity(userData);
 
   const headers = redirectHeaders();
   headers.set('Location', landingSuccessLocation(baseUrl, encoded));
@@ -506,14 +602,14 @@ function parseCookies(cookieHeader) {
 // ─── Check Team Availability ─────────────────────────────────────────────────
 // Checks Backstage tenant API — the single source of truth for provisioned tenants.
 //
-// Identity-gated: POST { name, github_auth: { login, sig } }, verified the same
-// way handleFormSubmit verifies github_auth. A verified caller gets today's
-// truthful available:true/false answer. Anyone else — missing github_auth,
-// malformed github_auth, or a signature that fails hmacVerify — gets a single
-// fixed 401 body, byte-identical regardless of the queried name, so anonymous
-// tenant-name enumeration is no longer possible. Credentials must never travel
-// in the query string (sig is an unbounded bearer — see hmacSign/hmacVerify
-// comments) — only the POST body is read here.
+// Identity-gated: POST { name, github_auth }, where github_auth is the signed
+// v2 identity, verified by verifyIdentity exactly as handleFormSubmit does.
+// A verified caller gets today's truthful available:true/false answer.
+// Anyone else — missing, malformed, stale or wrongly signed github_auth —
+// gets a single fixed 401 body, byte-identical regardless of the queried
+// name, so anonymous tenant-name enumeration is not possible. Credentials
+// must never travel in the query string (sig is a bearer credential) — only
+// the POST body is read here.
 
 // No `available` field: it is the same key a verified caller gets for a
 // *taken* name, so echoing it here tells an unauthenticated client
@@ -522,8 +618,14 @@ function parseCookies(cookieHeader) {
 // not pretend otherwise.
 const CHECK_TEAM_UNAUTHORIZED_BODY = { error: 'GitHub authentication required' };
 
-function checkTeamUnauthorized(origin) {
-  return jsonResponse(CHECK_TEAM_UNAUTHORIZED_BODY, 401, {}, origin);
+// `code` is added only for auth_format / auth_expired, which depend on the
+// identity sent and never on the queried name, so the body stays identical
+// for every name.
+function checkTeamUnauthorized(origin, reason) {
+  const body = reason === 'auth_format' || reason === 'auth_expired'
+    ? { ...CHECK_TEAM_UNAUTHORIZED_BODY, code: reason }
+    : CHECK_TEAM_UNAUTHORIZED_BODY;
+  return jsonResponse(body, 401, {}, origin);
 }
 
 export async function handleCheckTeam(request, env, origin) {
@@ -541,22 +643,10 @@ export async function handleCheckTeam(request, env, origin) {
     body = {};
   }
 
-  const githubAuth = body.github_auth;
-  const hasAuthShape =
-    githubAuth &&
-    typeof githubAuth === 'object' &&
-    typeof githubAuth.login === 'string' &&
-    githubAuth.login &&
-    typeof githubAuth.sig === 'string' &&
-    githubAuth.sig;
-
-  if (!hasAuthShape) {
-    return checkTeamUnauthorized(origin);
-  }
-
-  const validSig = await hmacVerify(githubAuth.login, githubAuth.sig, env.GITHUB_OAUTH_HMAC_KEY);
-  if (!validSig) {
-    return checkTeamUnauthorized(origin);
+  const auth = await verifyIdentity(
+    body.github_auth, env.GITHUB_OAUTH_HMAC_KEY, Math.floor(Date.now() / 1000));
+  if (!auth.ok) {
+    return checkTeamUnauthorized(origin, auth.reason);
   }
 
   // ── Verified caller: today's truthful answer ─────────────────────────────
@@ -630,17 +720,27 @@ export async function handleFormSubmit(request, env, origin) {
     const data = await request.json();
     const { github_auth, team, usecase, turnstile_token } = data;
 
-    // ── Validate GitHub auth (HMAC signature) ───────────────────────────────
-    if (!github_auth || !github_auth.login || !github_auth.sig) {
+    // ── Validate GitHub auth (signed v2 identity) ───────────────────────────
+    // Everything below uses only the signed fields; name/email/html_url in
+    // the request body are ignored.
+    const auth = await verifyIdentity(
+      github_auth, env.GITHUB_OAUTH_HMAC_KEY, Math.floor(Date.now() / 1000));
+    if (!auth.ok) {
+      if (auth.reason === 'auth_invalid') {
+        return jsonResponse({ success: false, message: 'Invalid authentication signature' }, 403, {}, origin);
+      }
+      if (auth.reason === 'auth_format' || auth.reason === 'auth_expired') {
+        return jsonResponse({
+          success: false,
+          code: auth.reason,
+          message: 'Your sign-in has expired. Sign in with GitHub again.',
+        }, 401, {}, origin);
+      }
       return jsonResponse({ success: false, message: 'GitHub authentication required' }, 401, {}, origin);
     }
 
-    const validSig = await hmacVerify(github_auth.login, github_auth.sig, env.GITHUB_OAUTH_HMAC_KEY);
-    if (!validSig) {
-      return jsonResponse({ success: false, message: 'Invalid authentication signature' }, 403, {}, origin);
-    }
-
-    const { login, name, email, html_url } = github_auth;
+    const { login, name, email } = auth.identity;
+    const html_url = `https://github.com/${login}`;
 
     if (!team) {
       return jsonResponse({ success: false, message: 'Missing team name' }, 400, {}, origin);

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { handleFormSubmit, hmacSign, renderWelcomeEmail } from './index.js';
+import { handleFormSubmit, renderWelcomeEmail, signIdentity } from './index.js';
 
 const HMAC_KEY = 'test-hmac-key-for-welcome-email-tests';
 
@@ -65,12 +65,14 @@ function createFetchStub({ resend = 'ok', telegram = 'ok', backstageCreateStatus
 
 async function submit(stubOptions, envOverrides = {}, authOverrides = {}) {
   const login = 'octocat';
+  // authOverrides are applied after signing, i.e. they model a body that
+  // differs from what the Worker signed.
   const github_auth = {
-    login,
-    name: 'Octo <Cat>',
-    email: 'octocat@example.com',
-    html_url: `https://github.com/${login}`,
-    sig: await hmacSign(login, HMAC_KEY),
+    ...(await signIdentity(
+      { github_id: 583231, login, name: 'Octo <Cat>', email: 'octocat@example.com' },
+      HMAC_KEY,
+      Math.floor(Date.now() / 1000),
+    )),
     ...authOverrides,
   };
   const { fetchStub, calls } = createFetchStub(stubOptions);
@@ -193,10 +195,10 @@ test('submit: no RESEND_API_KEY -> emailStatus skipped, Resend not called', asyn
   assert.equal(calls.resend.length, 0);
 });
 
-test('submit: no email on the GitHub profile -> emailStatus skipped', async () => {
-  const { body, calls } = await submit({}, {}, { email: '' });
-  assert.equal(body.success, true);
-  assert.equal(body.emailStatus, 'skipped');
+test('submit: an identity without an email is refused before any mail or workflow', async () => {
+  const { res, body, calls } = await submit({}, {}, { email: '' });
+  assert.equal(res.status, 401);
+  assert.equal(body.code, 'auth_format');
   assert.equal(calls.resend.length, 0);
 });
 
