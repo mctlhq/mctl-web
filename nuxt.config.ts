@@ -35,11 +35,11 @@ export default defineNuxtConfig({
         { rel: 'preconnect', href: 'https://ui.mctl.ai' },
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap',
+          href: 'https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap',
         },
         // Pinned: the unversioned URL is a moving target, so a design-system
         // release could restyle the site without a change here. Bump on purpose.
-        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.5.0/mctl.css' },
+        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.6.0/mctl.css' },
       ],
     },
   },

@@ -31,10 +31,10 @@
   // Elevation is shadow-light; hover lifts on a hairline + a quiet drop, no glow.
   --shadow-card-hover: 0 16px 48px rgba(0, 0, 0, 0.48);
 
-  --container-width: 1400px;
+  --container-width: var(--site-content-width, 1400px);
   --container-width-md: 1200px;
   --section-py: clamp(5rem, 6vw, 8rem);
-  --header-height: 80px;
+  --header-height: var(--site-header-height, 80px);
 }
 
 * {

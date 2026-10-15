@@ -7,15 +7,17 @@
 
 <style lang="scss" scoped>
 .logo-default {
-  display: inline-block;
-  font-size: 24px;
-  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  font-size: var(--site-wordmark-size, 24px);
+  font-weight: var(--site-wordmark-weight, 800);
   color: var(--color-text);
-  letter-spacing: 2px;
+  letter-spacing: var(--site-wordmark-tracking, 2px);
 
   &__accent {
     color: var(--color-accent);
-    margin-right: 2px;
+    margin-right: var(--site-wordmark-accent-gap, 2px);
   }
 }
 </style>

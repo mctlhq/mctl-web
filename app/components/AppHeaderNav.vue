@@ -63,8 +63,8 @@ const pageLinks = computed(() => [
   &__link {
     text-decoration: none;
     color: var(--color-text-muted);
-    font-size: 0.95rem;
-    font-weight: 500;
+    font-size: var(--site-nav-size, 0.95rem);
+    font-weight: var(--site-nav-weight, 500);
     transition: color 0.3s ease;
 
     &:hover {

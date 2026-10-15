@@ -16,7 +16,7 @@ const { size = 'lg' } = defineProps<BaseContainerProps>();
 .base-container {
   width: 100%;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 var(--site-gutter, 20px);
 }
 
 @media (min-width: 1400px) {
@@ -32,7 +32,7 @@ const { size = 'lg' } = defineProps<BaseContainerProps>();
       }
       &--wide {
         width: 100%;
-        padding: 0 20px;
+        padding: 0 var(--site-gutter, 20px);
       }
     }
   }
