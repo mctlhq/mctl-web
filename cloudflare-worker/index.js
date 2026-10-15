@@ -552,7 +552,8 @@ async function handleGitHubCallback(url, request, env) {
   // email (`user.email`) is whatever the person typed into their profile and
   // GitHub does not verify it, so it is never a fallback: with no verified
   // primary address, sign-in stops and the page says how to fix it.
-  const primaryEmail = emails.find(e => e && e.primary === true && e.verified === true && typeof e.email === 'string');
+  const primaryEmail = emails.find(e => e && e.primary === true && e.verified === true &&
+      typeof e.email === 'string' && e.email.includes('@'));
   if (!primaryEmail) {
     return redirectWithError('EMAIL_UNVERIFIED', baseUrl);
   }
@@ -602,13 +603,13 @@ function parseCookies(cookieHeader) {
 // Checks Backstage tenant API — the single source of truth for provisioned tenants.
 //
 // Identity-gated: POST { name, github_auth }, where github_auth is the signed
-// v2 identity, verified by verifyIdentity exactly as handleFormSubmit does. A verified caller gets today's
-// truthful available:true/false answer. Anyone else — missing github_auth,
-// malformed github_auth, or a signature that fails hmacVerify — gets a single
-// fixed 401 body, byte-identical regardless of the queried name, so anonymous
-// tenant-name enumeration is no longer possible. Credentials must never travel
-// in the query string (sig is an unbounded bearer — see hmacSign/hmacVerify
-// comments) — only the POST body is read here.
+// v2 identity, verified by verifyIdentity exactly as handleFormSubmit does.
+// A verified caller gets today's truthful available:true/false answer.
+// Anyone else — missing, malformed, stale or wrongly signed github_auth —
+// gets a single fixed 401 body, byte-identical regardless of the queried
+// name, so anonymous tenant-name enumeration is not possible. Credentials
+// must never travel in the query string (sig is a bearer credential) — only
+// the POST body is read here.
 
 // No `available` field: it is the same key a verified caller gets for a
 // *taken* name, so echoing it here tells an unauthenticated client

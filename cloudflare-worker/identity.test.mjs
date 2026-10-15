@@ -287,6 +287,8 @@ test('callback: never falls back to the public profile email', async () => {
     [],
     [{ email: 'octo@example.com', primary: true, verified: false }],
     [{ email: 'octo@example.com', primary: false, verified: true }],
+    // Signed but unverifiable later: would lock the person into auth_format.
+    [{ email: '', primary: true, verified: true }],
   ]) {
     const loc = await callback(GH_USER, emails);
     assert.equal(loc, 'https://mctl.ai/#auth_error=EMAIL_UNVERIFIED', JSON.stringify(emails));
