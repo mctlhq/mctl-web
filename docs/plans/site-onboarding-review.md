@@ -3,7 +3,8 @@
 Status: stage A done and released in mctl-web 7.6.0 (2026-10-14). The B0 spike
 ran on 2026-10-15 (results table in stage B); B1 is preliminary and not started;
 stages C and D are an agreed design, not yet scheduled.
-Reviewed: 2026-10-14; B0 results added 2026-10-15.
+Reviewed: 2026-10-14; B0 and phase 0 (local hook validation) results added
+2026-10-15.
 
 This is the canonical review of the path from mctl.ai to a working workspace. It
 covers the website copy, the forms, the welcome email, and how a new person gets
@@ -405,6 +406,42 @@ because v1 is removed in v5.
         carries a `mctl:github_id` other than the one bound to the account, or
         lacks a refusal the account should carry.
 - **B1b.** Grant the `customers` org access to the portal and mctl-api projects.
+
+#### Phase 0 results (local hook validation 2026-10-15)
+
+The released mctl-api 4.89.0 identity hook was checked against a native local
+ZITADEL v4.19.2 with Login V2. Production was not touched. The setup mirrors
+gitops#1898 `customers.tf`: org `customers` with the `mctl.ai` domain, the GitHub
+IdP, the restated login policy (`allow_register=false`), a listed web client and
+a second, unlisted client, and the three signed targets. The executions were the
+same as in #1898: a response execution on `RetrieveIdentityProviderIntent`, the
+15 request executions from `docs/zitadel-identity-hook.md` (mctl-api), and the
+`preuserinfo`/`preaccesstoken` functions. The two creation targets have
+`interruptOnError=true` and the token target has `false`. The target signing keys
+were fed into the mctl-api config.
+
+The local instance copies production's credentials. Login V2 authenticates as
+the System API user `login-client` with a JWT key. The automation runs as the
+System API user `iac` (`IAM_OWNER` + `ORG_OWNER`), the shape
+`zitadel-iac` uses. An org-level machine user with a PAT was checked as well.
+
+The local run differs from production in four ways:
+- the GitHub IdP is the GitHub Enterprise type pointed at a mock GitHub, which
+  uses the same provider code as github.com;
+- the hook's GitHub API base URL was overridden through a local-only patch that
+  was never committed;
+- `HTTPClient.DenyList` was emptied so the targets could be on loopback;
+- the OIDC clients ran in dev mode on `http://localhost`.
+
+| Check | Observed | Evidence | Decision |
+|---|---|---|---|
+| 1. Payload format | **Pass, no parser change.** The hook parsed every real payload with no `*_unparsable` reason. Request and response executions send `fullMethod`, `instanceID`, `userID`, `request`, `response` (intent only) and `headers`. `orgID` is present only when the caller belongs to an org: a System API user call (`iac`, `login-client`) has none. Proto bodies are camelCase protojson (`idpIntentId`, `organizationId`, `idpLinks`, `isVerified`), and metadata values are base64. The intent response carries `idpInformation.{idpId, userId, userName, oauth.accessToken, rawInformation}` plus Login V2's own prefilled `addHumanUser` and `createUser`, whose username is the bare GitHub login. Login V2 auto-creation then sent `CreateUser` exactly as the hook built it: organization, `<login>@mctl.ai`, profile, verified email, one IdP link, and `github_id`/`github_login` metadata. A repeat sign-in sent `UpdateUser` with profile, email and `metadata: [github_login]`. Function payloads are snake_case and shaped differently: `function` (`function/preuserinfo`, `function/preaccesstoken`), `userinfo`, `user` (`resource_owner`, `human.first_name`, ...), `user_metadata` (base64 values), `org{id,name,primary_domain}` and `application{client_id}`. They carry no IdP links. | A logging proxy in front of mctl-api captured every request; samples were kept redacted. Hook log reasons: `intent_create`, `intent_update`, `gate_customer_create`, `gate_metadata_login_client`, `token_claims`, `token_client_not_listed`, `token_other_org`. | Phase 2 uses mctl-api 4.89.0 as released. A reader of these payloads must not assume `orgID` is present. |
+| 2. Login V2 caller id | **The gate sees the literal string `login-client`.** That is the System API user's name, not a numeric id: `userID: "login-client"` on `RetrieveIdentityProviderIntent`, `CreateUser` and `UpdateUser`. `iac` likewise appears as `userID: "iac"`. An org machine user appears by its numeric id. Mutation check: with `ZITADEL_HOOK_LOGIN_CLIENT_USER_ID` set to a numeric user id, a new sign-in was refused with `gate_caller_not_login_client:login-client` (`user_creation_failed`). Back on `login-client`, the same persona was created. | Captured payloads; hook log reasons from both runs. | `ZITADEL_HOOK_LOGIN_CLIENT_USER_ID=login-client`, the literal. It must equal the System API user name in the chart's `SystemAPIUsers`. Production has no user object to look up: a `ListUsers` username query finds nothing, because a System API user is not a ZITADEL user. Whoever renames the system user or moves Login V2 to a PAT machine user must change this value at the same time. |
+| 3. Admin pass-through on the 15 gated methods | **Pass.** Calls against the admin org passed the hook, made both as `iac` and as an org machine user with a PAT: v2 `CreateUser`, v2 and v2beta `AddHumanUser`, v1 `AddHumanUser`, `ImportHumanUser` and `AddMachineUser`, v1 `SetUserMetadata` and `BulkSetUserMetadata` and v2 `SetUserMetadata` writing `github_login` as zitadel-iac does, and v2 `UpdateUser`. Admin `ImportData`, v3alpha `CreateUser`, and v2 and v2beta `AddIDPLink` with another IdP also passed the hook; ZITADEL then rejected the minimal test bodies on validation, and no successful import was attempted. `github_id` written on an admin-org user was refused (403), as designed. | 22 API calls with the hook decision per call; `gate_other_org`, `gate_github_id_immutable`. | Nothing blocks zitadel-iac. `github_id` must never be written by automation in any org. |
+| 4. Customer sign-in and refusals | **Pass.** A new GitHub sign-in through the listed client created `<login>@mctl.ai` in `customers` with no form. The account got a verified email, one IdP link, and `github_id` and `github_login` metadata. The ID and access tokens both carried `mctl:org`, `mctl:idp`, `mctl:github_id` and `mctl:github_login`. The unlisted client got tokens with no `mctl:*` claim (`token_client_not_listed`). A persona with no display name was created with the login as its name. After a GitHub rename the user kept its subject, `github_id` and username, and `github_login` was updated. Refusals, with no user created in any of them: no verified email and public-only email (412, `intent_no_verified_email`); a login in `ADMIN_USERS` and a tenant name from gitops (403, `intent_login_reserved`); an Organization-type account (403, `intent_not_a_user`). Also refused (403): v2 `AddHumanUser` into customers as `login-client` (the form path), also by `orgDomain`; v1 `ImportHumanUser` into customers; admin `ImportData` into customers; v2 `CreateUser` into customers by `iac`, and by `login-client` with no IdP link; `AddIDPLink` with the customers IdP on a customer or an admin user; `github_id` written by `iac` or by `login-client` (`SetUserMetadata`, `UpdateUser`); and `github_login` written on a customer user through v1 with the customers org context. The person sees only Login V2's generic "Login failed" page; the hook's text is in the `error` query parameter, as in B0. | Playwright runs of Login V2; the customers user listing with metadata and links; API responses `EXEC-reUaUZCzCp`. | The behaviour matches B1 shape items 1 to 3. As `docs/zitadel-identity-hook.md` states, an instance admin can still rewrite a customer's `github_login` with v2 `SetUserMetadata`, or with v1 without the org context, because the request does not name customers. This was reproduced. `mctl:github_login` stays display-only; access is decided on `mctl:github_id`. |
+| 5. Hook down | **Pass.** mctl-api was stopped and the target answered 502. The admin password sign-in completed and issued tokens, and the admin refresh token and a customer refresh token both refreshed (200), all without `mctl:*` claims. Gated methods failed closed: v2 `AddHumanUser` in the admin org returned `Execution failed (EXEC-dra6yamk98)`. A customer GitHub sign-in stopped on the failure page, with no user created. | Playwright and refresh runs; capture log `upstreamError`. | The non-interrupting token function is correct. Admin user management through the 15 methods depends on the hook being up; this is the documented trade-off. |
+| 6. Phase 1 safety (IdP, policy, no executions) | **Only `is_creation_allowed=false` is safe.** With creation off, a GitHub sign-in ends on "Account Not Found" and no user is created. With creation on (auto-creation off, or on), Login V2 goes to its "Complete your data" form, because the GitHub mapping has no given or family name. On submit, Login V2 refuses with `registerNotAllowed` (`allow_register=false`), and no user was created. That refusal comes from a Login V2 form check plus a profile-mapping detail, not from ZITADEL's API: without the hook, nothing stops a creation request at the API. | Playwright runs on all three settings; user counts in customers after each. | Phase 1 uses `is_creation_allowed=false` and `is_auto_creation=false` (as the split gitops#1898 does). Both flip to `true` only in the same change that adds the executions. |
+| Teardown | All processes stopped (ZITADEL, Login V2, proxy, mock GitHub, capture proxy, mctl-api, Postgres). Data directory, binaries, logs, screenshots, keys, PATs and the master key deleted. The mctl-api worktree was removed. No listening ports were left. No GitHub OAuth app, Vault secret or cluster resource was created. | `lsof` shows no listener on the ports used. | — |
 
 ### Stage C: principals, portal, website session
 
