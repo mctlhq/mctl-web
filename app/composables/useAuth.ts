@@ -1,53 +1,49 @@
 import { computed } from 'vue'
 import { useStorage } from '@vueuse/core'
 import type { GitHubUser } from '@/types'
+import {
+  decodeAuthFragment,
+  isExpired,
+  isIdentity,
+  makeStored,
+  readStored,
+  type AuthIdentity,
+} from '~/lib/authBlob'
 
 const AUTH_KEY = 'mctl_auth'
-const AUTH_TTL = 8 * 60 * 60 * 1000
 
 export function useAuth() {
-  // SSR-safe state
-  const user = useState<GitHubUser | null>('auth_user', () => null)
+  // SSR-safe state. `user` holds the identity exactly as the Worker issued it;
+  // see app/lib/authBlob.ts for why the client never rebuilds its fields.
+  const user = useState<AuthIdentity | null>('auth_user', () => null)
   const errorCode = useState<string | null>('auth_error', () => null)
 
-  const stored = useStorage<(GitHubUser & { exp: number }) | null>(
-    AUTH_KEY,
-    null
-  )
+  const stored = useStorage<unknown>(AUTH_KEY, null)
 
   const isAuth = computed(() => !!user.value?.login)
 
-  const authData = computed(() => {
-    if (!user.value) return null;
+  // Sent unchanged in `github_auth` to /api/submit and /api/github/check-team.
+  const authData = computed(() => user.value)
 
-    return {
-      login: user.value.login,
-      name: user.value.name || user.value.login,
-      email: user.value.email || '',
-      avatar_url: user.value.avatar_url,
-      html_url: user.value.html_url,
-      sig: user.value.sig,
-    };
-  });
+  // Display-only view for the signed-in badge; never sent anywhere.
+  const profile = computed(() => user.value as unknown as GitHubUser | null)
 
-  function setUser(u: GitHubUser) {
-    user.value = u
-    stored.value = {
-      ...u,
-      exp: Date.now() + AUTH_TTL,
-    }
+  function setUser(identity: AuthIdentity) {
+    user.value = identity
+    stored.value = makeStored(identity, Date.now())
     errorCode.value = null
   }
 
   function restore() {
-    if (!stored.value) return
-
-    if (Date.now() > stored.value.exp) {
+    const current = readStored(stored.value)
+    if (!current || isExpired(current, Date.now())) {
       stored.value = null
       return
     }
 
-    user.value = stored.value
+    // Persist the converted shape so a pre-#133 entry is read only once.
+    stored.value = current
+    user.value = current.identity
   }
 
   function logout() {
@@ -76,8 +72,8 @@ export function useAuth() {
     if (!auth) return {}
 
     try {
-      const json = atob(auth.replace(/-/g, '+').replace(/_/g, '/'))
-      const parsed = JSON.parse(json) as GitHubUser
+      const parsed = decodeAuthFragment(auth)
+      if (!isIdentity(parsed)) throw new Error('identity without login or sig')
 
       setUser(parsed)
     } catch (e) {
@@ -118,6 +114,7 @@ export function useAuth() {
 
   return {
     user,
+    profile,
     isAuth,
     authData,
     errorCode,
