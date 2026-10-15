@@ -58,7 +58,7 @@ test('malformed storage reads as no identity', () => {
 test('only auth_expired and auth_format reset the sign-in', () => {
   assert.equal(isAuthResetCode('auth_expired'), true)
   assert.equal(isAuthResetCode('auth_format'), true)
-  for (const code of [undefined, null, '', 'unauthorized', 'AUTH_EXPIRED', 401]) {
+  for (const code of [undefined, null, '', 'unauthorized', 'auth_invalid', 'AUTH_EXPIRED', 401]) {
     assert.equal(isAuthResetCode(code), false, String(code))
   }
 })
