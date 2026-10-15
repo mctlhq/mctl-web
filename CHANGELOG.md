@@ -1,5 +1,20 @@
 # Changelog
 
+## [7.6.2](https://github.com/mctlhq/mctl-web/compare/7.6.1...7.6.2) (2026-10-15)
+
+
+### Bug Fixes
+
+* **worker:** refuse a primary verified email without an @ at sign-in ([6ef3113](https://github.com/mctlhq/mctl-web/commit/6ef3113358bc878c46b17e4e2d4afa933b1a7d36))
+* **worker:** sign the whole GitHub identity and expire it ([a5749d4](https://github.com/mctlhq/mctl-web/commit/a5749d45e179473f9c924bb1d2c93e8a74b0ae12))
+
+
+### Documentation
+
+* **plan:** customer access scope, ready email and grants stage ([1c6e0bd](https://github.com/mctlhq/mctl-web/commit/1c6e0bd3a33dc0d9cf4b31a9935bacd08ae58e8a))
+* **plan:** customer access scope, ready email and grants stage ([ade4773](https://github.com/mctlhq/mctl-web/commit/ade477360c5886bfc1aaf14b5b525f845f1c42c5))
+* **plan:** principal-keyed example, readiness check, revocation bound ([653710c](https://github.com/mctlhq/mctl-web/commit/653710cb9d04bd1107c44f62f65f425e149be92d))
+
 ## [7.6.1](https://github.com/mctlhq/mctl-web/compare/7.6.0...7.6.1) (2026-10-15)
 
 
