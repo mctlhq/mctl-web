@@ -50,7 +50,7 @@ async function goToContact() {
 
   p {
     margin: 0 0 1rem;
-    font-size: var(--text-label-size);
+    font-size: var(--text-label-size, 15.2px);
     line-height: 1.5;
     color: var(--color-text);
   }

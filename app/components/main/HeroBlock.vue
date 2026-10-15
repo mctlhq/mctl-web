@@ -74,7 +74,7 @@ const { t } = useI18n()
   text-align: center;
 
   h1 {
-    font-size: var(--text-hero-size);
+    font-size: var(--text-hero-size, clamp(35.2px, 4.5vw, 68px));
   }
 
   &__intro {
@@ -89,7 +89,7 @@ const { t } = useI18n()
     margin-bottom: 1.75rem;
     padding: 0.4rem 0.9rem;
 
-    font-size: var(--text-micro-size);
+    font-size: var(--text-micro-size, 12px);
     letter-spacing: 1px;
     text-transform: uppercase;
     color: var(--color-accent);
@@ -112,12 +112,12 @@ const { t } = useI18n()
     max-width: 900px;
     margin: 0 auto 40px;
     text-align: center;
-    font-size: var(--mctl-typography-font-size-lg);
+    font-size: var(--mctl-typography-font-size-lg, 18px);
     color: var(--color-text-muted);
     line-height: 1.6;
 
     @media (min-width: 768px) {
-      font-size: var(--text-title-size);
+      font-size: var(--text-title-size, 24px);
     }
   }
 
@@ -135,7 +135,7 @@ const { t } = useI18n()
     gap: 0.5rem;
 
     color: var(--color-text-muted);
-    font-weight: var(--mctl-typography-font-weight-medium);
+    font-weight: var(--mctl-typography-font-weight-medium, 500);
     transition: color 0.25s ease, gap 0.25s ease;
 
     span {
@@ -188,8 +188,8 @@ const { t } = useI18n()
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
-    background: var(--surface-elevated);
-    border-bottom: 1px solid var(--surface-line);
+    background: var(--surface-elevated, #0f1114);
+    border-bottom: 1px solid var(--surface-line, #1f242b);
   }
 
   &__dot {
@@ -204,7 +204,7 @@ const { t } = useI18n()
 
   &__title {
     margin-left: auto;
-    font-size: var(--text-micro-size);
+    font-size: var(--text-micro-size, 12px);
     color: var(--color-text-muted);
     letter-spacing: 0.5px;
   }
@@ -214,11 +214,11 @@ const { t } = useI18n()
     // Body inherits the page's display face (Onest via CDN); force mono so
     // the terminal reads as a terminal.
     font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
-    font-size: var(--text-small-size);
+    font-size: var(--text-small-size, 14px);
     line-height: 1.9;
 
     @media (max-width: 480px) {
-      font-size: var(--text-micro-size);
+      font-size: var(--text-micro-size, 12px);
     }
   }
 

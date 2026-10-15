@@ -64,7 +64,7 @@ const { t } = useI18n();
   &__disclaimer {
     margin: 10px 0 20px;
 
-    font-size: var(--text-micro-size);
+    font-size: var(--text-micro-size, 12px);
     line-height: 1.5;
     color: var(--color-text-muted);
   }
@@ -99,7 +99,7 @@ const { t } = useI18n();
     strong {
       display: block;
       color: var(--color-text);
-      font-size: var(--text-body-size);
+      font-size: var(--text-body-size, 16px);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -108,7 +108,7 @@ const { t } = useI18n();
     a {
       display: block;
       color: var(--color-accent);
-      font-size: var(--text-small-size);
+      font-size: var(--text-small-size, 14px);
       text-decoration: none;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -128,7 +128,7 @@ const { t } = useI18n();
     border-radius: 4px;
     cursor: pointer;
     font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
-    font-size: var(--mctl-typography-font-size-xl);
+    font-size: var(--mctl-typography-font-size-xl, 20px);
     line-height: 1;
     transition: all 0.3s ease;
     flex-shrink: 0;

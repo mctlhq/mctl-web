@@ -270,7 +270,7 @@ useHead({
           <div class="step-content">
             <h3>
               Platform Operator
-              <span class="component-name" style="font-size: var(--text-micro-size);vertical-align:middle;margin-left:0.4rem">admin</span>
+              <span class="component-name" style="font-size: var(--text-micro-size, 12px);vertical-align:middle;margin-left:0.4rem">admin</span>
             </h3>
             <p>
               Create a tenant via the API or portal. Assign namespaces, set resource quotas,
@@ -317,9 +317,9 @@ useHead({
 }
 
 .docs-hero h1 {
-  font-size: var(--text-docs-hero-size);
-  font-weight: var(--text-docs-hero-weight);
-  line-height: var(--text-docs-hero-leading);
+  font-size: var(--text-docs-hero-size, clamp(32px, 4.5vw, 56px));
+  font-weight: var(--text-docs-hero-weight, 800);
+  line-height: var(--text-docs-hero-leading, 1.15);
   color: var(--color-text);
   letter-spacing: -0.02em;
   margin-bottom: 1rem;
@@ -327,7 +327,7 @@ useHead({
 }
 
 .docs-hero .subtitle {
-  font-size: var(--mctl-typography-font-size-lg);
+  font-size: var(--mctl-typography-font-size-lg, 18px);
   color: var(--color-text-muted);
   margin-bottom: 0;
   max-width: 580px;
@@ -351,7 +351,7 @@ useHead({
   max-width: 760px;
   margin: 0 auto;
   color: var(--color-text-muted);
-  font-size: var(--text-label-size);
+  font-size: var(--text-label-size, 15.2px);
   line-height: 1.8;
 }
 
@@ -376,12 +376,12 @@ useHead({
 .component-card:hover {
   border-color: var(--color-accent);
   transform: translateY(-4px);
-  box-shadow: var(--shadow-overlay);
+  box-shadow: var(--shadow-overlay, 0 16px 48px rgba(0, 0, 0, 0.48));
 }
 
 .component-name {
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
-  font-size: var(--text-small-size);
+  font-size: var(--text-small-size, 14px);
   color: var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 7%, transparent);
   padding: 0.35rem 0.65rem;
@@ -392,13 +392,13 @@ useHead({
 }
 
 .component-card h3 {
-  font-size: var(--mctl-typography-font-size-lg);
+  font-size: var(--mctl-typography-font-size-lg, 18px);
   color: var(--color-text);
   margin-bottom: 0.75rem;
 }
 
 .component-card p {
-  font-size: var(--text-small-size);
+  font-size: var(--text-small-size, 14px);
   color: var(--color-text-muted);
   line-height: 1.7;
 }
@@ -421,24 +421,24 @@ useHead({
 .interface-card:hover {
   border-color: var(--color-accent);
   transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.36));
 }
 
 .interface-card h3 {
-  font-size: var(--mctl-typography-font-size-lg);
+  font-size: var(--mctl-typography-font-size-lg, 18px);
   color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .interface-card .interface-url {
-  font-size: var(--text-caption-size);
+  font-size: var(--text-caption-size, 13px);
   color: var(--color-accent);
   margin-bottom: 0.75rem;
   display: block;
 }
 
 .interface-card p {
-  font-size: var(--text-small-size);
+  font-size: var(--text-small-size, 14px);
   color: var(--color-text-muted);
   line-height: 1.6;
 }
@@ -458,12 +458,12 @@ useHead({
 }
 
 .docs-diagram :deep(.diagram-box) h4 {
-  font-size: var(--text-small-size);
+  font-size: var(--text-small-size, 14px);
   margin-bottom: 0.25rem;
 }
 
 .docs-diagram :deep(.diagram-box) p {
-  font-size: var(--text-micro-size);
+  font-size: var(--text-micro-size, 12px);
 }
 
 .docs-diagram :deep(.diagram-connector) {
@@ -482,13 +482,13 @@ useHead({
 }
 
 .agent-callout h4 {
-  font-size: var(--text-body-size);
+  font-size: var(--text-body-size, 16px);
   color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .agent-callout p {
-  font-size: var(--text-small-size);
+  font-size: var(--text-small-size, 14px);
   color: var(--color-text-muted);
   line-height: 1.7;
 }
@@ -507,7 +507,7 @@ useHead({
 }
 
 .quickstart-grid :deep(.step-content h3) {
-  font-size: var(--mctl-typography-font-size-xl);
+  font-size: var(--mctl-typography-font-size-xl, 20px);
 }
 
 .quickstart-grid :deep(.step-content p) {

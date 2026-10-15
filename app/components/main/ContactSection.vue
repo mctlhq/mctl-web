@@ -22,7 +22,7 @@ const { t } = useI18n()
     margin-bottom: 48px;
 
     color: var(--color-text-muted);
-    font-size: var(--mctl-typography-font-size-lg);
+    font-size: var(--mctl-typography-font-size-lg, 18px);
     line-height: 1.7;
     text-align: center;
   }
