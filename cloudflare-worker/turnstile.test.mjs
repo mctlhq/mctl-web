@@ -6,7 +6,7 @@ import {
   handleContactForm,
   handleFormSubmit,
   handleCheckTeam,
-  hmacSign,
+  signIdentity,
   default as worker,
 } from './index.js';
 
@@ -271,8 +271,11 @@ test('handleContactForm: existing shape validation still runs before Turnstile',
 // ─── T3: handleFormSubmit ─────────────────────────────────────────────────────
 
 async function authFor(login) {
-  const sig = await hmacSign(login, HMAC_KEY);
-  return { login, name: login, email: `${login}@example.com`, html_url: `https://github.com/${login}` , sig };
+  return signIdentity(
+    { github_id: 583231, login, email: `${login}@example.com`, name: login },
+    HMAC_KEY,
+    Math.floor(Date.now() / 1000),
+  );
 }
 
 test('handleFormSubmit: valid github_auth + valid team + valid token -> proceeds to Backstage', async () => {
@@ -337,7 +340,7 @@ test('handleFormSubmit: valid github_auth + valid team + invalid token -> 400, B
 });
 
 test('handleFormSubmit: invalid github_auth.sig -> still 403 even with a valid token (order preserved)', async () => {
-  const github_auth = { login: 'octocat', sig: 'not-a-real-signature-but-right-length-0000000000000000000000' };
+  const github_auth = { ...(await authFor('octocat')), sig: '0'.repeat(64) };
   const { fetchStub, calls } = createFetchStub({ turnstileResult: { success: true } });
   const res = await withGlobalFetch(fetchStub, () =>
     handleFormSubmit(
@@ -430,7 +433,7 @@ test('handleCheckTeam: missing signature -> 401, byte-identical body for existin
 });
 
 test('handleCheckTeam: invalid signature -> 401, byte-identical to the missing-signature body', async () => {
-  const github_auth = { login: 'octocat', sig: 'a'.repeat(64) };
+  const github_auth = { ...(await authFor('octocat')), sig: 'a'.repeat(64) };
   const { fetchStub, calls } = createFetchStub();
   const res = await withGlobalFetch(fetchStub, () =>
     handleCheckTeam(
