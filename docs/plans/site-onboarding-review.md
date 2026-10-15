@@ -322,7 +322,7 @@ them were destroyed with the spike, and the excerpts below are quoted from them.
 | Not observed | Real github.com responses; a slow hook (timeout path); SCIM and other bulk or import APIs; v1 Actions coexistence on the same instance. | — | Covered by the B1 acceptance tests on production with test GitHub accounts; the user-creation method inventory is a B1 task. |
 | Teardown | All spike processes stopped (ZITADEL, Login V2, proxy, mock GitHub, hook, Postgres). Data directory, binaries, logs, screenshots, PATs, keys and the master key deleted. No listening ports left. No GitHub OAuth app, Vault secret or cluster resource was created. | `lsof` shows no listener on the spike ports; the spike directory is gone. | — |
 
-**B1 shape after B0** (still preliminary until the owner signs off). Identity hook
+**B1 shape after B0** (signed off by the owner on 2026-10-15). Identity hook
 on Actions v2, one signed `restCall` target per role:
 1. **Response execution on `RetrieveIdentityProviderIntent`** with
    `interruptOnError=true`. It only runs on IdP sign-ins, and admins use none. It
@@ -345,7 +345,7 @@ checks the `ZITADEL-Signature` HMAC and its 300-second window, and has to be as
 available as user creation needs to be. Actions v1 Complement Token is not used,
 because v1 is removed in v5.
 
-- **B1 (preliminary until the B0 table exists).** Org `customers` with the `mctl.ai` domain; GitHub IdP with auto-creation
+- **B1.** Org `customers` with the `mctl.ai` domain; GitHub IdP with auto-creation
   and auto-update, linking and auto-linking off; an org login policy that restates
   every field because it replaces the instance policy: GitHub as the only IdP,
   `user_login=false`, `force_mfa=false` with `force_mfa_local_only=true`, and
@@ -504,17 +504,30 @@ and not an existing tenant user.
 - Passkeys or other local sign-in for customer accounts.
 - Moving existing login-keyed users to principal-keyed catalog entities.
 
-## 6. Open owner decisions (before B1)
+## 6. Owner decisions for B1
 
-1. Create the GitHub OAuth app for the ZITADEL IdP and store its secret in Vault.
-2. Confirm the v1 product decision in stage B: GitHub-only customer accounts, no
-   additional ZITADEL MFA in the `customers` org, no local sign-in, passkeys or
-   recovery method, recovery through GitHub.
-3. Confirm the `mctl.ai` domain for the `customers` org.
-4. Confirm the ordering condition: C0 is verified before B1b and before the
-   mctl-api#377 switch, and the switch moves if C0 is not ready.
-5. Name the test group by GitHub login, including a new non-admin account.
-6. Where the identity hook runs. Preliminary: mctl-api, final after B0.
+Decided on 2026-10-15, after the B0 results:
+
+- The B1 shape after B0, including its two changes to the earlier design: the
+  token-time function does not interrupt on error and C0 refuses a token without
+  `mctl:github_id`; and the creation gate covers the v1 `ManagementService`
+  create and import methods as well as v2, with the Login V2 service user
+  required as the caller.
+- The v1 product decision in stage B: GitHub-only customer accounts, no
+  additional ZITADEL MFA in the `customers` org, no local sign-in, passkeys or
+  recovery method, recovery through GitHub.
+- The `mctl.ai` domain for the `customers` org.
+- The ordering condition: C0 is verified before B1b and before the mctl-api#377
+  switch, and the switch moves if C0 is not ready.
+- The identity hook runs as a dedicated mctl-api endpoint on a public hostname.
+
+Still open, both inputs rather than decisions:
+
+1. The owner creates the GitHub OAuth app for the ZITADEL IdP. The implementer
+   stores its secret in Vault. B1 can be built and reviewed before that, but not
+   applied.
+2. The owner names the test group by GitHub login, including a new non-admin
+   account. Needed before the B1 acceptance tests.
 
 ## 7. Done criterion
 
