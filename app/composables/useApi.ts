@@ -1,6 +1,11 @@
 export interface SubmitResult {
   success: boolean
   message?: string
+  // HTTP status and the Worker's machine-readable `code`, when present. The
+  // request-access form uses them to recognise a stale sign-in
+  // (401 auth_expired / auth_format, mctl-web#133).
+  status?: number
+  code?: string
 }
 
 // Joins the configured base (`https://mctl.ai/api` in production) with a
@@ -41,8 +46,10 @@ async function postJson(url: string, payload: object): Promise<SubmitResult> {
   const record = body && typeof body === 'object' ? (body as Record<string, unknown>) : null
   const message = record && typeof record.message === 'string' ? record.message : undefined
 
+  const code = record && typeof record.code === 'string' ? record.code : undefined
+
   if (!response.ok || !record || record.success !== true) {
-    return { success: false, message }
+    return { success: false, message, status: response.status, code }
   }
   return { success: true, message }
 }

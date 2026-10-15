@@ -1,5 +1,23 @@
 # Changelog
 
+## [7.6.1](https://github.com/mctlhq/mctl-web/compare/7.6.0...7.6.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **auth:** persist the identity and clear the auth fragment for real ([f5db103](https://github.com/mctlhq/mctl-web/commit/f5db1038c89346e458db24dabfa8afc6f465ae2c)), closes [#133](https://github.com/mctlhq/mctl-web/issues/133)
+* **auth:** send the signed GitHub identity back unchanged ([598cf93](https://github.com/mctlhq/mctl-web/commit/598cf93157ea6103671292316ebf04e0b5131d9c))
+* **auth:** send the signed GitHub identity back unchanged ([f4e093d](https://github.com/mctlhq/mctl-web/commit/f4e093d4c3e4f3e73c8b821877473148148288b2)), closes [#133](https://github.com/mctlhq/mctl-web/issues/133)
+
+
+### Documentation
+
+* **auth:** state that the earlier of the two expiries decides ([ac17fc9](https://github.com/mctlhq/mctl-web/commit/ac17fc962cac3f4f83f7a71ca5a4b14f3f119cbb))
+* **plans:** make B0 the gate for isolation and fresh identity data ([5b96b64](https://github.com/mctlhq/mctl-web/commit/5b96b64bba25a16ff202d04db81a4466a7a6c7b7))
+* **plans:** stage A done, prepare stage B for ZITADEL Login V2 ([6d7dd1f](https://github.com/mctlhq/mctl-web/commit/6d7dd1fea866916fed011a4d042efcce15d81e68))
+* **plans:** stage A done, prepare stage B for ZITADEL Login V2 ([2fe2a4d](https://github.com/mctlhq/mctl-web/commit/2fe2a4d21aa7283e7b617942947234d2c0603020))
+* **plans:** tighten B0 spike to the real Login V2 paths ([862b01b](https://github.com/mctlhq/mctl-web/commit/862b01bd7c25d72fc8176874233345a28cefa560))
+
 ## [7.6.0](https://github.com/mctlhq/mctl-web/compare/7.5.6...7.6.0) (2026-10-14)
 
 
