@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useStorage } from '@vueuse/core'
+import { StorageSerializers, useStorage } from '@vueuse/core'
 import type { GitHubUser } from '@/types'
 import {
   decodeAuthFragment,
@@ -18,7 +18,12 @@ export function useAuth() {
   const user = useState<AuthIdentity | null>('auth_user', () => null)
   const errorCode = useState<string | null>('auth_error', () => null)
 
-  const stored = useStorage<unknown>(AUTH_KEY, null)
+  // With a null default, useStorage cannot infer a serializer and falls back
+  // to String(), which stores "[object Object]": the sign-in never survived a
+  // reload. The object serializer is explicit for that reason.
+  const stored = useStorage<unknown>(AUTH_KEY, null, undefined, {
+    serializer: StorageSerializers.object,
+  })
 
   const isAuth = computed(() => !!user.value?.login)
 
@@ -106,10 +111,25 @@ export function useAuth() {
       changed = true
     }
 
-    if (changed) {
-      const cleanPath = url.pathname + url.search + url.hash
-      history.replaceState(null, '', cleanPath)
-    }
+    if (!changed) return
+
+    const cleanPath = url.pathname + url.search + url.hash
+    history.replaceState(null, '', cleanPath)
+
+    // parseOAuth runs in a plugin, before Nuxt's initial client navigation.
+    // That navigation writes the original URL back, so the replaceState above
+    // alone left `#auth=...` (a bearer identity) in the address bar and in
+    // history, and a reload signed the person in again from it. Clearing it
+    // once more through the router once the app is up makes it stick;
+    // router.isReady() is not late enough, it resolves before that navigation.
+    const router = useRouter()
+    onNuxtReady(() => {
+      const route = router.currentRoute.value
+      const authHash = route.hash.startsWith('#auth=') || route.hash.startsWith('#auth_error=')
+      if (!authHash && !('auth' in route.query) && !('auth_error' in route.query)) return
+      const { auth: _a, auth_error: _e, ...query } = route.query
+      router.replace({ path: route.path, query, hash: authHash ? '' : route.hash })
+    })
   }
 
   return {
