@@ -5,7 +5,7 @@ const runtimeConfig = useRuntimeConfig();
 
 const { t } = useI18n();
 
-const { user, authData, errorCode, logout } = useAuth();
+const { profile, authData, errorCode, logout } = useAuth();
 
 const { baseUrlFront } = runtimeConfig.public;
 
@@ -28,6 +28,7 @@ onMounted(() => {
     TOKEN_EXCHANGE: t('js.oauth.token_exchange'),
     PROFILE_FETCH: t('js.oauth.profile_fetch'),
     PARSE_ERROR: t('js.oauth.parse_error'),
+    EMAIL_UNVERIFIED: t('js.oauth.email_unverified'),
   };
 
   authError.value = errorMessages[code] ?? t('js.oauth.failed');
@@ -48,7 +49,7 @@ onMounted(() => {
         {{ t('form.subtitle') }}
       </p>
       <GithubAuth
-        :user="user"
+        :user="profile"
         :auth-error="authError"
         class="request-access__github-auth"
         @clickLogin="handleLogin"

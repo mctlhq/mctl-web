@@ -1,18 +1,27 @@
 import { ref } from 'vue'
+import { isAuthResetCode } from '~/lib/authBlob'
 
 const TEAM_REGEX = /^[a-z0-9][a-z0-9-]{0,62}$/
 
 interface GithubAuthIdentity {
   login?: string
   sig?: string
+  [field: string]: unknown
 }
 
 // check-team is identity-gated (see cloudflare-worker/index.js handleCheckTeam):
-// it requires the same signed { login, sig } handleFormSubmit already
-// validates, sent in the POST body — never the query string, since sig is an
-// unbounded bearer credential. `getAuthData` is read on every call so the
-// composable always uses the caller's current sign-in state.
-export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null | undefined) {
+// it requires the same signed identity handleFormSubmit validates, sent in the
+// POST body — never the query string, since sig is a bearer credential. The
+// identity goes back exactly as the Worker issued it (mctl-web#133): once the
+// Worker signs more than the login, a trimmed or rebuilt object would fail
+// verification. `getAuthData` is read on every call so the composable always
+// uses the caller's current sign-in state. `onAuthReset` runs when the Worker
+// answers 401 with auth_expired / auth_format, so the caller can drop the
+// stored identity.
+export function useTeamValidation(
+  getAuthData?: () => GithubAuthIdentity | null | undefined,
+  onAuthReset?: () => void,
+) {
   const checkTeamUrl = apiUrl('/github/check-team')
   const teamAvailable = ref(false)
   const teamError = ref('')
@@ -110,7 +119,7 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          github_auth: { login: authData.login, sig: authData.sig },
+          github_auth: authData,
         }),
         signal: controller.signal,
       })
@@ -120,19 +129,13 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
       // 401 branch, not the rate-limit branch, not the verdict below.
       if (inFlight !== controller) return
 
-      if (res.status === 401) {
-        teamAvailable.value = false
-        teamError.value = 'js.team.sign_in_required'
-        return
-      }
-
       // Parse first, then branch. A 400 carries `error: 'Invalid team name
       // format'`, and returning on `!res.ok` before reading the body would
       // bury it under the generic check_failed — the wrong-format message
       // would never reach the user from a backend rejection.
-      let data: { available?: boolean; error?: string } = {}
+      let data: { available?: boolean; error?: string; code?: unknown } = {}
       try {
-        data = await res.json()
+        data = (await res.json()) ?? {}
       } catch {
         data = {}
       }
@@ -142,6 +145,18 @@ export function useTeamValidation(getAuthData?: () => GithubAuthIdentity | null 
       // `taken` branch, from a request that has already been superseded. Anything
       // that is no longer the current attempt stops here and writes nothing.
       if (inFlight !== controller) return
+
+      if (res.status === 401) {
+        teamAvailable.value = false
+        const code = (data as { code?: unknown }).code
+        if (isAuthResetCode(code)) {
+          teamError.value = 'js.auth.expired'
+          onAuthReset?.()
+        } else {
+          teamError.value = 'js.team.sign_in_required'
+        }
+        return
+      }
 
       // Every non-2xx, not just the one we recognise. 429 in particular is now
       // reachable — this endpoint is rate-limited at 20/min/IP, which repeated

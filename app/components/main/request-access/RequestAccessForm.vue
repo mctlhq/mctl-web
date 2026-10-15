@@ -3,6 +3,7 @@ import { useForm } from 'vee-validate';
 import * as yup from 'yup';
 
 import type { RequestAccessFormData } from '@/types';
+import { isAuthResetCode } from '~/lib/authBlob';
 
 import SuccessModal from './SuccessModal.vue';
 
@@ -24,7 +25,15 @@ const { defineField, values, errors, handleSubmit } = useForm<RequestAccessFormD
 const [team, teamProps] = defineField('team');
 const [usecase, usecaseProps] = defineField('usecase');
 
-const { teamAvailable, teamError, checking, onInput, checkAvailability } = useTeamValidation(() => props.authData);
+// A 401 auth_expired / auth_format means the stored GitHub identity is no
+// longer accepted (expired, or issued in a format the Worker has retired).
+// Clearing it swaps the form back to the "Sign in with GitHub" state.
+const { logout } = useAuth();
+
+const { teamAvailable, teamError, checking, onInput, checkAvailability } = useTeamValidation(
+  () => props.authData,
+  logout,
+);
 
 const { submitAccessRequest } = useApi();
 
@@ -120,6 +129,9 @@ const onSubmit = handleSubmit(async (formData) => {
     if (result.success) {
       formStatus.value = null;
       showSuccessModal.value = true;
+    } else if (result.status === 401 && isAuthResetCode(result.code)) {
+      formStatus.value = { message: t('js.auth.expired'), type: 'error' };
+      logout();
     } else {
       formStatus.value = { message: result.message || t('js.submit.request_failed'), type: 'error' };
     }

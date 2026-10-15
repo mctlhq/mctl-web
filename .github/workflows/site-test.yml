@@ -1,0 +1,22 @@
+name: site-test
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['app/lib/**', '.github/workflows/site-test.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      # Plain TypeScript run through Node's type stripping (Node 22.18+), so
+      # these tests need neither npm install nor a Nuxt build.
+      - name: Run site unit tests
+        run: node --test app/lib/*.test.ts
