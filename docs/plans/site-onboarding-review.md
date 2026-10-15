@@ -141,9 +141,11 @@ workspace `acme`:
    only a login name: **no mailbox is created**, and mail goes to the verified
    GitHub address.
 2. mctl-api resolves the account to a principal through the numeric GitHub id.
-3. The create-tenant workflow writes `members: [{principalId, userId: github_user,
-   role: owner}]` to `tenants/acme/values.yaml`. The tenant chart creates the
-   namespaces `acme` and `acme-preview`.
+3. The create-tenant workflow (stage C2) writes `members: [{userId: github_user,
+   principalId: <prn>, role: owner, catalogKey: principal}]` to
+   `tenants/acme/values.yaml`. The tenant chart creates the namespaces `acme` and
+   `acme-preview`. The portal names the catalog user by `principalId`; `userId`
+   is display only.
 4. `github_user` signs in to the portal and connects an MCP client as owner of
    `acme`. In v1 that is all they get: no Argo CD, Argo Workflows, kubectl,
    Vault or Grafana access.
@@ -155,8 +157,8 @@ Access per resource in v1. Paths are in mctl-gitops `platform-gitops/` at
 | --- | --- | --- |
 | ZITADEL account `<login>@mctl.ai` | Yes | Created on first GitHub sign-in (stage B) |
 | Mailbox `<login>@mctl.ai` | No | Not created; forwarding is out of the first release |
-| Portal `app.mctl.ai` | Yes, after B1b | Catalog membership from `members` (`mctl-portal plugins/tenant-backend/src/tenantSync.ts`) |
-| MCP `api.mctl.ai/mcp` and mctl-api | Yes, after B1b | `members` by login or principalId (`mctl-api internal/gitops/reader.go`) |
+| Portal `app.mctl.ai` | Yes, after C2 and B1b | Catalog user and group membership keyed by `principalId` (`catalogKey: principal`, stage C2) |
+| MCP `api.mctl.ai/mcp` and mctl-api | Yes, after C0 and B1b | `members` matched by `principalId` only; the caller's principal comes from C0 |
 | Namespaces `<ws>`, `<ws>-preview` | Yes (as resources, not as kubectl access) | Tenant chart; preview behind `tenant.preview.enabled`, default `true` (`helm-charts/tenant/values.yaml:122-123`) |
 | ResourceQuota, LimitRange, NetworkPolicies | Yes | `helm-charts/tenant/templates/{resourcequota,limitrange,networkpolicy}.yaml` |
 | Vault paths and ESO store | Yes, for workloads only | Policies and Kubernetes auth roles in `wft-create-tenant.yaml:539-614`; `SecretStore tenant-store` |
@@ -173,6 +175,13 @@ which zitadel-iac uses for tenant orgs. Customer accounts live in org `customers
 and are not in that path, so none of these flags can reach them in v1. The
 `members` list is read only by the portal and mctl-api; zitadel-iac, the tenant
 chart and Argo CD RBAC never read it.
+
+Starting state, for contrast (legacy, login-keyed, still used by admins and
+existing tenants): the portal keys catalog users by `userId` and reads only
+`userId` and `role` (`mctl-portal plugins/tenant-backend/src/tenantSync.ts:206-211`,
+`catalogEntities.ts:129-155`), and mctl-api matches `members` by GitHub login or
+`principalId` (`mctl-api internal/gitops/reader.go:94-200`). Customer accounts
+must never be matched by login; that is what stages C0 and C2 change.
 
 ## 5. Stages
 
@@ -383,12 +392,23 @@ and not an existing tenant user.
   is accepted, before the workspace exists, and lists no resources. Split it:
   - "Request accepted", sent by the Worker on submit: what was asked for, that
     provisioning has started, a contact link.
-  - "Workspace ready", sent when the tenant is ready (the create-tenant
-    workflow's last step, not the Worker): account `<login>@mctl.ai`, role, portal
-    link, MCP endpoint, environments, and only the access that was actually
-    granted. Text is built from the granted state, never from a fixed list.
-  - A portal page Workspace → Access that shows the same list from the same
-    source, so the email and the portal never disagree.
+  - "Workspace ready": account `<login>@mctl.ai`, role, portal link, MCP
+    endpoint, environments, and only the access that was actually granted. Text
+    is built from the verified state, never from a fixed list.
+  - Readiness is a separate check, not the create-tenant workflow's last step.
+    That step only waits for the tenant app to be Synced/Healthy, which proves
+    neither that the portal has synced the catalog nor that the person can sign
+    in. Before sending, confirm: the tenant infrastructure; the membership as the
+    portal and mctl-api see it for this principal; and each capability the email
+    will list. A failed or partial check is unknown, never ready: no email is
+    sent and the check retries.
+  - Email delivery is decoupled from provisioning: a failed send never marks the
+    workspace failed, and resending is idempotent (one "ready" email per tenant
+    and principal, keyed so a retry cannot send a duplicate).
+  - A portal page Workspace → Access reads the same source. The email is a
+    snapshot of verified access at send time; the page shows the current state.
+    After a revocation the old email stays as it was, so it says "as of <date>"
+    and points to the Access page for the current list.
 
 ### Out of the first release
 
@@ -401,8 +421,15 @@ and not an existing tenant user.
   - Grants are keyed by principal, not by login, and come from one source that
     the portal Access page also reads.
   - Removing a member, disabling the account or deleting the tenant revokes
-    every grant. The revocation check is accepted only when proven both ways:
-    access present after a grant, absent after each kind of revocation.
+    every grant. The stage defines a maximum revocation time per surface and
+    proves it, because a refused new sign-in is not enough. For each kind of
+    revocation the test holds sessions and credentials opened before it: an Argo
+    CD session, an Argo Workflows session, a previously issued kubectl token,
+    portal and MCP sessions. Each must lose access within the stated bound. The
+    check is accepted only when proven both ways: access present after a grant,
+    absent within the bound after each revocation.
+  - The customer Workflows role is reviewed as a whole for any read of Secrets,
+    not only the `secrets: get` in `sso-team-logs`.
 - Forwarding `<login>@mctl.ai` as a real mailbox.
 - Passkeys or other local sign-in for customer accounts.
 - Moving existing login-keyed users to principal-keyed catalog entities.
