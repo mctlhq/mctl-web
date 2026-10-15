@@ -71,7 +71,8 @@ function closeMenu() {
   }
 
   &__logo {
-    display: block;
+    display: flex;
+    align-items: center;
   }
 
   &__right {
