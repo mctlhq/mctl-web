@@ -482,6 +482,25 @@ The local run differs from production in four ways:
 - **C1b (site).** The new sign-in UI behind `?auth_flow=zitadel`, legacy by
   default. A later small flip makes it the default and updates /privacy, /docs and
   the welcome email.
+  - `runtimeConfig.public.authFlow` (`NUXT_PUBLIC_AUTH_FLOW`, default `legacy`).
+    The query parameter wins and is remembered in localStorage: the session
+    cookie is browser-wide, and the Worker sends any cookie-bearing
+    `/api/submit` down the session branch, so every tab has to show the flow
+    the cookie belongs to. An explicit `?auth_flow=legacy` in a browser that
+    remembered `zitadel` therefore ends the Worker session first; if the Worker
+    does not confirm it, the page stays on the ZITADEL flow. A sign-out the
+    Worker does not confirm (429, 503, network) is reported, not shown as
+    signed out. The switch is UI only; the Worker's test group decides who may
+    act.
+  - The session is read from `GET /api/zitadel/session`; nothing about the
+    identity is stored in the browser. Team checks and submits go to
+    `/api/team/check` and the cookie branch of `/api/submit` with
+    `credentials: 'include'` and `X-MCTL-Request: 1`.
+  - Response handling is pure code in `app/lib/zitadelSession.ts` with node tests
+    (`npm run test:site`), including the copy for every callback error code.
+  - The Worker now keeps Workers Logs (`[observability]` in `wrangler.toml`):
+    the first live sign-in on 2026-10-16 could only be reconstructed from zone
+    analytics and the KV namespace.
 - **C1c.** Remove the legacy GitHub OAuth flow, the HMAC identity and the
   login-keyed landing creator.
 

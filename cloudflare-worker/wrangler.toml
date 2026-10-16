@@ -24,6 +24,16 @@ compatibility_date = "2024-01-01"
 workers_dev = true
 preview_urls = true
 
+# Workers Logs (C1b). Until 2026-10-16 the script kept no logs at all, so the
+# first live ZITADEL sign-in could only be reconstructed from zone analytics
+# and the KV namespace. The log lines are the console.* calls in index.js and
+# zitadel.js: status codes, refusal codes, GitHub numeric ids and team names,
+# never tokens, cookies or session ids. Cloudflare keeps them for the plan's
+# retention window.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
 # Non-secret config vars — plain values, safe to keep in git.
 [vars]
 # GitHub logins exempt from tenant-provisioning limits, comma-separated.
