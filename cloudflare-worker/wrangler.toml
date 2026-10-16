@@ -28,3 +28,43 @@ preview_urls = true
 [vars]
 # GitHub logins exempt from tenant-provisioning limits, comma-separated.
 UNLIMITED_USERS = "mashkovd"
+
+# ZITADEL sign-in for the site (stage C1a, docs/plans/site-onboarding-review.md).
+# mctl-web is a public PKCE client in the customers org: no client secret.
+# Who may use the cookie flow before AUTH_FLOW_PUBLIC is "true" comes from the
+# secret AUTH_FLOW_TEST_GITHUB_IDS (numeric GitHub ids, comma-separated); while
+# it is unset, every signed-in visitor gets 403 on /api/team/check and the
+# cookie branch of /api/submit.
+ZITADEL_ISSUER = "https://auth.mctl.ai"
+ZITADEL_CLIENT_ID = "395272531977766613"
+ZITADEL_ORG_ID = "395272528420931285"
+ZITADEL_GITHUB_IDP_ID = "395272531877168853"
+ZITADEL_REDIRECT_URI = "https://mctl.ai/api/zitadel/callback"
+ZITADEL_POST_LOGOUT_URI = "https://mctl.ai"
+SESSION_ORIGINS = "https://mctl.ai"
+AUTH_FLOW_PUBLIC = "false"
+
+# Server-side sessions. The namespaces are owned by OpenTofu in mctl-gitops
+# (infrastructure/cloudflare/account/workers-kv.tf, mctlhq/mctl-gitops#1909);
+# this file only binds them.
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "a42b3ef582994c48a87f14d9d8701379"
+
+# `wrangler dev --env dev`: the mctl-web-dev client and a namespace of its own,
+# so a local run can never read or write a production session. [vars] and
+# bindings are not inherited by an environment, hence the full list.
+[env.dev.vars]
+UNLIMITED_USERS = "mashkovd"
+ZITADEL_ISSUER = "https://auth.mctl.ai"
+ZITADEL_CLIENT_ID = "395272531977701077"
+ZITADEL_ORG_ID = "395272528420931285"
+ZITADEL_GITHUB_IDP_ID = "395272531877168853"
+ZITADEL_REDIRECT_URI = "http://localhost:8787/api/zitadel/callback"
+ZITADEL_POST_LOGOUT_URI = "http://localhost:8787"
+SESSION_ORIGINS = "http://localhost:3000"
+AUTH_FLOW_PUBLIC = "false"
+
+[[env.dev.kv_namespaces]]
+binding = "SESSIONS"
+id = "078d270d14204f75be694fcbecb1c12a"

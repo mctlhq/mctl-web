@@ -465,14 +465,20 @@ The local run differs from production in four ways:
   - Portal-originated tenant creation (the no-tenant page and the Backstage
     template) takes the creator from the server-side identity, not from the request body.
   - New availability endpoint for the website.
-- **C1a (Worker).** New `/api/auth/*`, `/api/team/check` and a cookie branch of
-  `/api/submit`, alongside the unchanged legacy GitHub flow.
+- **C1a (Worker).** New `/api/zitadel/*` (login, callback, session, logout; the
+  path registered on the mctl-web clients in B1, not `/api/auth/*`),
+  `/api/team/check` and a cookie branch of `/api/submit`, alongside the unchanged
+  legacy GitHub flow. mctl-web is a public PKCE client, so the Worker holds no
+  client secret; state, nonce and the verifier ride in a short-lived `__Host-`
+  cookie that only the site can set.
   - Server-side sessions in Workers KV behind an opaque `__Host-` cookie; the ID
     token never reaches the browser. Sessions last up to 8 hours.
   - Every cookie request re-presents the ID token to the portal and mctl-api, so a
     revoked identity or disabled principal is refused on the next request.
   - CSRF protection (Origin plus a custom header) on the cookie branch only.
   - A server-side test-group allowlist by GitHub numeric id until the public switch.
+  - The KV namespaces (prod and dev) are OpenTofu resources in mctl-gitops
+    (`infrastructure/cloudflare/account/workers-kv.tf`, mctl-gitops#1909).
 - **C1b (site).** The new sign-in UI behind `?auth_flow=zitadel`, legacy by
   default. A later small flip makes it the default and updates /privacy, /docs and
   the welcome email.
