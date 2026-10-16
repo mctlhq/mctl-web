@@ -593,6 +593,19 @@ test('team/check: the portal refusing the token ends the session', async () => {
   assert.equal(env.SESSIONS.store.size, 0);
 });
 
+test('team/check: a portal 403 that is not about the identity keeps the session', async () => {
+  for (const body of [{ error: 'forbidden' }, { error: 'x', code: 'landing_token_invalid' }]) {
+    const env = baseEnv();
+    const { sessionId } = await signIn(env);
+    const network = createNetwork({ availability: { status: 403, body } });
+    const res = await withNetwork(network, () => worker.fetch(request('/api/team/check', {
+      method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: SITE, body: { name: 'acme' } }), env));
+    assert.equal(res.status, 502, JSON.stringify(body));
+    assert.equal(cookieValue(res, SESSION_COOKIE), undefined);
+    assert.equal(env.SESSIONS.store.size, 1);
+  }
+});
+
 test('team/check: a portal outage keeps the session', async () => {
   const env = baseEnv();
   const { sessionId } = await signIn(env);
@@ -656,6 +669,29 @@ test('submit (session): a refused token ends the session and creates nothing', a
   assert.equal((await res.json()).code, 'session_revoked');
   assert.equal(env.SESSIONS.store.size, 0);
   assert.equal(network.calls.telegram, 0);
+});
+
+test('submit (session): a portal 403 that is not about the identity keeps the session', async () => {
+  const env = baseEnv();
+  const { sessionId } = await signIn(env);
+  const network = createNetwork({ create: { status: 403, body: { error: 'forbidden' } } });
+  const res = await withNetwork(network, () => worker.fetch(request('/api/submit', {
+    method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: SITE,
+    body: { team: 'acme', turnstile_token: 'ok' } }), env));
+  assert.equal(res.status, 502);
+  assert.equal(env.SESSIONS.store.size, 1);
+  assert.equal(network.calls.telegram, 0);
+});
+
+test('submit (session): the success answer is not cacheable', async () => {
+  const env = baseEnv();
+  const { sessionId } = await signIn(env);
+  const res = await withNetwork(createNetwork(), () => worker.fetch(request('/api/submit', {
+    method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: SITE,
+    body: { team: 'acme', turnstile_token: 'ok' } }), env));
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Cache-Control'), 'private, no-store');
+  assert.equal(res.headers.get('Access-Control-Allow-Credentials'), 'true');
 });
 
 test('submit (session): Turnstile still gates it', async () => {
@@ -735,4 +771,29 @@ test('preflight: the site may send the session cookie and the CSRF header; local
   const local = await worker.fetch(request('/api/team/check', {
     method: 'OPTIONS', headers: { Origin: 'http://localhost:3000' } }), env);
   assert.equal(local.headers.get('Access-Control-Allow-Credentials'), null);
+});
+
+test('preflight: credentials are advertised only on the session-cookie routes', async () => {
+  const env = baseEnv();
+  for (const path of ['/api/contact', '/api/github/check-team', '/api/zitadel/login']) {
+    const res = await worker.fetch(request(path, { method: 'OPTIONS', headers: { Origin: 'https://mctl.ai' } }), env);
+    assert.equal(res.headers.get('Access-Control-Allow-Credentials'), null, path);
+  }
+});
+
+test('CORS: a session origin outside the legacy list still gets a matching Allow-Origin', async () => {
+  const env = baseEnv({ SESSION_ORIGINS: 'https://mctl.ai,https://staging.mctl.ai' });
+  const res = await worker.fetch(request('/api/zitadel/session', {
+    method: 'OPTIONS', headers: { Origin: 'https://staging.mctl.ai' } }), env);
+  assert.equal(res.headers.get('Access-Control-Allow-Origin'), 'https://staging.mctl.ai');
+  assert.equal(res.headers.get('Access-Control-Allow-Credentials'), 'true');
+});
+
+test('session: rate limited', async () => {
+  const env = baseEnv();
+  let last;
+  for (let i = 0; i < 61; i++) {
+    last = await worker.fetch(request('/api/zitadel/session', { headers: { 'CF-Connecting-IP': '203.0.113.9' } }), env);
+  }
+  assert.equal(last.status, 429);
 });

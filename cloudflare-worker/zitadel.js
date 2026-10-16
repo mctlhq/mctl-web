@@ -176,8 +176,12 @@ export function csrfOk(request, cfg) {
 }
 
 // CORS headers that let the site's own origins send the session cookie.
+// Allow-Origin is set here from the same list, so a session origin that is not
+// in index.js's ALLOWED_ORIGINS still gets an answer the browser accepts.
 export function credentialCorsHeaders(origin, cfg) {
-  return cfg.sessionOrigins.has(origin) ? { 'Access-Control-Allow-Credentials': 'true' } : {};
+  return cfg.sessionOrigins.has(origin)
+    ? { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Credentials': 'true' }
+    : {};
 }
 
 // ─── ID token verification ───────────────────────────────────────────────────

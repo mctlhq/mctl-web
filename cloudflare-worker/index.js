@@ -49,6 +49,13 @@ const BASE_DOMAIN = 'mctl.ai';
 // Root domain redirects (mctl.me, mctl.ru) are handled by CF Redirect Rules — no Worker invocation.
 const REDIRECT_SUFFIXES = ['.mctl.me', '.mctl.ru'];
 const ALLOWED_ORIGINS = new Set(['https://mctl.ai', 'http://localhost:3000']);
+
+// Routes that read the __Host-mctl_sid cookie from a fetch. Only their
+// preflight advertises credentials; the origins that may send the cookie are
+// SESSION_ORIGINS (zitadel.js), which sets Allow-Origin itself.
+const SESSION_COOKIE_PATHS = new Set([
+  '/api/zitadel/session', '/api/zitadel/logout', '/api/team/check', '/api/submit',
+]);
 const LANDING_URL = `https://${BASE_DOMAIN}`;
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
 const BACKSTAGE_APP_URL = 'https://app.mctl.ai';
@@ -75,6 +82,8 @@ const RATE_LIMITS = {
   'POST /api/github/check-team': { max: 20, windowSec: 60 },
   'GET /api/zitadel/login': { max: 10, windowSec: 60 },
   'POST /api/zitadel/logout': { max: 10, windowSec: 60 },
+  'GET /api/zitadel/callback': { max: 10, windowSec: 60 },
+  'GET /api/zitadel/session': { max: 60, windowSec: 60 },
   'POST /api/team/check': { max: 20, windowSec: 60 },
 };
 
@@ -118,7 +127,10 @@ export default {
     // CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
-        headers: { ...corsHeaders(origin), ...credentialCorsHeaders(origin, zitadelConfig(env)) },
+        headers: {
+          ...corsHeaders(origin),
+          ...(SESSION_COOKIE_PATHS.has(url.pathname) ? credentialCorsHeaders(origin, zitadelConfig(env)) : {}),
+        },
       });
     }
 
@@ -904,7 +916,7 @@ async function finishSubmit(env, origin, {
     `• [ArgoCD](https://ops\\.mctl\\.me/)`,
     workflowSubmitted ? `• [Workflow](https://workflows\\.mctl\\.me/)` : null,
     ``,
-    `⏰ ${new Date().toISOString().replace(/[-.]/g, '\\$&')}`,
+    `⏰ ${esc(new Date().toISOString())}`,
   ].filter(Boolean).join('\n');
 
   // The notifications are side effects of an already-submitted workflow.
@@ -928,7 +940,7 @@ async function finishSubmit(env, origin, {
   } else {
     return jsonResponse({
       success: false,
-      message: `Failed to submit provisioning request: ${workflowError}`,
+      message: 'Failed to submit provisioning request. Please try again.',
     }, 500, extraHeaders, origin);
   }
 }
@@ -1052,6 +1064,20 @@ async function requireSession(request, env, origin) {
 // The portal refused the stored ID token (mctl-api answered about the
 // customer: expired or invalid token, revoked identity, disabled
 // principal). The session is over: forget it and ask for a new sign-in.
+// The portal's 403 codes that are about the stored ID token or the person
+// behind it (mctl-api's refusal of the creator). Signing in again is the
+// only remedy, so these end the session. Any other 403 is a server-side
+// cause a new sign-in cannot fix, and ending the session would loop.
+const IDENTITY_REFUSALS = new Set([
+  'not_a_customer', 'id_token_invalid', 'customer_unproven',
+  'principal_disabled', 'identity_refused', 'customer_conflict',
+]);
+
+export async function isIdentityRefusal(res) {
+  const body = await res.json().catch(() => ({}));
+  return IDENTITY_REFUSALS.has(body?.code);
+}
+
 async function revokedSession(ctx, origin) {
   try {
     await ctx.cfg.sessions.delete(ctx.key);
@@ -1096,7 +1122,7 @@ export async function handleSessionCheckTeam(request, env, origin) {
       method: 'POST',
       body: JSON.stringify({ name, creatorIdToken: ctx.session.id_token }),
     });
-    if (res.status === 403) {
+    if (res.status === 403 && await isIdentityRefusal(res)) {
       console.warn(`team/check: portal refused the session of GitHub id ${ctx.session.github_id}`);
       return revokedSession(ctx, origin);
     }
@@ -1126,7 +1152,7 @@ export async function handleSessionSubmit(request, env, origin) {
   const ctx = await requireSession(request, env, origin);
   if (ctx.response) return ctx.response;
   const { cfg, session } = ctx;
-  const credentials = credentialCorsHeaders(origin, cfg);
+  const credentials = { ...credentialCorsHeaders(origin, cfg), 'Cache-Control': 'private, no-store' };
 
   try {
     const { team, usecase, turnstile_token } = await readJsonObject(request);
@@ -1167,8 +1193,12 @@ export async function handleSessionSubmit(request, env, origin) {
     }
 
     if (tenantRes.status === 403) {
-      console.warn(`submit (session): portal refused the session of GitHub id ${session.github_id}`);
-      return revokedSession(ctx, origin);
+      if (await isIdentityRefusal(tenantRes)) {
+        console.warn(`submit (session): portal refused the session of GitHub id ${session.github_id}`);
+        return revokedSession(ctx, origin);
+      }
+      console.error('submit (session): portal answered 403 without an identity refusal');
+      return sessionJson({ success: false, message: 'Failed to submit request. Please try again.' }, 502, origin, cfg);
     }
     if (tenantRes.status === 409) {
       const err = await tenantRes.json().catch(() => ({}));
@@ -1251,7 +1281,7 @@ export async function handleContactForm(request, env, origin) {
       `💬 *Message:*`,
       esc(message),
       ``,
-      `⏰ ${new Date().toISOString().replace(/[-.]/g, '\\$&')}`,
+      `⏰ ${esc(new Date().toISOString())}`,
     ].join('\n');
 
     // Send to Telegram

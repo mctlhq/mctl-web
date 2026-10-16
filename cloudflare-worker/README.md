@@ -110,8 +110,13 @@ most 8 hours and never longer than the ID token. The legacy GitHub OAuth flow
 The cookie routes that change something need `Origin` in `SESSION_ORIGINS` and
 the header `X-MCTL-Request: 1`. A session cookie that is present but invalid is
 a 401; it never falls back to the legacy flow. Each request re-presents the
-stored ID token to the portal, which asks mctl-api; a 403 there ends the
-session.
+stored ID token to the portal, which asks mctl-api; a 403 with an identity
+refusal code there ends the session.
+
+Logout deletes the KV record, but KV is eventually consistent across locations
+(up to about 60 seconds), and the ID token stays valid at ZITADEL until its own
+`exp`. For that window a cookie value captured before logout would still pass;
+`HttpOnly`, `Secure` and the `__Host-` prefix are what make capturing it hard.
 
 Configuration: the `ZITADEL_*`, `SESSION_ORIGINS` and `AUTH_FLOW_PUBLIC` vars in
 `wrangler.toml`, the `SESSIONS` binding (namespace owned by mctl-gitops,
