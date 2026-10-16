@@ -1,5 +1,13 @@
 # Changelog
 
+## [7.7.1](https://github.com/mctlhq/mctl-web/compare/7.7.0...7.7.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* adopt design 0.7 and simplify site styling ([d649e93](https://github.com/mctlhq/mctl-web/commit/d649e934503f92d2e66a618927dae26af499b9b2))
+* adopt design 0.7 and simplify site styling ([35fbe48](https://github.com/mctlhq/mctl-web/commit/35fbe48dc5976bab61cd747d4fd5a1a8d0f17c5e))
+
 ## [7.7.0](https://github.com/mctlhq/mctl-web/compare/7.6.2...7.7.0) (2026-10-16)
 
 
