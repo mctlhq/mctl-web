@@ -1,3 +1,5 @@
+import { SESSION_REQUEST_HEADERS, interpretSubmit, type SubmitOutcome } from '~/lib/zitadelSession'
+
 export interface SubmitResult {
   success: boolean
   message?: string
@@ -58,6 +60,24 @@ export function useApi() {
   const submitUrl = apiUrl('/submit')
   const contactUrl = apiUrl('/contact')
 
+  // The ZITADEL sign-in (C1b): the Worker reads the creator from its session
+  // cookie, so the body carries no identity. The custom header is part of the
+  // Worker's CSRF check. A body that cannot be read is a failed request.
+  async function submitSessionRequest(payload: {
+    team: string
+    usecase: string
+    turnstile_token: string
+  }): Promise<SubmitOutcome> {
+    const response = await fetch(submitUrl, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...SESSION_REQUEST_HEADERS },
+      body: JSON.stringify(payload),
+    })
+    const body = await response.json().catch(() => null)
+    return interpretSubmit(response.status, body)
+  }
+
   async function submitAccessRequest(payload: {
     github_auth: object
     team: string
@@ -78,6 +98,7 @@ export function useApi() {
 
   return {
     submitAccessRequest,
+    submitSessionRequest,
     submitContactForm,
   }
 }

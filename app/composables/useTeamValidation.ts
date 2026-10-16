@@ -1,7 +1,17 @@
 import { ref } from 'vue'
 import { isAuthResetCode } from '~/lib/authBlob'
+import { SESSION_REQUEST_HEADERS, interpretTeamCheck } from '~/lib/zitadelSession'
 
 const TEAM_REGEX = /^[a-z0-9][a-z0-9-]{0,62}$/
+
+// The ZITADEL sign-in (C1b). When `active()` is true the check goes to
+// /api/team/check with the Worker's session cookie instead of the legacy
+// signed identity; `onSignedOut` runs when the Worker has ended the session.
+export interface SessionCheckOptions {
+  active: () => boolean
+  signedIn: () => boolean
+  onSignedOut: () => void
+}
 
 interface GithubAuthIdentity {
   login?: string
@@ -21,8 +31,11 @@ interface GithubAuthIdentity {
 export function useTeamValidation(
   getAuthData?: () => GithubAuthIdentity | null | undefined,
   onAuthReset?: () => void,
+  session?: SessionCheckOptions,
 ) {
   const checkTeamUrl = apiUrl('/github/check-team')
+  const sessionCheckUrl = apiUrl('/team/check')
+  const sessionActive = () => !!session?.active()
   const teamAvailable = ref(false)
   const teamError = ref('')
   const checking = ref(false)
@@ -43,6 +56,7 @@ export function useTeamValidation(
   }
 
   function hasIdentity(): boolean {
+    if (sessionActive()) return !!session?.signedIn()
     const authData = getAuthData ? getAuthData() : null
     return !!(authData && authData.login && authData.sig)
   }
@@ -89,8 +103,9 @@ export function useTeamValidation(
   }
 
   async function checkAvailability(name: string) {
+    const useSession = sessionActive()
     const authData = getAuthData ? getAuthData() : null
-    if (!authData || !authData.login || !authData.sig) {
+    if (useSession ? !session?.signedIn() : !authData || !authData.login || !authData.sig) {
       teamAvailable.value = false
       teamError.value = 'js.team.sign_in_required'
       return
@@ -114,6 +129,30 @@ export function useTeamValidation(
     teamError.value = ''
 
     try {
+      if (useSession) {
+        const res = await fetch(sessionCheckUrl, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', ...SESSION_REQUEST_HEADERS },
+          body: JSON.stringify({ name }),
+          signal: controller.signal,
+        })
+        if (inFlight !== controller) return
+        // An abort while reading the body lands in the catch as null; the
+        // guard below then drops it, as for the legacy branch.
+        const body = await res.json().catch(() => null)
+        if (inFlight !== controller) return
+        const result = interpretTeamCheck(res.status, body)
+        if (result.ok && result.available) {
+          teamAvailable.value = true
+          return
+        }
+        teamAvailable.value = false
+        teamError.value = result.key
+        if (!result.ok && result.signedOut) session?.onSignedOut()
+        return
+      }
+
       const res = await fetch(checkTeamUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

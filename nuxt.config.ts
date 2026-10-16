@@ -89,6 +89,12 @@ export default defineNuxtConfig({
         || (process.env.NODE_ENV === 'production'
           ? '0x4AAAAAAEjFjEMuTRSzlzQc'
           : '1x00000000000000000000AA'),
+      // Which sign-in the request-access form shows by default: `legacy`
+      // (GitHub OAuth in the Worker, identity in localStorage) or `zitadel`
+      // (MCTL account, session held by the Worker). `?auth_flow=zitadel`
+      // switches one tab for testing. The switch is UI only: the Worker's
+      // AUTH_FLOW_PUBLIC / AUTH_FLOW_TEST_GITHUB_IDS decide who may act.
+      authFlow: import.meta.env.NUXT_PUBLIC_AUTH_FLOW || 'legacy',
     },
   },
 });

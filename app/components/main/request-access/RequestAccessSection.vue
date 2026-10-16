@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { SIGN_IN_ERROR_KEYS } from '~/lib/zitadelSession';
+
 import GithubAuth from './GithubAuth.vue';
 
 const runtimeConfig = useRuntimeConfig();
@@ -7,6 +9,21 @@ const { t } = useI18n();
 
 const { profile, authData, errorCode, logout } = useAuth();
 
+// `?auth_flow=zitadel` (C1b): the same badge and form, fed by the Worker's
+// session instead of the legacy identity. The legacy path below is unchanged.
+const session = useSession();
+const zitadel = computed(() => session.flow.value === 'zitadel');
+const badgeUser = computed(() => (zitadel.value ? session.profile.value : profile.value));
+// No badge until the session answer arrives, so a signed-in visitor does not
+// see "Sign in" flash first.
+const badgeReady = computed(() => !zitadel.value || session.status.value !== 'unknown');
+const sessionNotice = computed(() => {
+  if (!zitadel.value) return null;
+  if (session.status.value === 'unavailable') return t('js.session.unavailable');
+  if (session.signedIn.value && !session.canRequestWorkspace.value) return t('js.session.not_in_test_group');
+  return null;
+});
+
 const { baseUrlFront } = runtimeConfig.public;
 
 const githubLoginUrl = `${apiUrl('/github/login')}?redirect_to=${encodeURIComponent(baseUrlFront)}`;
@@ -14,7 +31,19 @@ const githubLoginUrl = `${apiUrl('/github/login')}?redirect_to=${encodeURICompon
 const authError = ref<string | null>(null);
 
 function handleLogin() {
+  if (zitadel.value) {
+    session.login();
+    return;
+  }
   window.location.href = githubLoginUrl;
+}
+
+function handleLogout() {
+  if (zitadel.value) {
+    session.logout();
+    return;
+  }
+  logout();
 }
 
 onMounted(() => {
@@ -31,7 +60,8 @@ onMounted(() => {
     EMAIL_UNVERIFIED: t('js.oauth.email_unverified'),
   };
 
-  authError.value = errorMessages[code] ?? t('js.oauth.failed');
+  const sessionKey = zitadel.value ? SIGN_IN_ERROR_KEYS[code] : undefined;
+  authError.value = sessionKey ? t(sessionKey) : (errorMessages[code] ?? t('js.oauth.failed'));
   setTimeout(() => {
     authError.value = null;
   }, 10000);
@@ -49,14 +79,23 @@ onMounted(() => {
         {{ t('form.subtitle') }}
       </p>
       <GithubAuth
-        :user="profile"
+        v-if="badgeReady"
+        :user="badgeUser"
         :auth-error="authError"
         class="request-access__github-auth"
         @clickLogin="handleLogin"
-        @clickLogout="logout"
+        @clickLogout="handleLogout"
       />
+      <p
+        v-if="sessionNotice"
+        class="request-access__notice"
+        role="status"
+      >
+        {{ sessionNotice }}
+      </p>
       <RequestAccessForm
         :auth-data="authData"
+        :session-mode="zitadel"
       />
     </BaseCard>
   </BaseSection>
@@ -84,6 +123,12 @@ onMounted(() => {
 
   &__github-auth {
     margin-bottom: 32px;
+  }
+
+  &__notice {
+    margin: -16px 0 24px;
+    color: var(--color-text-muted);
+    font-size: 14px;
   }
 }
 </style>

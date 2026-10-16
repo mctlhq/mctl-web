@@ -9,6 +9,9 @@ import SuccessModal from './SuccessModal.vue';
 
 interface Props {
   authData?: Record<string, any> | null
+  // The ZITADEL sign-in (C1b): the identity is the Worker's session cookie,
+  // so `authData` is ignored and requests go to the session routes.
+  sessionMode?: boolean
 }
 const props = defineProps<Props>();
 
@@ -29,13 +32,19 @@ const [usecase, usecaseProps] = defineField('usecase');
 // longer accepted (expired, or issued in a format the Worker has retired).
 // Clearing it swaps the form back to the "Sign in with GitHub" state.
 const { logout } = useAuth();
+const session = useSession();
 
 const { teamAvailable, teamError, checking, onInput, checkAvailability } = useTeamValidation(
   () => props.authData,
   logout,
+  {
+    active: () => !!props.sessionMode,
+    signedIn: () => session.signedIn.value,
+    onSignedOut: session.markSignedOut,
+  },
 );
 
-const { submitAccessRequest } = useApi();
+const { submitAccessRequest, submitSessionRequest } = useApi();
 
 const formStatus = ref<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -96,7 +105,7 @@ const onSubmit = handleSubmit(async (formData) => {
   // "still verifying" cannot mask a sign-in or availability error below.
   verificationStatus.value = null;
 
-  if (!props.authData) {
+  if (props.sessionMode ? !session.signedIn.value : !props.authData) {
     formStatus.value = { message: t('js.submit.github_required'), type: 'error' };
     return;
   }
@@ -118,6 +127,25 @@ const onSubmit = handleSubmit(async (formData) => {
 
   try {
     isSubmitting.value = true;
+
+    if (props.sessionMode) {
+      const outcome = await submitSessionRequest({
+        team: formData.team,
+        usecase: formData.usecase,
+        turnstile_token: turnstileToken.value,
+      });
+      if (outcome.ok) {
+        formStatus.value = null;
+        showSuccessModal.value = true;
+        return;
+      }
+      if (outcome.signedOut) session.markSignedOut();
+      const message = outcome.key
+        ? t(outcome.key, { name: formData.team })
+        : outcome.message || t('js.submit.request_failed');
+      formStatus.value = { message, type: 'error' };
+      return;
+    }
 
     const result = await submitAccessRequest({
       github_auth: props.authData,
