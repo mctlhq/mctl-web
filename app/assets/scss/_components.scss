@@ -60,7 +60,7 @@
 
 .btn:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-overlay, 0 16px 48px rgba(0, 0, 0, 0.48));
+  box-shadow: var(--shadow-sm, 0 4px 12px rgba(0, 0, 0, 0.2));
 }
 
 .btn:disabled {

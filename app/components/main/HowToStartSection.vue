@@ -70,7 +70,7 @@ const steps = [
     justify-content: center;
     font-size: var(--mctl-typography-font-size-3xl, 32px);
     font-weight: var(--mctl-typography-font-weight-extrabold, 800);
-    box-shadow: 0 0 20px color-mix(in srgb, var(--color-accent) 30%, transparent);
+    box-shadow: var(--shadow-sm, 0 4px 12px rgba(0, 0, 0, 0.2));
   }
 
   &__card-description {

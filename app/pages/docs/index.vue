@@ -270,7 +270,7 @@ useHead({
           <div class="step-content">
             <h3>
               Platform Operator
-              <span class="component-name" style="font-size: var(--text-micro-size, 12px);vertical-align:middle;margin-left:0.4rem">admin</span>
+              <span class="component-name component-name--admin">admin</span>
             </h3>
             <p>
               Create a tenant via the API or portal. Assign namespaces, set resource quotas,
@@ -541,5 +541,13 @@ useHead({
 @media (max-width: 380px) {
   .docs-hero { padding: 6rem 0 1.5rem; }
   .component-card { padding: 1.5rem 1rem; }
+}
+</style>
+
+<style scoped>
+.component-name--admin {
+  font-size: var(--text-micro-size, 12px);
+  vertical-align: middle;
+  margin-left: 0.4rem;
 }
 </style>

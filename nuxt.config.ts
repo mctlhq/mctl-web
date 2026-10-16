@@ -39,7 +39,7 @@ export default defineNuxtConfig({
         },
         // Pinned: the unversioned URL is a moving target, so a design-system
         // release could restyle the site without a change here. Bump on purpose.
-        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.6.0/mctl.css' },
+        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.7.0/mctl.css' },
       ],
     },
   },

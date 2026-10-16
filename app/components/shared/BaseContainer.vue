@@ -19,22 +19,11 @@ const { size = 'lg' } = defineProps<BaseContainerProps>();
   padding: 0 var(--site-gutter, 20px);
 }
 
-@media (min-width: 1440px) {
-  .base-container {
-    &--size {
-      &--md {
-        width: var(--container-width-md);
-        padding: 0;
-      }
-      &--lg {
-        width: var(--container-width);
-        padding: 0;
-      }
-      &--wide {
-        width: 100%;
-        padding: 0 var(--site-gutter, 20px);
-      }
-    }
-  }
+/* Include gutters in the outer width so content stays aligned at every viewport. */
+.base-container--size--lg {
+  max-width: calc(var(--container-width) + 2 * var(--site-gutter, 20px));
+}
+.base-container--size--md {
+  max-width: calc(var(--container-width-md) + 2 * var(--site-gutter, 20px));
 }
 </style>
