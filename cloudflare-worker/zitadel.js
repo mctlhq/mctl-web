@@ -159,7 +159,7 @@ export function clearSessionCookie() {
   return hostCookie(SESSION_COOKIE, '', 0);
 }
 
-function clearLoginCookie() {
+export function clearLoginCookie() {
   return hostCookie(LOGIN_COOKIE, '', 0);
 }
 

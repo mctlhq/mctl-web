@@ -32,6 +32,7 @@ import {
   SESSION_COOKIE,
   clearSessionCookie,
   credentialCorsHeaders,
+  clearLoginCookie,
   csrfOk,
   endSessionUrl,
   handleZitadelCallback,
@@ -82,7 +83,9 @@ const RATE_LIMITS = {
   'POST /api/github/check-team': { max: 20, windowSec: 60 },
   'GET /api/zitadel/login': { max: 10, windowSec: 60 },
   'POST /api/zitadel/logout': { max: 10, windowSec: 60 },
-  'GET /api/zitadel/callback': { max: 10, windowSec: 60 },
+  // Generous: every callback from behind one NAT shares this counter, and a
+  // forged one dies at INVALID_STATE before any outbound fetch.
+  'GET /api/zitadel/callback': { max: 30, windowSec: 60 },
   'GET /api/zitadel/session': { max: 60, windowSec: 60 },
   'POST /api/team/check': { max: 20, windowSec: 60 },
 };
@@ -143,6 +146,13 @@ export default {
       const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
       const limited = await checkRateLimit(
         clientIP, rateBucket(rateKey, request), limit.max, limit.windowSec);
+      if (limited && rateKey === 'GET /api/zitadel/callback') {
+        // A top-level navigation: back to the site, like every other callback
+        // failure, rather than a JSON body on a bare API URL.
+        const res = zitadelErrorRedirect('RATE_LIMITED', [...zitadelConfig(env).sessionOrigins][0]);
+        res.headers.append('Set-Cookie', clearLoginCookie());
+        return res;
+      }
       if (limited) {
         return jsonResponse(
           { error: 'Too many requests. Please try again later.' },
@@ -908,7 +918,7 @@ async function finishSubmit(env, origin, {
     `🏷 Team: \`${esc(team)}\``,
     ``,
     `*Status:*`,
-    `• ${esc(workflowStatus)}`,
+    `• ${workflowStatus}`,
     usecase ? `📝 ${esc(usecase)}` : null,
     ``,
     `🔗 *Platform Access:*`,
@@ -1065,17 +1075,21 @@ async function requireSession(request, env, origin) {
 // customer: expired or invalid token, revoked identity, disabled
 // principal). The session is over: forget it and ask for a new sign-in.
 // The portal's 403 codes that are about the stored ID token or the person
-// behind it (mctl-api's refusal of the creator). Signing in again is the
-// only remedy, so these end the session. Any other 403 is a server-side
-// cause a new sign-in cannot fix, and ending the session would loop.
+// behind it (mctl-api's refusal of the creator). The session can no longer
+// act, so these end it; a new sign-in either fixes the cause (an expired or
+// unproven token) or meets the same refusal at the next request. Any other
+// 403 is a server-side cause unrelated to the session: ending it would only
+// loop the person through sign-in.
 const IDENTITY_REFUSALS = new Set([
   'not_a_customer', 'id_token_invalid', 'customer_unproven',
   'principal_disabled', 'identity_refused', 'customer_conflict',
 ]);
 
-export async function isIdentityRefusal(res) {
+// The portal's 403 code, or '' when the body has none. Logged at both call
+// sites, so a code outside IDENTITY_REFUSALS (contract drift) is visible.
+export async function refusalCode(res) {
   const body = await res.json().catch(() => ({}));
-  return IDENTITY_REFUSALS.has(body?.code);
+  return typeof body?.code === 'string' ? body.code : '';
 }
 
 async function revokedSession(ctx, origin) {
@@ -1122,9 +1136,14 @@ export async function handleSessionCheckTeam(request, env, origin) {
       method: 'POST',
       body: JSON.stringify({ name, creatorIdToken: ctx.session.id_token }),
     });
-    if (res.status === 403 && await isIdentityRefusal(res)) {
-      console.warn(`team/check: portal refused the session of GitHub id ${ctx.session.github_id}`);
-      return revokedSession(ctx, origin);
+    if (res.status === 403) {
+      const code = await refusalCode(res);
+      if (IDENTITY_REFUSALS.has(code)) {
+        console.warn(`team/check: portal refused the session of GitHub id ${ctx.session.github_id}: ${code}`);
+        return revokedSession(ctx, origin);
+      }
+      console.error(`team/check: portal answered 403 without an identity refusal (code "${code}")`);
+      return sessionJson({ error: 'Failed to check team availability' }, 502, origin, ctx.cfg);
     }
     if (!res.ok) {
       console.error(`team/check: portal answered ${res.status}`);
@@ -1193,11 +1212,12 @@ export async function handleSessionSubmit(request, env, origin) {
     }
 
     if (tenantRes.status === 403) {
-      if (await isIdentityRefusal(tenantRes)) {
-        console.warn(`submit (session): portal refused the session of GitHub id ${session.github_id}`);
+      const code = await refusalCode(tenantRes);
+      if (IDENTITY_REFUSALS.has(code)) {
+        console.warn(`submit (session): portal refused the session of GitHub id ${session.github_id}: ${code}`);
         return revokedSession(ctx, origin);
       }
-      console.error('submit (session): portal answered 403 without an identity refusal');
+      console.error(`submit (session): portal answered 403 without an identity refusal (code "${code}")`);
       return sessionJson({ success: false, message: 'Failed to submit request. Please try again.' }, 502, origin, cfg);
     }
     if (tenantRes.status === 409) {

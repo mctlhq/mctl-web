@@ -153,6 +153,7 @@ function createNetwork({
     }
     if (url.startsWith('https://api.telegram.org/')) {
       calls.telegram += 1;
+      calls.telegramText = JSON.parse(options.body).text;
       return json(200, { ok: true });
     }
     if (url.startsWith('https://api.resend.com/')) {
@@ -796,4 +797,27 @@ test('session: rate limited', async () => {
     last = await worker.fetch(request('/api/zitadel/session', { headers: { 'CF-Connecting-IP': '203.0.113.9' } }), env);
   }
   assert.equal(last.status, 429);
+});
+
+test('callback: rate limited -> back to the site, pending login cleared', async () => {
+  const env = baseEnv();
+  const network = createNetwork();
+  let last;
+  for (let i = 0; i < 31; i++) {
+    last = await withNetwork(network, () => worker.fetch(request('/api/zitadel/callback?code=c&state=s', {
+      headers: { 'CF-Connecting-IP': '203.0.113.7' }, cookies: { [LOGIN_COOKIE]: 'x' } }), env));
+  }
+  assert.equal(last.status, 302);
+  assert.equal(last.headers.get('Location'), 'https://mctl.ai/?auth_flow=zitadel#auth_error=RATE_LIMITED');
+  assert.ok(setCookies(last).some(c => c.startsWith(`${LOGIN_COOKIE}=;`)));
+});
+
+test('submit (session): the Telegram status line is escaped once', async () => {
+  const env = baseEnv();
+  const { sessionId } = await signIn(env);
+  const network = createNetwork();
+  await withNetwork(network, () => worker.fetch(request('/api/submit', {
+    method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: SITE,
+    body: { team: 'acme', turnstile_token: 'ok' } }), env));
+  assert.match(network.calls.telegramText, /• ✅ Workflow submitted: `create\\-tenant\\-abc`/);
 });
