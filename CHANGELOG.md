@@ -1,5 +1,30 @@
 # Changelog
 
+## [7.7.0](https://github.com/mctlhq/mctl-web/compare/7.6.2...7.7.0) (2026-10-16)
+
+
+### Features
+
+* adopt shared public site typography and colors ([37e7bbf](https://github.com/mctlhq/mctl-web/commit/37e7bbfd547a5ed391a159aedae30eafcb593263))
+* use shared public site shell tokens ([e60eac9](https://github.com/mctlhq/mctl-web/commit/e60eac9b90ed85665cc8c15e0397e54888c9065f))
+* use shared typography and semantic colors across site ([6def1b0](https://github.com/mctlhq/mctl-web/commit/6def1b053b86367f654732b191ea7ac98d85122b))
+
+
+### Bug Fixes
+
+* center header wordmark without baseline offset ([62718ed](https://github.com/mctlhq/mctl-web/commit/62718ed262edfbfe883edf627241d2c204bfb1e2))
+* preserve site styles when design CDN is unavailable ([610f27b](https://github.com/mctlhq/mctl-web/commit/610f27b60140548e48ec0be03b050c4691efdd7a))
+
+
+### Documentation
+
+* **plan:** record owner sign-off on B1 shape after B0 ([517d888](https://github.com/mctlhq/mctl-web/commit/517d8887334ba6b13bce1ccb6ba5fd927f44eec4))
+* **plan:** record owner sign-off on B1 shape after B0 ([6dc171d](https://github.com/mctlhq/mctl-web/commit/6dc171d07eeb46de42d6373284d1cf55c815902f))
+* **plan:** record phase 0 local identity hook validation ([d312308](https://github.com/mctlhq/mctl-web/commit/d312308c4016cadc99ba0accfb589cbb81136786))
+* **plan:** record phase 0 local identity hook validation ([8eabd70](https://github.com/mctlhq/mctl-web/commit/8eabd70a065f805e388f29a57bdb9204ac8a70e8))
+* **plans:** record B0 spike results for stage B ([7f779f0](https://github.com/mctlhq/mctl-web/commit/7f779f0df9ae15f44bd75a9ace9ba4871756464d))
+* **plans:** record B0 spike results for stage B ([d96377b](https://github.com/mctlhq/mctl-web/commit/d96377b006565bc0374c2a2dd940fdf7d7f727aa))
+
 ## [7.6.2](https://github.com/mctlhq/mctl-web/compare/7.6.1...7.6.2) (2026-10-15)
 
 
