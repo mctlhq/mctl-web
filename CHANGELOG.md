@@ -1,5 +1,23 @@
 # Changelog
 
+## [7.8.0](https://github.com/mctlhq/mctl-web/compare/7.7.1...7.8.0) (2026-10-16)
+
+
+### Features
+
+* **auth:** ZITADEL sign-in UI behind the auth_flow switch ([a259238](https://github.com/mctlhq/mctl-web/commit/a25923865127e51d6673d5f6cf90337c80bddbad))
+* **auth:** ZITADEL sign-in UI behind the auth_flow switch ([d08e910](https://github.com/mctlhq/mctl-web/commit/d08e91023364bc366f18f1c0cc29c753b2793388))
+* **worker:** ZITADEL sign-in with server-side sessions ([3db9c1a](https://github.com/mctlhq/mctl-web/commit/3db9c1abbcd46c499a15036d37de6cfcf3cae548))
+* **worker:** ZITADEL sign-in with server-side sessions ([baa77a4](https://github.com/mctlhq/mctl-web/commit/baa77a433d6d6574d6daa34f9da709faa779fdd0))
+
+
+### Bug Fixes
+
+* **auth:** address C1b review findings ([abe3864](https://github.com/mctlhq/mctl-web/commit/abe3864473884dae2f2acad054e6d049865a42cc))
+* **auth:** end a session only when one can exist, and only on a 2xx ([e8dba1f](https://github.com/mctlhq/mctl-web/commit/e8dba1fc534a71258abfa24bce34db6d0f5a3cbc))
+* **worker:** address C1a review findings ([6d486e4](https://github.com/mctlhq/mctl-web/commit/6d486e4fcfebdf0f44350079079b1ee0ad7e2de8))
+* **worker:** keep a rate-limited callback on the site, log refusal codes ([6909cac](https://github.com/mctlhq/mctl-web/commit/6909cacffbea30d977dbfdc482b1976d93aefa06))
+
 ## [7.7.1](https://github.com/mctlhq/mctl-web/compare/7.7.0...7.7.1) (2026-10-16)
 
 
