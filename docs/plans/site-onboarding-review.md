@@ -4,7 +4,9 @@ Status: implementation and production acceptance in progress (2026-10-16).
 Stage A and the signed-identity fix (#133, #136, #137) are released. B0 and local
 hook validation completed; B1 creation/token gates, C0 and C2 are deployed.
 C1a/C1b are released behind the test-group/UI switches (web #147/#149, 7.8.0).
-B1b, public cutover, legacy retirement and D1/D2 remain open until verified.
+B1b grants and the API claim-client rollout are applied. The missing portal
+client-audience setting found by live sign-in is corrected and rolled out.
+Public cutover, legacy retirement and D1/D2 remain open until verified.
 The findings below describe the original audit unless a later record says
 otherwise; implementation is not evidence of successful live acceptance.
 
@@ -656,3 +658,45 @@ B1b implementation: mctl-gitops#1919. The legacy portal OIDC-provider client
 is excluded from customer claims: unlike the portal UI it still resolves by
 login and has no C0 customer-principal path. D1 English copy is tracked by the
 customer-login-copy branch PR; full D1 acceptance and D2 remain open.
+
+### B1b production apply
+
+GitOps #1919 merged as `0ea5b4b2`. The live zitadel-iac Job created on
+2026-10-16 20:26:44 UTC succeeded: two project grants added, one Secret updated,
+zero resources destroyed. Both customers grants were created, and the live
+`ZITADEL_HOOK_CLAIM_CLIENT_IDS` Secret contains five explicit client IDs.
+GitOps #1921 rolled out mctl-api after this Secret update. The running process
+was verified to load all five clients, with `TENANT_AUTHZ_MODE=shadow`, and the
+application returned Synced/Healthy. Public website access remains disabled.
+
+GitOps #1920 merged and the English D1 Login V2/verification-email copy applied
+through the successful zitadel-iac Job created at 20:36:43 UTC. It does
+not establish other locale coverage or prove that initial verified-email
+creation sends no mail. D2 ready notifications and Workspace Access are not
+implemented by these changes. The principal-mode gate above still blocks full
+MCP and public-launch acceptance.
+
+### C2 live sign-in configuration fix
+
+A real portal sign-in as mctl-reviewer reached C0 but returned
+`503 surface_identity_unavailable`. The generated hook Secret omitted
+`ZITADEL_PORTAL_CLIENT_ID`, so the API deliberately left purpose=signin
+unconfigured. GitOps #1923 wrote the portal UI client ID into the Secret; the successful
+zitadel-iac Job created at 20:42:20 UTC applied it. #1924 then rolled out the API.
+The running process was verified to have the same client ID as the portal's
+`AUTH_OIDC_CLIENT_ID`, remain in shadow mode, and return Synced/Healthy.
+The added test fails when that setting names the website client instead.
+Real portal sign-in is rechecked below; successful configuration alone does
+not establish tenant access.
+
+Deferred non-blocking review follow-up: extend the upstream-locale drift
+checker to cover the new org-scoped English Login V2 keys on ZITADEL upgrades.
+
+Post-fix browser result: the same mctl-reviewer sign-in now reaches the expected
+"This account is not a member of any MCTL tenant" refusal instead of 503.
+This confirms customer resolution proceeds to the principal-keyed catalog
+lookup; it does not grant access before membership exists. The test account
+has no tenant yet, so creation, catalog convergence and the positive portal
+access check still await the prepared workspace submission. Turnstile showed
+"The verification could not be completed"; the form was left open for the
+owner rather than bypassing verification or submitting an unconfirmed grant.
