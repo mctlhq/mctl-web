@@ -14,14 +14,14 @@ const { profile, authData, errorCode, logout } = useAuth();
 const session = useSession();
 const zitadel = computed(() => session.flow.value === 'zitadel');
 const badgeUser = computed(() => (zitadel.value ? session.profile.value : profile.value));
-// No badge until the session answer arrives, so a signed-in visitor does not
-// see "Sign in" flash first. Only after mount: the prerendered HTML has the
-// badge, and the hydrating render must match it or Vue re-patches the subtree.
+// The badge stays mounted (the prerendered HTML has it, and the hydrating
+// render must match) but is hidden, keeping its height, until the session
+// answer arrives, so a signed-in visitor does not see "Sign in" first.
 const mounted = ref(false);
 onMounted(() => {
   mounted.value = true;
 });
-const badgeReady = computed(() => !mounted.value || !zitadel.value || session.status.value !== 'unknown');
+const badgePending = computed(() => mounted.value && zitadel.value && session.status.value === 'unknown');
 const sessionNotice = computed(() => {
   if (!zitadel.value) return null;
   if (session.status.value === 'unavailable') return t('js.session.unavailable');
@@ -35,6 +35,13 @@ const githubLoginUrl = `${apiUrl('/github/login')}?redirect_to=${encodeURICompon
 
 const authError = ref<string | null>(null);
 
+function showAuthError(message: string) {
+  authError.value = message;
+  setTimeout(() => {
+    authError.value = null;
+  }, 10000);
+}
+
 function handleLogin() {
   if (zitadel.value) {
     session.login();
@@ -43,9 +50,10 @@ function handleLogin() {
   window.location.href = githubLoginUrl;
 }
 
-function handleLogout() {
+async function handleLogout() {
   if (zitadel.value) {
-    session.logout();
+    const key = await session.logout();
+    if (key) showAuthError(t(key));
     return;
   }
   logout();
@@ -66,10 +74,7 @@ onMounted(() => {
   };
 
   const sessionKey = zitadel.value ? SIGN_IN_ERROR_KEYS[code] : undefined;
-  authError.value = sessionKey ? t(sessionKey) : (errorMessages[code] ?? t('js.oauth.failed'));
-  setTimeout(() => {
-    authError.value = null;
-  }, 10000);
+  showAuthError(sessionKey ? t(sessionKey) : (errorMessages[code] ?? t('js.oauth.failed')));
 });
 </script>
 
@@ -84,10 +89,10 @@ onMounted(() => {
         {{ t('form.subtitle') }}
       </p>
       <GithubAuth
-        v-if="badgeReady"
         :user="badgeUser"
         :auth-error="authError"
         class="request-access__github-auth"
+        :class="{ 'request-access__github-auth--pending': badgePending }"
         @clickLogin="handleLogin"
         @clickLogout="handleLogout"
       />
@@ -128,6 +133,10 @@ onMounted(() => {
 
   &__github-auth {
     margin-bottom: 32px;
+
+    &--pending {
+      visibility: hidden;
+    }
   }
 
   &__notice {

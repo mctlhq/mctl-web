@@ -29,6 +29,17 @@ export function resolveAuthFlow(configured: unknown, query: unknown, remembered:
   return asFlow(query) ?? asFlow(remembered) ?? asFlow(configured) ?? 'legacy'
 }
 
+// Whether an explicit `?auth_flow=legacy` has to end a Worker session first.
+// Only a browser that remembered the ZITADEL flow can hold the session cookie:
+// the sign-in callback lands on `?auth_flow=zitadel`, which is remembered. So
+// every other visit sends nothing, which matters because the logout route is
+// rate-limited and shares its bucket with the real sign-out. (With storage
+// blocked nothing is remembered and nothing is ended; the cookie then expires
+// with the session.)
+export function shouldEndSession(query: unknown, remembered: unknown): boolean {
+  return asFlow(query) === 'legacy' && asFlow(remembered) === 'zitadel'
+}
+
 export interface SessionView {
   login: string
   name: string
@@ -122,6 +133,20 @@ export function sessionFailure(status: number, body: unknown): SessionFailure | 
     return { ok: false, key: 'js.session.unavailable', signedOut: false }
   }
   return null
+}
+
+export type LogoutOutcome = { ok: true; next: string | null } | { ok: false; key: string }
+
+// POST /api/zitadel/logout. Without a cookie the Worker still answers 200, so
+// a non-2xx is never "there was no session": the session may still be live,
+// and the caller must not report the visitor as signed out. `next` is the
+// ZITADEL end-session URL, followed only when it is https.
+export function interpretLogout(status: number, body: unknown): LogoutOutcome {
+  if (status < 200 || status >= 300) {
+    return { ok: false, key: status === 429 ? 'js.session.rate_limited' : 'js.session.unavailable' }
+  }
+  const url = body && typeof body === 'object' ? (body as Record<string, unknown>).logoutUrl : undefined
+  return { ok: true, next: typeof url === 'string' && url.startsWith('https://') ? url : null }
 }
 
 export type TeamCheckResult =

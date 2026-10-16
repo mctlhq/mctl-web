@@ -2,12 +2,14 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   SIGN_IN_ERROR_KEYS,
+  interpretLogout,
   interpretSubmit,
   interpretTeamCheck,
   readSessionView,
   resolveAuthFlow,
   sessionFailure,
   sessionProfile,
+  shouldEndSession,
 } from './zitadelSession.ts'
 
 const signedIn = {
@@ -39,6 +41,34 @@ test('unknown values fall through to the next source, and finally to legacy', ()
   assert.equal(resolveAuthFlow('legacy', 'github', null), 'legacy')
   assert.equal(resolveAuthFlow(undefined, undefined, 'other'), 'legacy')
   assert.equal(resolveAuthFlow('', '', ''), 'legacy')
+})
+
+test('only a switch to legacy from a remembered ZITADEL flow ends the session', () => {
+  assert.equal(shouldEndSession('legacy', 'zitadel'), true)
+  assert.equal(shouldEndSession('legacy', null), false)
+  assert.equal(shouldEndSession('legacy', 'legacy'), false)
+  assert.equal(shouldEndSession(null, 'zitadel'), false)
+  assert.equal(shouldEndSession('zitadel', 'zitadel'), false)
+  assert.equal(shouldEndSession('LEGACY', 'zitadel'), false)
+})
+
+test('logout: a 2xx ends the session and follows only an https end-session URL', () => {
+  assert.deepEqual(interpretLogout(200, { signedIn: false, logoutUrl: 'https://auth.mctl.ai/oidc/v1/end_session?x=1' }), {
+    ok: true, next: 'https://auth.mctl.ai/oidc/v1/end_session?x=1',
+  })
+  assert.deepEqual(interpretLogout(200, { logoutUrl: 'javascript:alert(1)' }), { ok: true, next: null })
+  assert.deepEqual(interpretLogout(200, null), { ok: true, next: null })
+})
+
+test('logout: anything but a 2xx is not a sign-out', () => {
+  assert.deepEqual(interpretLogout(429, { error: 'Too many requests. Please try again later.' }), {
+    ok: false, key: 'js.session.rate_limited',
+  })
+  assert.deepEqual(interpretLogout(503, { error: 'Sign-in is not available' }), {
+    ok: false, key: 'js.session.unavailable',
+  })
+  assert.deepEqual(interpretLogout(0, null), { ok: false, key: 'js.session.unavailable' })
+  assert.equal(interpretLogout(302, { logoutUrl: 'https://x' }).ok, false)
 })
 
 test('a well-formed signed-in answer is read', () => {

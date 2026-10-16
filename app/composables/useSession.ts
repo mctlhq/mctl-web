@@ -2,9 +2,11 @@ import { computed } from 'vue'
 import {
   AUTH_FLOW_PARAM,
   SESSION_REQUEST_HEADERS,
+  interpretLogout,
   readSessionView,
   resolveAuthFlow,
   sessionProfile,
+  shouldEndSession,
   type AuthFlow,
   type SessionView,
 } from '~/lib/zitadelSession'
@@ -19,22 +21,32 @@ export function useSession() {
   // `unknown` until the first answer, so the form does not flash "sign in"
   // for someone who is signed in.
   const status = useState<'unknown' | 'ready' | 'unavailable'>('zitadel_session_status', () => 'unknown')
-  const flow = useState<AuthFlow>('auth_flow', () => 'legacy')
+  const { baseUrlFront, authFlow } = useRuntimeConfig().public
+  // The prerendered page is built in the build default's flow, so the
+  // hydrating render starts from the same one.
+  const flow = useState<AuthFlow>('auth_flow', () => resolveAuthFlow(authFlow, null, null))
 
   const sessionUrl = apiUrl('/zitadel/session')
   const loginUrl = apiUrl('/zitadel/login')
   const logoutUrl = apiUrl('/zitadel/logout')
-  const { baseUrlFront, authFlow } = useRuntimeConfig().public
 
   const signedIn = computed(() => !!view.value)
   const profile = computed(() => (view.value ? sessionProfile(view.value) : null))
   const canRequestWorkspace = computed(() => !!view.value?.canRequestWorkspace)
 
+  function remember(value: AuthFlow) {
+    try {
+      localStorage.setItem(FLOW_STORAGE_KEY, value)
+    } catch {
+      // Storage blocked: the choice still applies to this page view.
+    }
+  }
+
   // Reads `?auth_flow=` and the browser's remembered choice (localStorage,
   // because the session cookie is browser-wide too; see resolveAuthFlow).
-  // Client only: the prerendered page always starts from the build default.
-  // `explicitLegacy` is set when the visitor asked for legacy by parameter.
-  function resolveFlow(): { flow: AuthFlow; explicitLegacy: boolean } {
+  // Client only. `endSession` is set when an explicit switch to legacy may
+  // leave a session cookie behind (see shouldEndSession).
+  function resolveFlow(): { flow: AuthFlow; endSession: boolean } {
     let remembered: string | null = null
     try {
       remembered = localStorage.getItem(FLOW_STORAGE_KEY)
@@ -43,33 +55,39 @@ export function useSession() {
     }
     const query = new URL(window.location.href).searchParams.get(AUTH_FLOW_PARAM)
     const resolved = resolveAuthFlow(authFlow, query, remembered)
-    if (query) {
-      try {
-        localStorage.setItem(FLOW_STORAGE_KEY, resolved)
-      } catch {
-        // Storage blocked: the parameter still applies to this page view.
-      }
-    }
+    if (query) remember(resolved)
     flow.value = resolved
-    return { flow: resolved, explicitLegacy: query === 'legacy' && resolved === 'legacy' }
+    return { flow: resolved, endSession: shouldEndSession(query, remembered) }
   }
 
-  // Switching back to legacy while a session cookie exists would leave the
-  // legacy form broken: the Worker routes any cookie-bearing /api/submit to
-  // the session branch, which refuses it without the CSRF header. So an
-  // explicit switch to legacy ends the session in the Worker (not at ZITADEL;
-  // no redirect). Failures are ignored: there may be no session at all.
-  async function endSessionQuietly() {
+  async function postLogout() {
     try {
-      await fetch(logoutUrl, {
+      const res = await fetch(logoutUrl, {
         method: 'POST',
         credentials: 'include',
         headers: { ...SESSION_REQUEST_HEADERS },
       })
+      return interpretLogout(res.status, await res.json().catch(() => null))
     } catch {
-      // Nothing to do: the cookie, if any, expires with the session.
+      return interpretLogout(0, null)
     }
-    markSignedOut()
+  }
+
+  // Switching back to legacy while a session cookie exists would leave the
+  // legacy form broken: the Worker routes any cookie-bearing /api/submit to
+  // the session branch, which refuses it without the CSRF header. So the
+  // switch ends the session in the Worker first (not at ZITADEL; no
+  // redirect). If that fails the session may still be live, so the page
+  // stays on the ZITADEL flow, which matches the cookie, instead.
+  async function leaveSessionFlow() {
+    const outcome = await postLogout()
+    if (outcome.ok) {
+      markSignedOut()
+      return
+    }
+    remember('zitadel')
+    flow.value = 'zitadel'
+    await refresh()
   }
 
   async function refresh() {
@@ -100,26 +118,18 @@ export function useSession() {
     window.location.href = `${loginUrl}${redirect}`
   }
 
-  // Ends the session in the Worker, then at ZITADEL. If the Worker cannot be
-  // reached the local view is still cleared; the cookie then expires on its
-  // own within the session lifetime.
-  async function logout() {
-    let next: string | null = null
-    try {
-      const res = await fetch(logoutUrl, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { ...SESSION_REQUEST_HEADERS },
-      })
-      const body = await res.json().catch(() => null)
-      if (res.ok && body && typeof body.logoutUrl === 'string' && body.logoutUrl.startsWith('https://')) {
-        next = body.logoutUrl
-      }
-    } catch {
-      next = null
+  // Ends the session in the Worker, then at ZITADEL. Returns an i18n key when
+  // the Worker did not confirm it: the view is then re-read rather than
+  // cleared, so the page never says "signed out" over a live session.
+  async function logout(): Promise<string | null> {
+    const outcome = await postLogout()
+    if (!outcome.ok) {
+      await refresh()
+      return outcome.key
     }
     markSignedOut()
-    if (next) window.location.href = next
+    if (outcome.next) window.location.href = outcome.next
+    return null
   }
 
   return {
@@ -130,7 +140,7 @@ export function useSession() {
     profile,
     canRequestWorkspace,
     resolveFlow,
-    endSessionQuietly,
+    leaveSessionFlow,
     refresh,
     markSignedOut,
     login,

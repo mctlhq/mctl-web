@@ -486,9 +486,12 @@ The local run differs from production in four ways:
     The query parameter wins and is remembered in localStorage: the session
     cookie is browser-wide, and the Worker sends any cookie-bearing
     `/api/submit` down the session branch, so every tab has to show the flow
-    the cookie belongs to. An explicit `?auth_flow=legacy` therefore also ends
-    the Worker session. The switch is UI only; the Worker's test group decides
-    who may act.
+    the cookie belongs to. An explicit `?auth_flow=legacy` in a browser that
+    remembered `zitadel` therefore ends the Worker session first; if the Worker
+    does not confirm it, the page stays on the ZITADEL flow. A sign-out the
+    Worker does not confirm (429, 503, network) is reported, not shown as
+    signed out. The switch is UI only; the Worker's test group decides who may
+    act.
   - The session is read from `GET /api/zitadel/session`; nothing about the
     identity is stored in the browser. Team checks and submits go to
     `/api/team/check` and the cookie branch of `/api/submit` with

@@ -2,7 +2,7 @@ import { AUTH_FLOW_PARAM } from '~/lib/zitadelSession';
 
 export default defineNuxtPlugin(() => {
   const { restore, parseOAuth, isAuth } = useAuth();
-  const { resolveFlow, endSessionQuietly, refresh, signedIn } = useSession();
+  const { resolveFlow, leaveSessionFlow, refresh, signedIn } = useSession();
 
   restore();
 
@@ -22,10 +22,10 @@ export default defineNuxtPlugin(() => {
     });
   };
 
-  const { flow, explicitLegacy } = resolveFlow();
+  const { flow, endSession } = resolveFlow();
 
-  if (explicitLegacy) {
-    endSessionQuietly();
+  if (endSession) {
+    leaveSessionFlow();
   }
 
   if (flow === 'zitadel') {
