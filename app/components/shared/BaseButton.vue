@@ -29,7 +29,6 @@ const { variant = 'primary', size = 'md', block = false } = defineProps<BaseButt
   font-weight: var(--mctl-typography-font-weight-medium, 500);
   color: var(--color-text);
 
-  background-color: var(--control-bg, var(--color-bg));
   border-width: 1px;
   border-style: solid;
   border-radius: 4px;
