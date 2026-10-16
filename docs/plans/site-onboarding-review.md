@@ -623,3 +623,36 @@ Remaining delivery: B1b and live C0/C2 checks; test-group sign-in, workspace,
 portal and MCP; public cutover and C1c; customer Login V2/message texts (D1);
 verified readiness plus idempotent ready notification and Access page (D2).
 Stage E stays outside this first release as agreed above.
+
+### Principal-mode launch dependency
+
+Public customer MCP access is blocked on mctl-api#377, not just on B1b.
+`customerSigninPrincipal` in `internal/api/oauth_signin_customer.go` deliberately
+refuses customer OAuth sign-in outside `TENANT_AUTHZ_MODE=principal` with
+`customer_not_enabled`; the production manifest still sets `shadow`.
+
+Issue #377 requires seven consecutive clean shadow days starting from
+2026-10-12 21:33 UTC. The earliest cutover is **2026-10-19 21:33 UTC**, only
+with the complete metrics/traffic, keyed-membership and live authorization
+checks in that issue and `mctl-api/docs/principals.md`. Do not bypass that gate
+or remove the guard to finish website acceptance earlier. The date alone is
+not acceptance. After the gate, use a reviewed GitOps change, verify live
+principal authorization and rollback, then finish onboarding MCP acceptance.
+
+Before that gate, independent work can finish: C0/C2 and test-group workspace
+creation/portal checks; B1b role-free project grants and narrow claim allowlist;
+D1 copy and D2 verified readiness/notification implementation. Keep public signup
+and legacy retirement pending full portal/MCP acceptance. A ready notification
+must list only capabilities verified at send time, never promise MCP early.
+
+Live test-group recheck: `mctl-reviewer` completed GitHub → ZITADEL → website
+sign-in and the form showed the successful availability state for
+`onboarding-acceptance-test`, exercising C0 through the portal. Creating this
+test workspace is awaiting the owner's action-time confirmation because it
+creates an Owner grant. The earlier table's schema checks do not substitute
+for the pending tenant/capability checks.
+
+B1b implementation: mctl-gitops#1919. The legacy portal OIDC-provider client
+is excluded from customer claims: unlike the portal UI it still resolves by
+login and has no C0 customer-principal path. D1 English copy is tracked by the
+customer-login-copy branch PR; full D1 acceptance and D2 remain open.
