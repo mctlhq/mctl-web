@@ -68,8 +68,8 @@ const steps = [
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.75rem;
-    font-weight: 800;
+    font-size: var(--mctl-typography-font-size-3xl, 32px);
+    font-weight: var(--mctl-typography-font-weight-extrabold, 800);
     box-shadow: 0 0 20px color-mix(in srgb, var(--color-accent) 30%, transparent);
   }
 
@@ -81,11 +81,11 @@ const steps = [
 
   &__card-substeps {
     font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
-    font-size: 0.75rem;
+    font-size: var(--text-micro-size, 12px);
     background: var(--color-bg);
     padding: 0.75rem;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--surface-line, #1f242b);
     color: var(--color-accent);
     line-height: 1.6;
     white-space: pre-wrap;

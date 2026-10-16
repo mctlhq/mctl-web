@@ -55,7 +55,7 @@ const footerLinks = computed(() => [
 
   &__copy {
     color: var(--color-text-muted);
-    font-size: 0.8rem;
+    font-size: var(--text-caption-size, 13px);
   }
 }
 </style>

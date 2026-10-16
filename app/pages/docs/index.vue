@@ -270,7 +270,7 @@ useHead({
           <div class="step-content">
             <h3>
               Platform Operator
-              <span class="component-name" style="font-size:0.7rem;vertical-align:middle;margin-left:0.4rem">admin</span>
+              <span class="component-name" style="font-size: var(--text-micro-size, 12px);vertical-align:middle;margin-left:0.4rem">admin</span>
             </h3>
             <p>
               Create a tenant via the API or portal. Assign namespaces, set resource quotas,
@@ -317,8 +317,9 @@ useHead({
 }
 
 .docs-hero h1 {
-  font-size: clamp(2.5rem, 5vw, 4rem);
-  font-weight: 800;
+  font-size: var(--text-docs-hero-size, clamp(32px, 4.5vw, 56px));
+  font-weight: var(--text-docs-hero-weight, 800);
+  line-height: var(--text-docs-hero-leading, 1.15);
   color: var(--color-text);
   letter-spacing: -0.02em;
   margin-bottom: 1rem;
@@ -326,7 +327,7 @@ useHead({
 }
 
 .docs-hero .subtitle {
-  font-size: 1.1rem;
+  font-size: var(--mctl-typography-font-size-lg, 18px);
   color: var(--color-text-muted);
   margin-bottom: 0;
   max-width: 580px;
@@ -350,7 +351,7 @@ useHead({
   max-width: 760px;
   margin: 0 auto;
   color: var(--color-text-muted);
-  font-size: 0.95rem;
+  font-size: var(--text-label-size, 15.2px);
   line-height: 1.8;
 }
 
@@ -375,12 +376,12 @@ useHead({
 .component-card:hover {
   border-color: var(--color-accent);
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px color-mix(in srgb, var(--color-accent) 10%, transparent);
+  box-shadow: var(--shadow-overlay, 0 16px 48px rgba(0, 0, 0, 0.48));
 }
 
 .component-name {
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
-  font-size: 0.85rem;
+  font-size: var(--text-small-size, 14px);
   color: var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 7%, transparent);
   padding: 0.35rem 0.65rem;
@@ -391,13 +392,13 @@ useHead({
 }
 
 .component-card h3 {
-  font-size: 1.1rem;
+  font-size: var(--mctl-typography-font-size-lg, 18px);
   color: var(--color-text);
   margin-bottom: 0.75rem;
 }
 
 .component-card p {
-  font-size: 0.85rem;
+  font-size: var(--text-small-size, 14px);
   color: var(--color-text-muted);
   line-height: 1.7;
 }
@@ -420,24 +421,24 @@ useHead({
 .interface-card:hover {
   border-color: var(--color-accent);
   transform: translateY(-4px);
-  box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.36));
 }
 
 .interface-card h3 {
-  font-size: 1.1rem;
+  font-size: var(--mctl-typography-font-size-lg, 18px);
   color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .interface-card .interface-url {
-  font-size: 0.78rem;
+  font-size: var(--text-caption-size, 13px);
   color: var(--color-accent);
   margin-bottom: 0.75rem;
   display: block;
 }
 
 .interface-card p {
-  font-size: 0.85rem;
+  font-size: var(--text-small-size, 14px);
   color: var(--color-text-muted);
   line-height: 1.6;
 }
@@ -457,12 +458,12 @@ useHead({
 }
 
 .docs-diagram :deep(.diagram-box) h4 {
-  font-size: 0.9rem;
+  font-size: var(--text-small-size, 14px);
   margin-bottom: 0.25rem;
 }
 
 .docs-diagram :deep(.diagram-box) p {
-  font-size: 0.75rem;
+  font-size: var(--text-micro-size, 12px);
 }
 
 .docs-diagram :deep(.diagram-connector) {
@@ -481,13 +482,13 @@ useHead({
 }
 
 .agent-callout h4 {
-  font-size: 1rem;
+  font-size: var(--text-body-size, 16px);
   color: var(--color-text);
   margin-bottom: 0.5rem;
 }
 
 .agent-callout p {
-  font-size: 0.85rem;
+  font-size: var(--text-small-size, 14px);
   color: var(--color-text-muted);
   line-height: 1.7;
 }
@@ -506,7 +507,7 @@ useHead({
 }
 
 .quickstart-grid :deep(.step-content h3) {
-  font-size: 1.25rem;
+  font-size: var(--mctl-typography-font-size-xl, 20px);
 }
 
 .quickstart-grid :deep(.step-content p) {
@@ -519,7 +520,6 @@ useHead({
 
 @media (max-width: 768px) {
   .docs-hero { padding: 7rem 0 2rem; }
-  .docs-hero h1 { font-size: 2.2rem; }
   .docs-section { padding: 4rem 0; }
   .interface-grid { grid-template-columns: 1fr; }
   .quickstart-grid { grid-template-columns: 1fr; }

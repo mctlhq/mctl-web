@@ -87,14 +87,14 @@ const features = [
 
   &__card-title {
     margin-bottom: 20px;
-    font-size: 24px;
+    font-size: var(--text-title-size, 24px);
     text-align: center;
   }
 
   &__card-code {
     margin-bottom: 20px;
     min-height: 54px;
-    font-size: 0.8rem;
+    font-size: var(--text-caption-size, 13px);
     color: var(--color-accent);
     background: color-mix(in srgb, var(--color-accent) 7%, transparent);
     padding: 0.5rem 0.8rem;

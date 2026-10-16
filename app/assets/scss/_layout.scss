@@ -22,7 +22,7 @@
   right: 0;
   z-index: 1000;
   padding: 1.25rem 0;
-  background: rgba(5, 8, 22, 0.8);
+  background: var(--site-header-bg, color-mix(in srgb, #0a0b0d 80%, transparent));
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-glass-border);
 }
@@ -36,8 +36,8 @@
 .burger-menu { display: none; }
 
 .logo {
-  font-size: 1.5rem;
-  font-weight: 800;
+  font-size: var(--text-title-size, 24px);
+  font-weight: var(--mctl-typography-font-weight-extrabold, 800);
   text-decoration: none;
   color: var(--color-text);
   letter-spacing: 2px;
@@ -60,8 +60,8 @@
   text-decoration: none;
   color: var(--color-text-muted);
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: var(--text-label-size, 15.2px);
+  font-weight: var(--mctl-typography-font-weight-medium, 500);
   transition: color 0.3s ease;
 }
 
@@ -109,7 +109,7 @@
   text-align: center;
 }
 
-.footer-logo .logo { font-size: 1.25rem; }
+.footer-logo .logo { font-size: var(--mctl-typography-font-size-xl, 20px); }
 
 .footer-links {
   display: flex;
@@ -130,7 +130,7 @@
 }
 
 .footer-copy {
-  font-size: 0.8rem;
+  font-size: var(--text-caption-size, 13px);
   color: var(--color-text-muted);
 }
 
@@ -185,7 +185,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--overlay-scrim, color-mix(in srgb, #0a0b0d 84%, transparent));
     z-index: 998;
   }
 

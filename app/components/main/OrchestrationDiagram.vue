@@ -78,12 +78,12 @@ const { t } = useI18n();
 
   &__box-title {
     margin-bottom: 0.5rem;
-    font-size: 1.25rem;
+    font-size: var(--mctl-typography-font-size-xl, 20px);
     color: var(--color-text);
   }
 
   &__box-description {
-    font-size: 0.9rem;
+    font-size: var(--text-small-size, 14px);
     color: var(--color-text-muted);
   }
 }

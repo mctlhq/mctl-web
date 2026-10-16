@@ -31,7 +31,7 @@ defineProps<Props>();
 
     text-align: center;
     font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
-    font-size: .8rem;
+    font-size: var(--text-caption-size, 13px);
     letter-spacing: 2px;
     color: var(--color-accent);
     text-transform: uppercase;

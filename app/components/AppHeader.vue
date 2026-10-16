@@ -59,9 +59,9 @@ function closeMenu() {
   width: 100%;
   height: var(--header-height);
 
-  background: rgba(5, 8, 22, 0.8);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--color-glass-border);
+  background: var(--site-header-bg, rgba(10, 11, 13, 0.8));
+  backdrop-filter: blur(var(--site-header-blur, 12px));
+  border-bottom: 1px solid var(--site-header-border, var(--color-line));
 
   &__container {
     height: 100%;
@@ -71,7 +71,8 @@ function closeMenu() {
   }
 
   &__logo {
-    display: block;
+    display: flex;
+    align-items: center;
   }
 
   &__right {
@@ -133,9 +134,9 @@ function closeMenu() {
     left: 0;
     width: 100%;
     height: 100vh;
-    background: rgba(5, 8, 22, 0.8);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--color-glass-border);
+    background: var(--site-header-bg, rgba(10, 11, 13, 0.8));
+    backdrop-filter: blur(var(--site-header-blur, 12px));
+    border-bottom: 1px solid var(--site-header-border, var(--color-line));
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;

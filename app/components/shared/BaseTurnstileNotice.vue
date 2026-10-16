@@ -42,7 +42,7 @@ const message = computed(() => {
 
 <style lang="scss" scoped>
 .turnstile-notice {
-  font-size: 0.875rem;
+  font-size: var(--text-small-size, 14px);
   line-height: 1.5;
   color: var(--color-text-muted);
 
