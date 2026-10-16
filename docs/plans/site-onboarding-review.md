@@ -1,10 +1,12 @@
 # Site onboarding review: sign-up, forms, emails, identity
 
-Status: stage A done and released in mctl-web 7.6.0 (2026-10-14). The B0 spike
-ran on 2026-10-15 (results table in stage B); B1 is preliminary and not started;
-stages C and D are an agreed design, not yet scheduled.
-Reviewed: 2026-10-14; B0 and phase 0 (local hook validation) results added
-2026-10-15.
+Status: implementation and production acceptance in progress (2026-10-16).
+Stage A and the signed-identity fix (#133, #136, #137) are released. B0 and local
+hook validation completed; B1 creation/token gates, C0 and C2 are deployed.
+C1a/C1b are released behind the test-group/UI switches (web #147/#149, 7.8.0).
+B1b, public cutover, legacy retirement and D1/D2 remain open until verified.
+The findings below describe the original audit unless a later record says
+otherwise; implementation is not evidence of successful live acceptance.
 
 This is the canonical review of the path from mctl.ai to a working workspace. It
 covers the website copy, the forms, the welcome email, and how a new person gets
@@ -596,3 +598,28 @@ Still open, both inputs rather than decisions:
 A new person goes from mctl.ai through sign-up to a workspace, then signs in to
 the portal and connects an MCP client, with no manual Vault entry and no manual
 membership fix.
+
+## 8. Production acceptance record (2026-10-16)
+
+- Web #147 (C1a) and #149 (C1b) merged; production is 7.8.0.
+  Anonymous `GET /api/zitadel/session` returns `{"signedIn":false}`.
+  The opt-in UI redirects through the customers ZITADEL client to the GitHub
+  account chooser. The existing test account is `mctl-reviewer`.
+- Portal #172/#173/#175 shipped in 4.21.0. Direct ArgoCD reads report the
+  portal and mctl-api Synced/Healthy. The live Backstage database has
+  `catalog_key`, `principal_id`, `login`, and the partial unique index
+  `uq_tenant_members_principal` on user_id for principal-keyed membership.
+  At this observation all ten membership rows were login-keyed; customer
+  creation, catalog resolution and sign-in still need end-to-end proof.
+- B1b needs both project grants and the identity-hook client allowlist extended
+  to the portal UI/provider, API OAuth and CLI clients. Otherwise those clients
+  can obtain tokens without the required customer claims and C0 refuses them.
+  After IaC writes the Secret, mctl-api must roll out to load it.
+- Keep `AUTH_FLOW_PUBLIC=false` and the site's legacy default until acceptance.
+  A failed or incomplete check remains unknown; it does not satisfy the done
+  criterion. Do not retire the legacy flow before the replacement is verified.
+
+Remaining delivery: B1b and live C0/C2 checks; test-group sign-in, workspace,
+portal and MCP; public cutover and C1c; customer Login V2/message texts (D1);
+verified readiness plus idempotent ready notification and Access page (D2).
+Stage E stays outside this first release as agreed above.
