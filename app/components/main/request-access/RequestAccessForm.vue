@@ -106,7 +106,8 @@ const onSubmit = handleSubmit(async (formData) => {
   verificationStatus.value = null;
 
   if (props.sessionMode ? !session.signedIn.value : !props.authData) {
-    formStatus.value = { message: t('js.submit.github_required'), type: 'error' };
+    const key = props.sessionMode ? 'js.session.sign_in_required' : 'js.submit.github_required';
+    formStatus.value = { message: t(key), type: 'error' };
     return;
   }
 

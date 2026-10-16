@@ -30,12 +30,14 @@ export function useSession() {
   const profile = computed(() => (view.value ? sessionProfile(view.value) : null))
   const canRequestWorkspace = computed(() => !!view.value?.canRequestWorkspace)
 
-  // Reads `?auth_flow=` and the tab's remembered choice. Client only:
-  // the prerendered page always starts from the build default.
-  function resolveFlow(): AuthFlow {
+  // Reads `?auth_flow=` and the browser's remembered choice (localStorage,
+  // because the session cookie is browser-wide too; see resolveAuthFlow).
+  // Client only: the prerendered page always starts from the build default.
+  // `explicitLegacy` is set when the visitor asked for legacy by parameter.
+  function resolveFlow(): { flow: AuthFlow; explicitLegacy: boolean } {
     let remembered: string | null = null
     try {
-      remembered = sessionStorage.getItem(FLOW_STORAGE_KEY)
+      remembered = localStorage.getItem(FLOW_STORAGE_KEY)
     } catch {
       remembered = null
     }
@@ -43,13 +45,31 @@ export function useSession() {
     const resolved = resolveAuthFlow(authFlow, query, remembered)
     if (query) {
       try {
-        sessionStorage.setItem(FLOW_STORAGE_KEY, resolved)
+        localStorage.setItem(FLOW_STORAGE_KEY, resolved)
       } catch {
-        // Private mode: the parameter still applies to this page view.
+        // Storage blocked: the parameter still applies to this page view.
       }
     }
     flow.value = resolved
-    return resolved
+    return { flow: resolved, explicitLegacy: query === 'legacy' && resolved === 'legacy' }
+  }
+
+  // Switching back to legacy while a session cookie exists would leave the
+  // legacy form broken: the Worker routes any cookie-bearing /api/submit to
+  // the session branch, which refuses it without the CSRF header. So an
+  // explicit switch to legacy ends the session in the Worker (not at ZITADEL;
+  // no redirect). Failures are ignored: there may be no session at all.
+  async function endSessionQuietly() {
+    try {
+      await fetch(logoutUrl, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { ...SESSION_REQUEST_HEADERS },
+      })
+    } catch {
+      // Nothing to do: the cookie, if any, expires with the session.
+    }
+    markSignedOut()
   }
 
   async function refresh() {
@@ -110,6 +130,7 @@ export function useSession() {
     profile,
     canRequestWorkspace,
     resolveFlow,
+    endSessionQuietly,
     refresh,
     markSignedOut,
     login,

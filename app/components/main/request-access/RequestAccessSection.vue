@@ -15,8 +15,13 @@ const session = useSession();
 const zitadel = computed(() => session.flow.value === 'zitadel');
 const badgeUser = computed(() => (zitadel.value ? session.profile.value : profile.value));
 // No badge until the session answer arrives, so a signed-in visitor does not
-// see "Sign in" flash first.
-const badgeReady = computed(() => !zitadel.value || session.status.value !== 'unknown');
+// see "Sign in" flash first. Only after mount: the prerendered HTML has the
+// badge, and the hydrating render must match it or Vue re-patches the subtree.
+const mounted = ref(false);
+onMounted(() => {
+  mounted.value = true;
+});
+const badgeReady = computed(() => !mounted.value || !zitadel.value || session.status.value !== 'unknown');
 const sessionNotice = computed(() => {
   if (!zitadel.value) return null;
   if (session.status.value === 'unavailable') return t('js.session.unavailable');

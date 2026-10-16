@@ -483,9 +483,12 @@ The local run differs from production in four ways:
   default. A later small flip makes it the default and updates /privacy, /docs and
   the welcome email.
   - `runtimeConfig.public.authFlow` (`NUXT_PUBLIC_AUTH_FLOW`, default `legacy`).
-    The query parameter wins and is remembered for the tab in sessionStorage,
-    because logout and some error paths land on the bare site. It switches the
-    UI only; the Worker's test group decides who may act.
+    The query parameter wins and is remembered in localStorage: the session
+    cookie is browser-wide, and the Worker sends any cookie-bearing
+    `/api/submit` down the session branch, so every tab has to show the flow
+    the cookie belongs to. An explicit `?auth_flow=legacy` therefore also ends
+    the Worker session. The switch is UI only; the Worker's test group decides
+    who may act.
   - The session is read from `GET /api/zitadel/session`; nothing about the
     identity is stored in the browser. Team checks and submits go to
     `/api/team/check` and the cookie branch of `/api/submit` with

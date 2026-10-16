@@ -2,7 +2,7 @@ import { AUTH_FLOW_PARAM } from '~/lib/zitadelSession';
 
 export default defineNuxtPlugin(() => {
   const { restore, parseOAuth, isAuth } = useAuth();
-  const { resolveFlow, refresh, signedIn } = useSession();
+  const { resolveFlow, endSessionQuietly, refresh, signedIn } = useSession();
 
   restore();
 
@@ -22,10 +22,16 @@ export default defineNuxtPlugin(() => {
     });
   };
 
-  if (resolveFlow() === 'zitadel') {
+  const { flow, explicitLegacy } = resolveFlow();
+
+  if (explicitLegacy) {
+    endSessionQuietly();
+  }
+
+  if (flow === 'zitadel') {
     // The ZITADEL callback lands on `/?auth_flow=zitadel` (with `#auth_error=`
     // on failure). Only that landing scrolls to the form; a plain visit in a
-    // tab that remembers the flow does not.
+    // browser that remembers the flow does not.
     const landed = new URL(window.location.href).searchParams.has(AUTH_FLOW_PARAM);
     refresh().then(() => {
       if (landed && (signedIn.value || error)) scrollToForm();

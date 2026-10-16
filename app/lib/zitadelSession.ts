@@ -19,10 +19,12 @@ function asFlow(value: unknown): AuthFlow | null {
   return value === 'legacy' || value === 'zitadel' ? value : null
 }
 
-// Which sign-in this tab shows. `?auth_flow=` wins and is remembered for the
-// tab (sessionStorage), because the Worker's logout and some error paths land
-// on the bare site without the parameter. The build default comes last. The
-// switch only changes the UI: the Worker decides who may act.
+// Which sign-in the site shows. `?auth_flow=` wins and is remembered in
+// localStorage: the session cookie is browser-wide, so every tab has to agree
+// with it (the Worker sends a cookie-bearing /api/submit down the session
+// branch whatever the UI shows), and the Worker's logout and some error paths
+// land on the bare site without the parameter. The build default comes last.
+// The switch only changes the UI: the Worker decides who may act.
 export function resolveAuthFlow(configured: unknown, query: unknown, remembered: unknown): AuthFlow {
   return asFlow(query) ?? asFlow(remembered) ?? asFlow(configured) ?? 'legacy'
 }
@@ -92,8 +94,9 @@ export interface SessionFailure {
   signedOut: boolean
 }
 
-// 401 and 403 answers from the cookie routes. Returns null for anything else,
-// which the caller handles as its own route's failure.
+// 401, 403 and "sign-in not configured" answers from the cookie routes.
+// Returns null for anything else, which the caller handles as its own route's
+// failure.
 export function sessionFailure(status: number, body: unknown): SessionFailure | null {
   const code = body && typeof body === 'object' ? (body as Record<string, unknown>).code : undefined
   if (status === 401) {
@@ -109,7 +112,13 @@ export function sessionFailure(status: number, body: unknown): SessionFailure | 
   if (status === 403 && code === 'csrf') {
     return { ok: false, key: 'js.submit.request_failed', signedOut: false }
   }
-  if (status === 503) {
+  // Two different 503s reach the site: the Worker's own "sign-in is not
+  // configured" ({error}, no `success`), and on submit a portal outage
+  // ({success: false, message}), which is not a sign-in problem and keeps its
+  // message. An unreadable 503 body is not evidence of either.
+  if (status === 503 && body && typeof body === 'object'
+    && typeof (body as Record<string, unknown>).error === 'string'
+    && !('success' in body)) {
     return { ok: false, key: 'js.session.unavailable', signedOut: false }
   }
   return null
@@ -155,6 +164,7 @@ export function interpretSubmit(status: number, body: unknown): SubmitOutcome {
   const b = body && typeof body === 'object' ? (body as Record<string, unknown>) : null
   const message = b && typeof b.message === 'string' ? b.message : undefined
   if (status >= 200 && status < 300 && b?.success === true) return { ok: true, message }
+  if (status === 429) return { ok: false, key: 'js.submit.rate_limited', signedOut: false }
   if (status === 409) {
     return {
       ok: false,

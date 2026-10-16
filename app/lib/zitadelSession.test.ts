@@ -120,10 +120,37 @@ test('403 answers keep the session', () => {
   assert.equal(sessionFailure(403, { code: 'other' }), null)
 })
 
-test('503 means the sign-in is unavailable; other statuses are not session failures', () => {
-  assert.equal(sessionFailure(503, {})?.key, 'js.session.unavailable')
-  assert.equal(sessionFailure(502, {}), null)
+test('the Worker\'s not-configured 503 means the sign-in is unavailable', () => {
+  assert.equal(sessionFailure(503, { error: 'Sign-in is not available' })?.key, 'js.session.unavailable')
+  assert.equal(sessionFailure(502, { error: 'x' }), null)
   assert.equal(sessionFailure(200, {}), null)
+})
+
+test('a 503 that is not the sign-in one is not a session failure', () => {
+  const portal = { success: false, message: 'Workspace requests are unavailable right now.' }
+  assert.equal(sessionFailure(503, portal), null)
+  assert.equal(sessionFailure(503, { success: false, error: 'upstream', message: 'down' }), null)
+  assert.equal(sessionFailure(503, null), null)
+  assert.equal(sessionFailure(503, {}), null)
+})
+
+test('submit: a portal outage keeps the Worker\'s message', () => {
+  assert.deepEqual(
+    interpretSubmit(503, { success: false, message: 'Workspace requests are unavailable right now.' }),
+    { ok: false, message: 'Workspace requests are unavailable right now.', signedOut: false },
+  )
+  assert.equal((interpretSubmit(503, { error: 'Sign-in is not available' }) as { key?: string }).key,
+    'js.session.unavailable')
+})
+
+test('submit: 429 has its own message', () => {
+  assert.deepEqual(interpretSubmit(429, { error: 'Too many requests. Please try again later.' }), {
+    ok: false, key: 'js.submit.rate_limited', signedOut: false,
+  })
+})
+
+test('team check: an unreadable 503 is a failed check, not a sign-in outage', () => {
+  assert.equal((interpretTeamCheck(503, null) as { key: string }).key, 'js.team.check_failed')
 })
 
 test('team check: available and taken names', () => {
