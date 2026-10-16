@@ -88,3 +88,45 @@ replaces every route of the script, and a dashboard route is drift that the
 nightly `cloudflare-drift.yml` in mctl-gitops reports. To add or change a
 pattern, open a PR in mctl-gitops; if the new pattern needs new handling, change
 `index.js` here in the same release.
+
+## ZITADEL sign-in (stage C1a)
+
+`zitadel.js` signs a visitor in through ZITADEL (customers org, GitHub IdP
+preselected) and keeps the session on the server. The browser only holds an
+opaque id in the `__Host-mctl_sid` cookie; the record behind it, including the
+ID token, lives in the `SESSIONS` KV namespace under `sess:<sha256(id)>` for at
+most 8 hours and never longer than the ID token. The legacy GitHub OAuth flow
+(`/api/github/*`, `/api/submit` with `github_auth`) is unchanged.
+
+| Route | What it does |
+|---|---|
+| `GET /api/zitadel/login` | redirect to ZITADEL with PKCE, state and nonce |
+| `GET /api/zitadel/callback` | verify the ID token, create the session |
+| `GET /api/zitadel/session` | who is signed in (never the token) |
+| `POST /api/zitadel/logout` | delete the session, return the ZITADEL end-session URL |
+| `POST /api/team/check` | name availability for the signed-in customer |
+| `POST /api/submit` | with the session cookie: create the workspace for the signed-in customer |
+
+The cookie routes that change something need `Origin` in `SESSION_ORIGINS` and
+the header `X-MCTL-Request: 1`. A session cookie that is present but invalid is
+a 401; it never falls back to the legacy flow. Each request re-presents the
+stored ID token to the portal, which asks mctl-api; a 403 with an identity
+refusal code there ends the session.
+
+Logout deletes the KV record, but KV is eventually consistent across locations
+(up to about 60 seconds), and the ID token stays valid at ZITADEL until its own
+`exp`. For that window a cookie value captured before logout would still pass;
+`HttpOnly`, `Secure` and the `__Host-` prefix are what make capturing it hard.
+
+Configuration: the `ZITADEL_*`, `SESSION_ORIGINS` and `AUTH_FLOW_PUBLIC` vars in
+`wrangler.toml`, the `SESSIONS` binding (namespace owned by mctl-gitops,
+`infrastructure/cloudflare/account/workers-kv.tf`) and one secret:
+
+```bash
+# Numeric GitHub ids allowed to use the cookie flow while AUTH_FLOW_PUBLIC is
+# not "true". Unset means nobody.
+wrangler secret put AUTH_FLOW_TEST_GITHUB_IDS
+```
+
+Local run: `wrangler dev --env dev` uses the `mctl-web-dev` client, its own KV
+namespace and `http://localhost:3000` as the only session origin.

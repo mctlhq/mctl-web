@@ -22,13 +22,41 @@
  *
  * Config vars (set via wrangler.toml [vars] — not secret):
  * - UNLIMITED_USERS: comma-separated GitHub logins exempt from tenant-provisioning limits
+ *
+ * ZITADEL sign-in with server-side sessions (stage C1a) is in zitadel.js,
+ * which lists its own config. Its routes run next to the legacy GitHub flow
+ * above, which they do not change.
  */
+
+import {
+  SESSION_COOKIE,
+  clearSessionCookie,
+  credentialCorsHeaders,
+  clearLoginCookie,
+  csrfOk,
+  endSessionUrl,
+  handleZitadelCallback,
+  handleZitadelLogin,
+  loadSession,
+  mayUseCookieFlow,
+  readCookie,
+  sessionView,
+  zitadelConfig,
+  zitadelConfigured,
+} from './zitadel.js';
 
 const BASE_DOMAIN = 'mctl.ai';
 // Subdomain redirects: *.mctl.me and *.mctl.ru → *.mctl.ai
 // Root domain redirects (mctl.me, mctl.ru) are handled by CF Redirect Rules — no Worker invocation.
 const REDIRECT_SUFFIXES = ['.mctl.me', '.mctl.ru'];
 const ALLOWED_ORIGINS = new Set(['https://mctl.ai', 'http://localhost:3000']);
+
+// Routes that read the __Host-mctl_sid cookie from a fetch. Only their
+// preflight advertises credentials; the origins that may send the cookie are
+// SESSION_ORIGINS (zitadel.js), which sets Allow-Origin itself.
+const SESSION_COOKIE_PATHS = new Set([
+  '/api/zitadel/session', '/api/zitadel/logout', '/api/team/check', '/api/submit',
+]);
 const LANDING_URL = `https://${BASE_DOMAIN}`;
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
 const BACKSTAGE_APP_URL = 'https://app.mctl.ai';
@@ -53,6 +81,13 @@ const RATE_LIMITS = {
   'POST /api/contact': { max: 3,  windowSec: 300 },
   'GET /api/github/login': { max: 10, windowSec: 60 },
   'POST /api/github/check-team': { max: 20, windowSec: 60 },
+  'GET /api/zitadel/login': { max: 10, windowSec: 60 },
+  'POST /api/zitadel/logout': { max: 10, windowSec: 60 },
+  // Generous: every callback from behind one NAT shares this counter, and a
+  // forged one dies at INVALID_STATE before any outbound fetch.
+  'GET /api/zitadel/callback': { max: 30, windowSec: 60 },
+  'GET /api/zitadel/session': { max: 60, windowSec: 60 },
+  'POST /api/team/check': { max: 20, windowSec: 60 },
 };
 
 // Known bot User-Agent fragments — block before any processing.
@@ -94,7 +129,12 @@ export default {
 
     // CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders(origin) });
+      return new Response(null, {
+        headers: {
+          ...corsHeaders(origin),
+          ...(SESSION_COOKIE_PATHS.has(url.pathname) ? credentialCorsHeaders(origin, zitadelConfig(env)) : {}),
+        },
+      });
     }
 
     // Rate limiting for sensitive endpoints. See RATE_LIMITS on why the method
@@ -106,6 +146,13 @@ export default {
       const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
       const limited = await checkRateLimit(
         clientIP, rateBucket(rateKey, request), limit.max, limit.windowSec);
+      if (limited && rateKey === 'GET /api/zitadel/callback') {
+        // A top-level navigation: back to the site, like every other callback
+        // failure, rather than a JSON body on a bare API URL.
+        const res = zitadelErrorRedirect('RATE_LIMITED', [...zitadelConfig(env).sessionOrigins][0]);
+        res.headers.append('Set-Cookie', clearLoginCookie());
+        return res;
+      }
       if (limited) {
         return jsonResponse(
           { error: 'Too many requests. Please try again later.' },
@@ -133,8 +180,31 @@ export default {
       return handleCheckTeam(request, env, origin);
     }
 
-    // Form submission
+    // ZITADEL sign-in and its server-side session (stage C1a, zitadel.js)
+    if (request.method === 'GET' && path === '/api/zitadel/login') {
+      return handleZitadelLogin(url, env, zitadelErrorRedirect);
+    }
+    if (request.method === 'GET' && path === '/api/zitadel/callback') {
+      return handleZitadelCallback(
+        url, request, env, zitadelErrorRedirect, zitadelSuccessRedirect, Math.floor(Date.now() / 1000));
+    }
+    if (request.method === 'GET' && path === '/api/zitadel/session') {
+      return handleSessionInfo(request, env, origin);
+    }
+    if (request.method === 'POST' && path === '/api/zitadel/logout') {
+      return handleLogout(request, env, origin);
+    }
+    if (request.method === 'POST' && path === '/api/team/check') {
+      return handleSessionCheckTeam(request, env, origin);
+    }
+
+    // Form submission. A session cookie selects the cookie branch, even when
+    // the body also carries a legacy github_auth; an invalid cookie is a 401
+    // there, never a fall back to the legacy identity.
     if (request.method === 'POST' && path === '/api/submit') {
+      if (readCookie(request, SESSION_COOKIE) !== null) {
+        return handleSessionSubmit(request, env, origin);
+      }
       return handleFormSubmit(request, env, origin);
     }
 
@@ -226,7 +296,7 @@ function corsHeaders(origin = '') {
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-MCTL-Request',
     'Vary': 'Origin',
   };
 }
@@ -740,7 +810,6 @@ export async function handleFormSubmit(request, env, origin) {
     }
 
     const { login, name, email } = auth.identity;
-    const html_url = `https://github.com/${login}`;
 
     if (!team) {
       return jsonResponse({ success: false, message: 'Missing team name' }, 400, {}, origin);
@@ -817,58 +886,374 @@ export async function handleFormSubmit(request, env, origin) {
       console.error('Tenant API call failed:', e);
     }
 
-    // ── Build Telegram notification ──────────────────────────────────────────
-    const workflowStatus = workflowSubmitted
-      ? `✅ Workflow submitted: \`${esc(workflowName || 'create-tenant')}\``
-      : `❌ Workflow failed: ${esc(workflowError || 'unknown')}`;
-
-    const msg = [
-      `🚀 *mctl\\.me — New Tenant Request*`,
-      ``,
-      `👤 [@${esc(login)}](${esc(html_url)})${name ? ` \\(${esc(name)}\\)` : ''}`,
-      email ? `📧 ${esc(email)}` : null,
-      `🏷 Team: \`${esc(team)}\``,
-      ``,
-      `*Status:*`,
-      `• ${esc(workflowStatus)}`,
-      usecase ? `📝 ${esc(usecase)}` : null,
-      ``,
-      `🔗 *Platform Access:*`,
-      `• [Portal](https://app\\.mctl\\.me/)`,
-      `• [ArgoCD](https://ops\\.mctl\\.me/)`,
-      workflowSubmitted ? `• [Workflow](https://workflows\\.mctl\\.me/)` : null,
-      ``,
-      `⏰ ${new Date().toISOString().replace(/[-.]/g, '\\$&')}`,
-    ].filter(Boolean).join('\n');
-
-    // The notifications are side effects of an already-submitted workflow.
-    // Each one reports its own status and none may turn an accepted tenant
-    // request into an error: before this, a Telegram network exception fell
-    // through to the outer catch and answered 500 for a workspace that was
-    // in fact being provisioned, inviting a duplicate request.
-    const telegramStatus = await sendTelegram(env, msg);
-    if (telegramStatus !== 'accepted') {
-      console.error(`submit: Telegram notification ${telegramStatus} for team ${team}`);
-    }
-
-    // ── Response ─────────────────────────────────────────────────────────────
-    if (workflowSubmitted) {
-      const emailStatus = await sendWelcomeEmail(env, { email, name: name || login, team });
-      return jsonResponse({
-        success: true,
-        message: `Provisioning request for "${team}" accepted. Portal sign-in for self-service accounts is not available yet.`,
-        emailStatus,
-      }, 200, {}, origin);
-    } else {
-      return jsonResponse({
-        success: false,
-        message: `Failed to submit provisioning request: ${workflowError}`,
-      }, 500, {}, origin);
-    }
+    // Awaited here so a failure still reaches the catch below.
+    return await finishSubmit(env, origin, {
+      login, name, email, team, usecase, workflowSubmitted, workflowName, workflowError,
+    });
 
   } catch (error) {
     console.error('Error:', error);
     return jsonResponse({ success: false, message: 'Failed to submit request. Please try again.' }, 500, {}, origin);
+  }
+}
+
+// Notifications and the answer once the provisioning request went to the
+// portal, shared by the legacy and the cookie branch of /api/submit.
+// `extraHeaders` carries the cookie branch's credential CORS headers.
+async function finishSubmit(env, origin, {
+  login, name, email, team, usecase, workflowSubmitted, workflowName, workflowError,
+}, extraHeaders = {}) {
+  const html_url = `https://github.com/${login}`;
+
+  // ── Build Telegram notification ──────────────────────────────────────────
+  const workflowStatus = workflowSubmitted
+    ? `✅ Workflow submitted: \`${esc(workflowName || 'create-tenant')}\``
+    : `❌ Workflow failed: ${esc(workflowError || 'unknown')}`;
+
+  const msg = [
+    `🚀 *mctl\\.me — New Tenant Request*`,
+    ``,
+    `👤 [@${esc(login)}](${esc(html_url)})${name ? ` \\(${esc(name)}\\)` : ''}`,
+    email ? `📧 ${esc(email)}` : null,
+    `🏷 Team: \`${esc(team)}\``,
+    ``,
+    `*Status:*`,
+    `• ${workflowStatus}`,
+    usecase ? `📝 ${esc(usecase)}` : null,
+    ``,
+    `🔗 *Platform Access:*`,
+    `• [Portal](https://app\\.mctl\\.me/)`,
+    `• [ArgoCD](https://ops\\.mctl\\.me/)`,
+    workflowSubmitted ? `• [Workflow](https://workflows\\.mctl\\.me/)` : null,
+    ``,
+    `⏰ ${esc(new Date().toISOString())}`,
+  ].filter(Boolean).join('\n');
+
+  // The notifications are side effects of an already-submitted workflow.
+  // Each one reports its own status and none may turn an accepted tenant
+  // request into an error: before this, a Telegram network exception fell
+  // through to the outer catch and answered 500 for a workspace that was
+  // in fact being provisioned, inviting a duplicate request.
+  const telegramStatus = await sendTelegram(env, msg);
+  if (telegramStatus !== 'accepted') {
+    console.error(`submit: Telegram notification ${telegramStatus} for team ${team}`);
+  }
+
+  // ── Response ─────────────────────────────────────────────────────────────
+  if (workflowSubmitted) {
+    const emailStatus = await sendWelcomeEmail(env, { email, name: name || login, team });
+    return jsonResponse({
+      success: true,
+      message: `Provisioning request for "${team}" accepted. Portal sign-in for self-service accounts is not available yet.`,
+      emailStatus,
+    }, 200, extraHeaders, origin);
+  } else {
+    return jsonResponse({
+      success: false,
+      message: 'Failed to submit provisioning request. Please try again.',
+    }, 500, extraHeaders, origin);
+  }
+}
+
+// ─── ZITADEL session routes (stage C1a) ──────────────────────────────────────
+//
+// The cookie branch. Sign-in itself is in zitadel.js; these routes read the
+// session it stored and re-present its ID token to the portal on every
+// request that acts, so mctl-api decides again each time.
+
+const TEAM_NAME_RE = /^[a-z0-9][a-z0-9-]{0,62}$/;
+
+// Back to the site with the new sign-in UI selected. Errors ride in the
+// fragment, like the legacy flow's, so they never reach a server log.
+export function zitadelErrorRedirect(errorCode, baseUrl = LANDING_URL) {
+  const headers = redirectHeaders();
+  headers.set('Location', `${baseUrl}/?auth_flow=zitadel#auth_error=${errorCode}`);
+  return new Response(null, { status: 302, headers });
+}
+
+export function zitadelSuccessRedirect(baseUrl = LANDING_URL) {
+  const headers = redirectHeaders();
+  headers.set('Location', `${baseUrl}/?auth_flow=zitadel`);
+  return new Response(null, { status: 302, headers });
+}
+
+// A JSON answer of the cookie branch: never cached, and readable with
+// credentials by the site's own origins only.
+function sessionJson(body, status, origin, cfg, extraHeaders = {}) {
+  return jsonResponse(body, status, {
+    'Cache-Control': 'private, no-store',
+    ...credentialCorsHeaders(origin, cfg),
+    ...extraHeaders,
+  }, origin);
+}
+
+// GET /api/zitadel/session: who is signed in, for the site to show. Not a
+// credential check for anything else, so it needs no CSRF header.
+export async function handleSessionInfo(request, env, origin) {
+  const cfg = zitadelConfig(env);
+  if (!zitadelConfigured(cfg)) {
+    return sessionJson({ error: 'Sign-in is not available' }, 503, origin, cfg);
+  }
+  let loaded;
+  try {
+    loaded = await loadSession(request, cfg.sessions, Math.floor(Date.now() / 1000));
+  } catch (e) {
+    console.error('session: KV read failed:', e?.message ?? e);
+    return sessionJson({ error: 'Sign-in is not available' }, 503, origin, cfg);
+  }
+  if (!loaded.ok) {
+    const clear = loaded.reason === 'invalid' ? { 'Set-Cookie': clearSessionCookie() } : {};
+    return sessionJson({ signedIn: false }, 200, origin, cfg, clear);
+  }
+  return sessionJson(sessionView(cfg, loaded.session), 200, origin, cfg);
+}
+
+// POST /api/zitadel/logout: ends the session here and hands back the URL
+// that ends the ZITADEL session as well.
+export async function handleLogout(request, env, origin) {
+  const cfg = zitadelConfig(env);
+  if (!csrfOk(request, cfg)) {
+    return sessionJson({ error: 'Forbidden', code: 'csrf' }, 403, origin, cfg);
+  }
+  if (!zitadelConfigured(cfg)) {
+    return sessionJson({ error: 'Sign-in is not available' }, 503, origin, cfg);
+  }
+  try {
+    const loaded = await loadSession(request, cfg.sessions, Math.floor(Date.now() / 1000));
+    if (loaded.ok) await cfg.sessions.delete(loaded.key);
+  } catch (e) {
+    // The cookie is cleared regardless; a record left behind expires by
+    // itself and is useless without the cookie.
+    console.error('logout: KV delete failed:', e?.message ?? e);
+  }
+  return sessionJson(
+    { signedIn: false, logoutUrl: endSessionUrl(cfg) }, 200, origin, cfg,
+    { 'Set-Cookie': clearSessionCookie() },
+  );
+}
+
+/**
+ * The session behind a cookie-branch request, or the answer to send instead:
+ * 403 csrf, 503 not configured, 401 session_required (clearing a stale
+ * cookie), 403 not_in_test_group.
+ */
+async function requireSession(request, env, origin) {
+  const cfg = zitadelConfig(env);
+  if (!csrfOk(request, cfg)) {
+    return { response: sessionJson({ error: 'Forbidden', code: 'csrf' }, 403, origin, cfg) };
+  }
+  if (!zitadelConfigured(cfg)) {
+    return { response: sessionJson({ error: 'Sign-in is not available' }, 503, origin, cfg) };
+  }
+  let loaded;
+  try {
+    loaded = await loadSession(request, cfg.sessions, Math.floor(Date.now() / 1000));
+  } catch (e) {
+    console.error('session: KV read failed:', e?.message ?? e);
+    return { response: sessionJson({ error: 'Sign-in is not available' }, 503, origin, cfg) };
+  }
+  if (!loaded.ok) {
+    return {
+      response: sessionJson(
+        { error: 'Sign in again', code: 'session_required' }, 401, origin, cfg,
+        { 'Set-Cookie': clearSessionCookie() },
+      ),
+    };
+  }
+  if (!mayUseCookieFlow(cfg, loaded.session)) {
+    return {
+      response: sessionJson(
+        { error: 'Self-service workspaces are not open to this account yet', code: 'not_in_test_group' },
+        403, origin, cfg,
+      ),
+    };
+  }
+  return { cfg, key: loaded.key, session: loaded.session };
+}
+
+// The portal refused the stored ID token (mctl-api answered about the
+// customer: expired or invalid token, revoked identity, disabled
+// principal). The session is over: forget it and ask for a new sign-in.
+// The portal's 403 codes that are about the stored ID token or the person
+// behind it (mctl-api's refusal of the creator). The session can no longer
+// act, so these end it; a new sign-in either fixes the cause (an expired or
+// unproven token) or meets the same refusal at the next request. Any other
+// 403 is a server-side cause unrelated to the session: ending it would only
+// loop the person through sign-in.
+const IDENTITY_REFUSALS = new Set([
+  'not_a_customer', 'id_token_invalid', 'customer_unproven',
+  'principal_disabled', 'identity_refused', 'customer_conflict',
+]);
+
+// The portal's 403 code, or '' when the body has none. Logged at both call
+// sites, so a code outside IDENTITY_REFUSALS (contract drift) is visible.
+export async function refusalCode(res) {
+  const body = await res.json().catch(() => ({}));
+  return typeof body?.code === 'string' ? body.code : '';
+}
+
+async function revokedSession(ctx, origin) {
+  try {
+    await ctx.cfg.sessions.delete(ctx.key);
+  } catch (e) {
+    console.error('session: KV delete failed:', e?.message ?? e);
+  }
+  return sessionJson(
+    { success: false, error: 'Sign in again', code: 'session_revoked' }, 401, origin, ctx.cfg,
+    { 'Set-Cookie': clearSessionCookie() },
+  );
+}
+
+async function readJsonObject(request) {
+  try {
+    const body = await request.json();
+    return body && typeof body === 'object' && !Array.isArray(body) ? body : {};
+  } catch {
+    return {};
+  }
+}
+
+// POST /api/team/check {name}: whether this signed-in customer can create
+// a workspace with that name. The portal answers from the ID token
+// (POST /api/tenant-management/tenants/availability).
+export async function handleSessionCheckTeam(request, env, origin) {
+  const ctx = await requireSession(request, env, origin);
+  if (ctx.response) return ctx.response;
+
+  const body = await readJsonObject(request);
+  const name = typeof body.name === 'string' ? body.name : '';
+  if (!TEAM_NAME_RE.test(name)) {
+    return sessionJson({ error: 'Invalid team name format' }, 400, origin, ctx.cfg);
+  }
+  if (!env.BACKSTAGE_LANDING_TOKEN) {
+    console.error('team/check: BACKSTAGE_LANDING_TOKEN is not set');
+    return sessionJson({ error: 'Server misconfiguration' }, 500, origin, ctx.cfg);
+  }
+
+  try {
+    const jwt = await createLandingJwt(env.BACKSTAGE_LANDING_TOKEN);
+    const res = await backstageAPI('/api/tenant-management/tenants/availability', jwt, {
+      method: 'POST',
+      body: JSON.stringify({ name, creatorIdToken: ctx.session.id_token }),
+    });
+    if (res.status === 403) {
+      const code = await refusalCode(res);
+      if (IDENTITY_REFUSALS.has(code)) {
+        console.warn(`team/check: portal refused the session of GitHub id ${ctx.session.github_id}: ${code}`);
+        return revokedSession(ctx, origin);
+      }
+      console.error(`team/check: portal answered 403 without an identity refusal (code "${code}")`);
+      return sessionJson({ error: 'Failed to check team availability' }, 502, origin, ctx.cfg);
+    }
+    if (!res.ok) {
+      console.error(`team/check: portal answered ${res.status}`);
+      return sessionJson({ error: 'Failed to check team availability' }, 502, origin, ctx.cfg);
+    }
+    const answer = await res.json();
+    if (!answer || typeof answer.available !== 'boolean') {
+      console.error('team/check: portal answered without availability');
+      return sessionJson({ error: 'Failed to check team availability' }, 502, origin, ctx.cfg);
+    }
+    return sessionJson(
+      answer.available ? { available: true } : { available: false, reason: String(answer.reason || '') },
+      200, origin, ctx.cfg,
+    );
+  } catch (e) {
+    console.error('team/check: unexpected error:', e?.message ?? e);
+    return sessionJson({ error: 'Failed to check team availability' }, 502, origin, ctx.cfg);
+  }
+}
+
+// POST /api/submit with a session cookie {team, usecase, turnstile_token}.
+// The creator is the signed-in customer, named by the ID token; the portal
+// keeps one workspace per customer and answers 409 with a code otherwise.
+export async function handleSessionSubmit(request, env, origin) {
+  const ctx = await requireSession(request, env, origin);
+  if (ctx.response) return ctx.response;
+  const { cfg, session } = ctx;
+  const credentials = { ...credentialCorsHeaders(origin, cfg), 'Cache-Control': 'private, no-store' };
+
+  try {
+    const { team, usecase, turnstile_token } = await readJsonObject(request);
+    if (typeof team !== 'string' || !TEAM_NAME_RE.test(team)) {
+      return sessionJson({ success: false, message: 'Invalid team name format' }, 400, origin, cfg);
+    }
+    const description = typeof usecase === 'string' ? usecase : '';
+
+    if (!env.TURNSTILE_SECRET_KEY || !env.BACKSTAGE_LANDING_TOKEN) {
+      console.error('submit (session): TURNSTILE_SECRET_KEY or BACKSTAGE_LANDING_TOKEN is not set');
+      return sessionJson({ success: false, message: 'Server misconfiguration' }, 500, origin, cfg);
+    }
+    const verification = await verifyTurnstileToken(
+      turnstile_token, env.TURNSTILE_SECRET_KEY, request.headers.get('CF-Connecting-IP'));
+    if (!verification.success) {
+      return sessionJson({ success: false, message: 'Verification failed, please try again.' }, 400, origin, cfg);
+    }
+
+    const jwt = await createLandingJwt(env.BACKSTAGE_LANDING_TOKEN);
+    let tenantRes;
+    try {
+      tenantRes = await backstageAPI('/api/tenant-management/tenants', jwt, {
+        method: 'POST',
+        body: JSON.stringify({
+          tenantName: team,
+          displayName: team,
+          description,
+          contactEmail: session.email,
+          creatorIdToken: session.id_token,
+        }),
+      });
+    } catch (e) {
+      console.error('submit (session): tenant API call failed:', e?.message ?? e);
+      return await finishSubmit(env, origin, {
+        login: session.login, name: session.name, email: session.email, team, usecase: description,
+        workflowSubmitted: false, workflowName: null, workflowError: e?.message ?? 'network error',
+      }, credentials);
+    }
+
+    if (tenantRes.status === 403) {
+      const code = await refusalCode(tenantRes);
+      if (IDENTITY_REFUSALS.has(code)) {
+        console.warn(`submit (session): portal refused the session of GitHub id ${session.github_id}: ${code}`);
+        return revokedSession(ctx, origin);
+      }
+      console.error(`submit (session): portal answered 403 without an identity refusal (code "${code}")`);
+      return sessionJson({ success: false, message: 'Failed to submit request. Please try again.' }, 502, origin, cfg);
+    }
+    if (tenantRes.status === 409) {
+      const err = await tenantRes.json().catch(() => ({}));
+      const code = err.code === 'creator_has_tenant' ? 'creator_has_tenant' : 'name_taken';
+      const message = code === 'creator_has_tenant'
+        ? 'This account already has a workspace.'
+        : `Team "${team}" is already taken.`;
+      return sessionJson({ success: false, code, message }, 409, origin, cfg);
+    }
+    if (tenantRes.status === 503) {
+      return sessionJson(
+        { success: false, message: 'Workspace requests are unavailable right now. Please try again later.' },
+        503, origin, cfg,
+      );
+    }
+
+    let workflowSubmitted = false;
+    let workflowName = null;
+    let workflowError = null;
+    if (tenantRes.status === 202 || tenantRes.status === 200) {
+      const tenantData = await tenantRes.json().catch(() => ({}));
+      workflowSubmitted = true;
+      workflowName = tenantData.workflowName || null;
+    } else {
+      const err = await tenantRes.json().catch(() => ({}));
+      workflowError = err.error || `Status ${tenantRes.status}`;
+      console.error('submit (session): tenant API error:', workflowError);
+    }
+    return await finishSubmit(env, origin, {
+      login: session.login, name: session.name, email: session.email, team, usecase: description,
+      workflowSubmitted, workflowName, workflowError,
+    }, credentials);
+  } catch (error) {
+    console.error('submit (session): error:', error);
+    return sessionJson({ success: false, message: 'Failed to submit request. Please try again.' }, 500, origin, cfg);
   }
 }
 
@@ -916,7 +1301,7 @@ export async function handleContactForm(request, env, origin) {
       `💬 *Message:*`,
       esc(message),
       ``,
-      `⏰ ${new Date().toISOString().replace(/[-.]/g, '\\$&')}`,
+      `⏰ ${esc(new Date().toISOString())}`,
     ].join('\n');
 
     // Send to Telegram
