@@ -768,3 +768,44 @@ form/notification corrections. It does not complete D2, other-locale/no-mail
 D1 acceptance, the principal-mode gate, MCP end-to-end acceptance or public
 cutover. The earliest principal cutover remains 2026-10-19 21:33 UTC subject
 to all checks in mctl-api#377; do not treat that date as automatic approval.
+
+## D1/D2 follow-up implementation (2026-10-17)
+
+API #641 adds a portal-only, canonical-principal readiness observation. Portal
+#178 checks that observation against the current membership and provider-shaped
+catalog Group/User, serves Workspace → Access, and runs an independent durable
+ready-email outbox. No failed/partial read means ready, no provisioning success
+substitutes for catalog convergence, and MCP remains blocked outside its launch
+gate. Production enablement and acceptance follow implementation reviews.
+
+The outbox is one email per tenant/principal. It freezes the recipient, snapshot
+and provider payload before attempting delivery; concurrent workers use a DB
+lease and the same provider idempotency key. Resend retains keys for 24 hours,
+so ambiguous retries stop at 23 hours in `reconcile` rather than risking a
+second send. An accepted provider response means accepted, not delivered. No
+email failure changes provisioning status. Current grants are rechecked before
+retrying the old snapshot, and the email links to current Access.
+
+D1 live first-creation evidence: the complete event listing for the review
+account contains user.human.added, user.human.email.verified and
+user.human.externalidp.added at 2026-10-15 22:46:12.143321 UTC, plus two metadata
+writes. It contains no initial/email-code-added or sent event. The v4.19.2
+notification handler subscribes to code-added events for these messages, not
+human.added/email.verified. Together with the create hook's verified-primary-
+email test, this establishes the no-mail first-create path for this account;
+no mailbox content or credentials were copied into the plan. Source:
+https://github.com/zitadel/zitadel/blob/v4.19.2/internal/notification/handlers/user_notifier.go.
+
+Customer-specific English product copy is extended explicitly to all 15
+supported login locales, preserving staff defaults. The existing locale drift
+checker still covers the instance rebrand; extending its upstream-key check to
+org-specific customer keys remains a non-blocking review follow-up.
+
+Validation so far: the API suite and go vet pass with zero new lint findings;
+three unchanged local gosec findings are not part of this feature. Portal
+TypeScript/backend build and 1,096 tests pass (five existing skips). Mutations
+that bypass ArgoCD convergence, catalog convergence or the durable accepted
+marker make the corresponding tests fail. Customer Terraform tests pass 16/16;
+dropping Russian fallback deliberately fails locale coverage. These are
+implementation checks; they do not substitute for pending live delivery and
+Access-page acceptance.

@@ -901,7 +901,7 @@ export async function handleFormSubmit(request, env, origin) {
 // portal, shared by the legacy and the cookie branch of /api/submit.
 // `extraHeaders` carries the cookie branch's credential CORS headers.
 async function finishSubmit(env, origin, {
-  login, name, email, team, usecase, workflowSubmitted, workflowName, workflowError,
+  login, name, email, team, usecase, workflowSubmitted, workflowName, workflowError, customer = false,
 }, extraHeaders = {}) {
   const html_url = `https://github.com/${login}`;
 
@@ -941,10 +941,10 @@ async function finishSubmit(env, origin, {
 
   // ── Response ─────────────────────────────────────────────────────────────
   if (workflowSubmitted) {
-    const emailStatus = await sendWelcomeEmail(env, { email, name: name || login, team });
+    const emailStatus = await sendWelcomeEmail(env, { email, name: name || login, team, customer });
     return jsonResponse({
       success: true,
-      message: `Provisioning request for "${team}" accepted. Portal sign-in for self-service accounts is not available yet.`,
+      message: `Provisioning request for "${team}" accepted.`,
       emailStatus,
     }, 200, extraHeaders, origin);
   } else {
@@ -1206,7 +1206,7 @@ export async function handleSessionSubmit(request, env, origin) {
     } catch (e) {
       console.error('submit (session): tenant API call failed:', e?.message ?? e);
       return await finishSubmit(env, origin, {
-        login: session.login, name: session.name, email: session.email, team, usecase: description,
+        login: session.login, name: session.name, email: session.email, team, usecase: description, customer: true,
         workflowSubmitted: false, workflowName: null, workflowError: e?.message ?? 'network error',
       }, credentials);
     }
@@ -1248,7 +1248,7 @@ export async function handleSessionSubmit(request, env, origin) {
       console.error('submit (session): tenant API error:', workflowError);
     }
     return await finishSubmit(env, origin, {
-      login: session.login, name: session.name, email: session.email, team, usecase: description,
+      login: session.login, name: session.name, email: session.email, team, usecase: description, customer: true,
       workflowSubmitted, workflowName, workflowError,
     }, credentials);
   } catch (error) {
@@ -1362,14 +1362,15 @@ const EMAIL_FONT = "Onest,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Hel
 const CONTACT_URL = 'https://mctl.ai/#contact';
 
 // Pure: returns the subject, HTML and plain-text parts of the welcome email.
-// It states only what is true when the Worker sends it — the provisioning
-// workflow was submitted — and makes no promise about sign-in, timing or
-// follow-up, because portal sign-in for self-service accounts does not exist
-// yet. `team` is already validated against the team-name regex; `name` comes
-// from the GitHub profile and is escaped.
-export function renderWelcomeEmail({ name, team, year = new Date().getUTCFullYear() }) {
+// Acceptance is separate from readiness. The customer follow-up is delivered
+// by the portal's verified-readiness outbox, not by this request handler.
+// Legacy signup keeps its existing sign-in notice; it has no ready outbox.
+export function renderWelcomeEmail({ name, team, customer = false, year = new Date().getUTCFullYear() }) {
   const c = EMAIL_COLORS;
-  const subject = `Your MCTL workspace "${team}" is being provisioned`;
+  const subject = `MCTL: request accepted for workspace "${team}"`;
+  const nextStep = customer
+    ? "We will email you when your workspace access has been verified. Provisioning runs in the background; you do not need to submit another request."
+    : "Portal sign-in for self-service accounts is not available yet. If you have questions, contact us.";
   const greeting = name ? `Hi ${name},` : 'Hi,';
 
   const html = `<!DOCTYPE html>
@@ -1385,10 +1386,10 @@ export function renderWelcomeEmail({ name, team, year = new Date().getUTCFullYea
         <tr><td style="padding:28px 32px">
           <p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:${c.ink}">${escHtml(greeting)}</p>
           <p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:${c.ink}">
-            Your workspace <strong>${escHtml(team)}</strong> is being provisioned.
+            Your request for workspace <strong>${escHtml(team)}</strong> was accepted. Provisioning has started.
           </p>
           <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:${c.ink}">
-            Portal sign-in for self-service accounts is not available yet. If you have questions, contact us.
+            ${escHtml(nextStep)}
           </p>
           <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:6px;background:${c.accent}">
             <a href="${CONTACT_URL}" style="display:inline-block;padding:12px 24px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px">Contact us</a>
@@ -1406,9 +1407,9 @@ export function renderWelcomeEmail({ name, team, year = new Date().getUTCFullYea
   const text = [
     greeting,
     '',
-    `Your workspace "${team}" is being provisioned.`,
+    `Your request for workspace "${team}" was accepted. Provisioning has started.`,
     '',
-    'Portal sign-in for self-service accounts is not available yet. If you have questions, contact us:',
+    nextStep,
     CONTACT_URL,
     '',
     '--',
@@ -1423,13 +1424,13 @@ export function renderWelcomeEmail({ name, team, year = new Date().getUTCFullYea
 // answered 2xx — not that the message was delivered. "failed" covers both a
 // non-2xx answer and a network exception. "skipped" means nothing was sent
 // (no recipient or no API key), which is distinct from a failure.
-async function sendWelcomeEmail(env, { email, name, team }, fetchImpl = fetch) {
+async function sendWelcomeEmail(env, { email, name, team, customer }, fetchImpl = fetch) {
   if (!email) return 'skipped';
   if (!env.RESEND_API_KEY) {
     console.error('Welcome email: RESEND_API_KEY is not set');
     return 'skipped';
   }
-  const { subject, html, text } = renderWelcomeEmail({ name, team });
+  const { subject, html, text } = renderWelcomeEmail({ name, team, customer });
   try {
     const res = await fetchImpl('https://api.resend.com/emails', {
       method: 'POST',

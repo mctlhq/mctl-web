@@ -158,6 +158,7 @@ function createNetwork({
     }
     if (url.startsWith('https://api.resend.com/')) {
       calls.resend += 1;
+      calls.email = JSON.parse(options.body);
       return json(200, { id: 'email' });
     }
     throw new Error(`zitadel.test.mjs: unexpected fetch to ${url}`);
@@ -648,6 +649,8 @@ test('submit (session): creates the workspace for the signed-in customer only', 
   assert.ok(network.calls.telegramText.includes('https://workflows\\.mctl\\.ai/'));
   assert.ok(!network.calls.telegramText.includes('mctl\\.me'));
   assert.equal(network.calls.resend, 1);
+  assert.match(network.calls.email.text, /when your workspace access has been verified/);
+  assert.doesNotMatch(network.calls.email.text, /not available yet|is ready/);
 });
 
 test('submit (session): the portal 409 code reaches the site', async () => {
