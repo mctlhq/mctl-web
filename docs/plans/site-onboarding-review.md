@@ -995,9 +995,11 @@ and generated UI still require verification before activation.
 
 The API, portal and website ArgoCD applications are Synced/Healthy. All four
 cluster nodes are Ready; observed memory utilization is 67–73 percent and CPU
-7–11 percent. No running workflows were listed in the argo namespace at this
-check; resource reservations and provisioning capacity still need assessment
-before a public traffic increase.
+7–11 percent. The initial workflow query used the wrong namespace (argo) and
+is not evidence of an empty backlog. The corrected argo-workflows query found
+three running maintenance workflows (two shepherd and one token rotation); no
+create-tenant workflow appeared in that running listing. Resource reservations
+and provisioning capacity still need assessment before a public traffic increase.
 
 The [Worker rollout runbook](../../cloudflare-worker/README.md#public-signup-rollout-and-rollback)
 defines switch ownership, activation/rollback order, a 60-minute initial watch,
