@@ -14,6 +14,21 @@ const { profile, authData, errorCode, logout } = useAuth();
 const session = useSession();
 const zitadel = computed(() => session.flow.value === 'zitadel');
 const badgeUser = computed(() => (zitadel.value ? session.profile.value : profile.value));
+// The first session read establishes the identity without remounting a draft
+// typed while that read was pending. Only a later observed account change
+// resets the form and its account-specific acceptance receipt.
+const formRevision = ref(0);
+let observedIdentity: string | undefined;
+watch(() => {
+  if (zitadel.value && session.status.value !== 'ready') return undefined;
+  return zitadel.value
+    ? `zitadel:${session.view.value?.githubId || 'anonymous'}`
+    : `legacy:${authData.value?.id || authData.value?.login || 'anonymous'}`;
+}, (identity) => {
+  if (identity === undefined) return;
+  if (observedIdentity !== undefined && identity !== observedIdentity) formRevision.value++;
+  observedIdentity = identity;
+}, { immediate: true });
 // The badge stays mounted (the prerendered HTML has it, and the hydrating
 // render must match) but is hidden, keeping its height, until the session
 // answer arrives, so a signed-in visitor does not see "Sign in" first.
@@ -104,7 +119,7 @@ onMounted(() => {
         {{ sessionNotice }}
       </p>
       <RequestAccessForm
-        :key="zitadel ? `zitadel:${session.view.value?.githubId || 'anonymous'}` : `legacy:${authData?.id || authData?.login || 'anonymous'}`"
+        :key="formRevision"
         :auth-data="authData"
         :session-mode="zitadel"
       />

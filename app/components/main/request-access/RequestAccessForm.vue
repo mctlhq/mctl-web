@@ -188,10 +188,8 @@ const onSubmit = handleSubmit(async (formData) => {
     formStatus.value = { message: t('js.submit.network_error'), type: 'error' }
   } finally {
     isSubmitting.value = false
-    // Turnstile tokens are single-use; siteverify consumes one on success
-    // too, and this form stays mounted after a successful send, so the
-    // widget must reset after every attempt that may have reached
-    // siteverify — not only on failure.
+    // Rejected attempts need a fresh single-use token. Acceptance removes
+    // the widget and leaves the receipt, so there is nothing to reset.
     if (!acceptedTeam.value) resetTurnstile()
   }
 });
