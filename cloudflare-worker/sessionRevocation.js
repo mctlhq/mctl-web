@@ -49,7 +49,7 @@ export async function handleSessionRevocation(request, env, now = Math.floor(Dat
     if (state.v !== 1 || state.githubId !== body.github_id || state.subject !== body.subject ||
         !Number.isSafeInteger(state.startedAt) || state.startedAt > now ||
         typeof state.cursor !== 'string' || state.cursor.length > 4096 || ![0, 1].includes(state.phase) ||
-        !Number.isSafeInteger(state.matched) || !Number.isSafeInteger(state.scanned) || typeof state.done !== 'boolean') {
+        !Number.isSafeInteger(state.matched) || state.matched < 0 || !Number.isSafeInteger(state.scanned) || state.scanned < 0 || typeof state.done !== 'boolean') {
       throw new Error('Invalid revocation progress');
     }
     const save = () => kv.put(markerKey, JSON.stringify(state), { expirationTtl: SESSION_MAX_SECONDS + 300 });
@@ -75,7 +75,8 @@ export async function handleSessionRevocation(request, env, now = Math.floor(Dat
         }
       }
       state.scanned += page.keys.length;
-      if (state.scanned > 100000) throw new Error('Session scan bound exceeded');
+      // Work is bounded per request, not over the lifetime of a retryable job.
+      // A cumulative key cap would permanently strand a large namespace.
       if (page.list_complete) {
         state.done = state.phase === 1 && state.matched === 0 && now - state.startedAt >= PROPAGATION_SECONDS;
         state.phase = 1; state.cursor = ''; state.matched = 0;

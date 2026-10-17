@@ -959,3 +959,21 @@ test('revocation: malformed pagination or records are unknown, never a clean res
   env.SESSIONS.store.set('sess:bad', { value: '{bad' });
   assert.equal((await call()).status, 503);
 });
+
+
+test('revocation: crossing the former cumulative scan cap still persists progress and completes', async () => {
+  const env = revocationEnv();
+  const now = Math.floor(Date.now() / 1000);
+  const subject = '395285255046563541';
+  await env.SESSIONS.put(`revoked-sub:${subject}`, JSON.stringify({
+    v: 1, githubId: TEST_GITHUB_ID, subject, startedAt: now - 61,
+    cursor: '', phase: 1, matched: 0, scanned: 100000, done: false,
+  }));
+  env.SESSIONS.store.set('sess:unrelated-cap', { value: JSON.stringify({ github_id: '123', sub: '456' }) });
+  const res = await withNetwork(createNetwork(), async () => handleSessionRevocation(await revocationRequest(), env, now));
+  assert.equal(res.status, 200);
+  const state = JSON.parse(await env.SESSIONS.get(`revoked-sub:${subject}`));
+  assert.equal(state.scanned, 100001);
+  assert.equal(state.done, true);
+  assert.ok(await env.SESSIONS.get('sess:unrelated-cap'));
+});

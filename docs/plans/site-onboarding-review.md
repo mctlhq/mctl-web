@@ -1093,3 +1093,9 @@ suite and portal suite passed; real PostgreSQL tests cover principal and portal
 session cleanup. An ArgoCD malformed-list mutation was detected by the new test.
 Production automation and the fresh-customer acceptance run remain pending;
 this entry is not evidence of deployment or completed reviewer reset.
+
+
+Deferred review improvement: the Worker currently scans the complete session
+namespace in bounded pages. Add a subject-keyed session index before platform
+session volume makes a full deletion exceed the workflow retry window. A failed
+workflow retains its subject fence and pagination progress for a later retry.
