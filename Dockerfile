@@ -33,7 +33,7 @@ USER 101:101
 # with dropping that line (the rm keeps /tmp empty, see portfolio 0.1.46).
 # Port contract: 8080 is the target. Port 80 stays open only until mctl-gitops
 # admins/mctl-web moves service.containerPort to 8080; the release after that
-# drops `listen 80` from nginx.conf.
-EXPOSE 8080
+# drops `listen 80` from nginx.conf, and 80 from EXPOSE with it.
+EXPOSE 80 8080
 HEALTHCHECK --interval=30s --timeout=5s CMD wget -q --spider http://127.0.0.1:8080/healthz || exit 1
 CMD ["nginx", "-g", "daemon off;"]
