@@ -10,7 +10,8 @@ client-audience setting found by live sign-in is corrected and rolled out.
 The test-group workspace creation and principal-keyed portal sign-in are verified.
 The test-group MCP sign-in and own/foreign workspace authorization are verified.
 D1 locale rollout, D2 Access/ready notification, and customer MCP acceptance are verified in production.
-Public cutover and legacy retirement remain separate follow-ups.
+Public cutover, Stage E, legacy retirement, and optional hardening are planned in
+[Post-acceptance roadmap](#post-acceptance-roadmap-2026-10-17).
 The findings below describe the original audit unless a later record says
 otherwise; implementation is not evidence of successful live acceptance.
 
@@ -878,3 +879,106 @@ remain separate follow-ups.
 
 Production API, portal and website ArgoCD applications report Synced/Healthy.
 No further operator action is required for this test-group acceptance.
+
+
+## Post-acceptance roadmap (2026-10-17)
+
+Planning baseline: test-group acceptance is complete; all items below are
+planned, not implemented or authorized for production activation by this record.
+Keep implementation PRs, rollout evidence, dates and gate results in this section.
+The execution order is public signup, then Stage E. Legacy observation runs
+alongside those stages; its retirement gate is independent. Optional hardening
+can proceed independently and does not block launch unless it reveals a defect.
+
+### P1. Public signup
+
+Status: planned; next implementation stage. Repositories: mctl-web,
+mctl-gitops, mctl-api and mctl-portal as required by the readiness checks.
+
+- Inventory the effective production switches, customer creation policy,
+  rate limits/Turnstile, capacity and operator alerts. Record current values,
+  intended changes and a tested rollback before changing the public default.
+- Repeat the full journey with a fresh customer identity and a new workspace:
+  GitHub sign-in, verified identity, one accepted request, provisioning,
+  principal-keyed membership, portal sign-in, Workspace Access and MCP.
+  Cover duplicate submit, existing team, failed provisioning and retry;
+  unknown readiness must not produce a ready notification or usable grants.
+- Confirm a non-member and a different tenant remain denied. Confirm no
+  unsolicited first-creation verification email and exactly one provider-
+  accepted ready notification; record mailbox delivery separately if observed.
+- Prepare the public-switch PR and its rollback, then record the owner launch
+  decision before activation. Roll out in a controlled step and repeat the
+  positive and negative production checks. Monitor auth/provisioning failures,
+  queue backlog and notification retries; record the observation interval and
+  rollback thresholds in the implementation PR before rollout.
+
+Done when: public entry uses the accepted flow, a fresh public customer passes
+end to end, isolation checks pass, production is healthy and rollback evidence
+and the launch decision are linked here. Stage E is not a launch prerequisite.
+
+### P2. Stage E: explicit grants and revocation
+
+Status: planned after public signup. Repositories: mctl-api, mctl-portal and
+mctl-gitops. Preserve the scope and session-based tests in "Out of the first
+release" above.
+
+- Define one principal-keyed grant model and an actor/role/surface permission
+  matrix. Identify who may grant/revoke, audit every change and expose the
+  effective grants on Workspace Access. Keep kubectl opt-in and least privilege.
+- Implement Argo CD own-app/log viewing, sync and restart; Workflows viewing
+  only, without UI creation or Secret reads. Review every customer role for
+  equivalent Secret access, not just one named permission.
+- Before rollout, define numerical maximum revocation times per surface and
+  document cache, token/session lifetime and enforcement mechanisms. Do not
+  claim revocation from a denied new login alone.
+- Test member removal, account disable and tenant deletion against sessions
+  and credentials issued beforehand: portal, MCP, Argo CD, Workflows and
+  kubectl. Prove granted access first, then denial within each stated bound;
+  include foreign-tenant and unauthorized grant attempts.
+
+Done when: the matrix and time bounds are committed, all positive/negative
+checks pass in production, Access reflects effective grants, audit evidence is
+retained without credentials, and grant/revocation rollback is documented.
+
+### P3. Retire legacy identity
+
+Status: observing; earliest eligible date **2026-10-31**, not an automatic
+execution date. Repositories: mctl-api, mctl-web, mctl-portal and mctl-gitops.
+The approved early principal cutover in GitOps #1873 remains the baseline.
+
+- Preserve at least 14 days of post-cutover observations and inspect auth
+  errors, legacy fallback use, unresolved identity mappings and customer/staff
+  access. Missing or partial telemetry means unknown and blocks retirement.
+- Inventory remaining login-keyed identities and consumers, legacy GitHub
+  OAuth/HMAC paths, configuration, credentials and rollback dependencies.
+  Resolve or explicitly migrate every active dependency before removal.
+- Recheck the customer/staff identity matrix, membership resolution, own and
+  foreign tenant authorization across portal and MCP, and deployed API mode.
+  Record evidence, observation dates and an explicit go/no-go decision here.
+- Prepare removal in reviewable PRs with rollback steps and credential cleanup
+  order. Remove obsolete paths/configuration only after the date and all gates
+  pass; repeat production checks and observe after rollout.
+
+Done when: the observation gate passes, no active consumer needs legacy identity,
+removal PRs are deployed and post-removal checks are healthy. A failed gate
+postpones retirement; the calendar alone cannot satisfy it.
+
+### P4. Optional review follow-ups and locale drift coverage
+
+Status: backlog; independent of public launch unless validation finds a defect.
+
+- Portal: expand the catalog mutation-denial fixture from Group to User (P3
+  from portal #176), preserving the shared read-only policy. Demonstrate that
+  deliberately permitting a User mutation makes the test fail.
+- GitOps/ZITADEL: extend the existing upstream-locale drift checker to
+  organization-scoped customer Login V2 keys and verification-message keys for
+  all 15 supported locales. Keep staff defaults separate and check the intended
+  English fallback explicitly when upstream schemas or supported locales change.
+- Prove the checker green on converged input and red on a removed/renamed key,
+  a missing locale and altered customer copy. Failed reads, malformed data or
+  incomplete pagination must report error/unknown, never a clean empty result.
+- Revisit other historical audit nits only after checking current code and
+  review threads; record a concrete remaining issue before scheduling work.
+
+Done when: the scoped fixtures/checker are merged, deliberate mutations fail,
+CI passes and an upgrade runbook explains how to review intentional drift.
