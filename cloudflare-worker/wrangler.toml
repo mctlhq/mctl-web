@@ -53,6 +53,10 @@ ZITADEL_REDIRECT_URI = "https://mctl.ai/api/zitadel/callback"
 ZITADEL_POST_LOGOUT_URI = "https://mctl.ai"
 SESSION_ORIGINS = "https://mctl.ai"
 AUTH_FLOW_PUBLIC = "false"
+# Fail closed until the dedicated customer-lifecycle service/project IDs from
+# zitadel-iac are reviewed and pinned here. These are public identifiers.
+SESSION_REVOCATION_SUBJECT = ""
+SESSION_REVOCATION_AUDIENCE = ""
 
 # Server-side sessions. The namespaces are owned by OpenTofu in mctl-gitops
 # (infrastructure/cloudflare/account/workers-kv.tf, mctlhq/mctl-gitops#1909);

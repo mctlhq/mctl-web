@@ -1067,7 +1067,7 @@ Implementation contract:
   blocks completion until settled. Cancel and redact old ready receipts rather
   than allowing an old scheduler snapshot to recreate a delivery after deletion.
 - Use dedicated least-privilege credentials: customer-org user management for
-  ZITADEL, production session namespace KV access for Cloudflare, and the
+  ZITADEL, a pinned machine-JWT Worker endpoint using its own session KV binding, and the
   existing restricted workflow caller for portal cleanup. Never mount the
   instance-wide IaC key in the API or grant workflow SQL-superuser access.
 - Add explicit workflow completion steps for portal and account postconditions.
@@ -1080,8 +1080,16 @@ Delivery checklist:
 - [ ] Portal cleanup, cancellation/redaction and isolation/lease/race tests.
 - [ ] Durable API deletion manifest, authorization guards and staged cleanup.
 - [ ] MCP option, operation schema and workflow preflight/completion wiring.
-- [ ] ZITADEL/Cloudflare credentials, network/configuration and rollout.
+- [ ] ZITADEL lifecycle credentials, Worker public identity pins and rollout.
 - [ ] Positive/negative and mutation tests, current-head review, CI and releases.
 - [ ] Fresh disposable customer: create, MCP full delete, verify every surface,
       retry deletion, then recreate without manual intervention.
 - [ ] Finish reviewer reset and record the exact remaining manual limitations.
+
+
+Implementation status (2026-10-17, before review/deployment): the isolated API,
+portal, Worker and GitOps branches contain the complete deletion path. The API
+suite and portal suite passed; real PostgreSQL tests cover principal and portal
+session cleanup. An ArgoCD malformed-list mutation was detected by the new test.
+Production automation and the fresh-customer acceptance run remain pending;
+this entry is not evidence of deployment or completed reviewer reset.

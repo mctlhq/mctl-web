@@ -28,6 +28,8 @@
  * above, which they do not change.
  */
 
+import { handleSessionRevocation } from './sessionRevocation.js';
+
 import {
   SESSION_COOKIE,
   clearSessionCookie,
@@ -88,6 +90,7 @@ const RATE_LIMITS = {
   'GET /api/zitadel/callback': { max: 30, windowSec: 60 },
   'GET /api/zitadel/session': { max: 60, windowSec: 60 },
   'POST /api/team/check': { max: 20, windowSec: 60 },
+  'POST /api/internal/customer-sessions/revoke': { max: 30, windowSec: 60 },
 };
 
 // Known bot User-Agent fragments — block before any processing.
@@ -161,6 +164,10 @@ export default {
           origin,
         );
       }
+    }
+
+    if (request.method === 'POST' && path === '/api/internal/customer-sessions/revoke') {
+      return handleSessionRevocation(request, env);
     }
 
     // GitHub OAuth: initiate login
