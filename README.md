@@ -138,7 +138,7 @@ NUXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA npm run generate
 
 ```bash
 docker build -t mctl-web .
-docker run -p 8080:80 mctl-web
+docker run -p 8080:8080 mctl-web
 open http://localhost:8080
 ```
 
