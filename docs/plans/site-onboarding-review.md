@@ -1,6 +1,6 @@
 # Site onboarding review: sign-up, forms, emails, identity
 
-Status: implementation and production acceptance in progress (2026-10-17).
+Status: test-group onboarding production acceptance complete (2026-10-17).
 Stage A and the signed-identity fix (#133, #136, #137) are released. B0 and local
 hook validation completed; B1 creation/token gates, C0 and C2 are deployed.
 C1a/C1b are released behind the test-group/UI switches (web #147/#149).
@@ -9,7 +9,7 @@ B1b grants and the API claim-client rollout are applied. The missing portal
 client-audience setting found by live sign-in is corrected and rolled out.
 The test-group workspace creation and principal-keyed portal sign-in are verified.
 The test-group MCP sign-in and own/foreign workspace authorization are verified.
-D1 locale rollout and D2 production acceptance remain in progress.
+D1 locale rollout, D2 Access/ready notification, and customer MCP acceptance are verified in production.
 Public cutover and legacy retirement remain separate follow-ups.
 The findings below describe the original audit unless a later record says
 otherwise; implementation is not evidence of successful live acceptance.
@@ -839,3 +839,42 @@ Role/RoleBinding in enabled preview namespaces. Production delivery and Access
 remain pending this GitOps apply plus portal #178 deployment. The updated portal
 suite passes 1,109 tests with five existing skips, plus TypeScript and backend
 build; page tests prove failed polling removes old capability links.
+
+## Final test-group production acceptance (2026-10-17)
+
+This record supersedes the pending D1/D2 deployment statements above. Public
+signup, extended Stage E grants/revocation, and legacy identity retirement
+remain separate follow-ups.
+
+- **D1:** GitOps #1929 applied the customer English fallback to all 15 supported
+  login locales. Live database checks found 15 locales with identical customer
+  login content and verification-message copy. GitOps #1938 serializes Terraform
+  applies to avoid concurrent ZITADEL event-write collisions; its first job
+  succeeded. The no-mail first-creation evidence is recorded above.
+- **D2 Access:** API #641 and portal #178 are deployed. The signed-in reviewer
+  opened /workspace/access and observed owner access, ready production and
+  preview environments, and confirmed portal/MCP links. A forbidden preview
+  quota read first produced 503; the namespace-scoped RBAC in GitOps #1929
+  resolved it. Unknown reads therefore did not become ready grants.
+- **D2 notification:** the durable outbox contains one accepted notification for
+  onboarding-acceptance-test, accepted at 16:53:17 UTC with a provider ID.
+  Subsequent observations retained that accepted row without another send.
+  Provider acceptance is not proof of inbox delivery or reading.
+  The historical test tenant's missing private contact was restored from its
+  verified identity without publishing the address. Tenant synchronization now
+  preserves private contact data instead of replacing it with absent public
+  GitOps data.
+- **Portal release:** 4.23.0 failed startup because a declared configuration
+  schema was missing from the runtime package. GitOps #1939 restored 4.22.0;
+  portal #182 added the missing package file and a production-image schema
+  validation gate. Release 4.23.1 is running with zero restarts and healthy
+  readiness. The image gate loaded schemas from all 12 workspace packages.
+  Feature CI passed 1,161 tests with five existing skips.
+- **Website:** #157 merged the customer request-accepted and ready-email copy.
+  Release #156 published 7.9.0; the production rollout uses
+  ghcr.io/mctlhq/mctl-web:7.9.0 and reports Healthy.
+- **MCP:** the fresh customer PKCE handshake, own-workspace read, and denied
+  foreign-workspace read are recorded in the preceding live acceptance section.
+
+Production API, portal and website ArgoCD applications report Synced/Healthy.
+No further operator action is required for this test-group acceptance.
