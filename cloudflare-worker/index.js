@@ -911,7 +911,7 @@ async function finishSubmit(env, origin, {
     : `❌ Workflow failed: ${esc(workflowError || 'unknown')}`;
 
   const msg = [
-    `🚀 *mctl\\.me — New Tenant Request*`,
+    `🚀 *mctl\\.ai — New Tenant Request*`,
     ``,
     `👤 [@${esc(login)}](${esc(html_url)})${name ? ` \\(${esc(name)}\\)` : ''}`,
     email ? `📧 ${esc(email)}` : null,
@@ -922,9 +922,9 @@ async function finishSubmit(env, origin, {
     usecase ? `📝 ${esc(usecase)}` : null,
     ``,
     `🔗 *Platform Access:*`,
-    `• [Portal](https://app\\.mctl\\.me/)`,
-    `• [ArgoCD](https://ops\\.mctl\\.me/)`,
-    workflowSubmitted ? `• [Workflow](https://workflows\\.mctl\\.me/)` : null,
+    `• [Portal](https://app\\.mctl\\.ai/)`,
+    `• [ArgoCD](https://ops\\.mctl\\.ai/)`,
+    workflowSubmitted ? `• [Workflow](https://workflows\\.mctl\\.ai/)` : null,
     ``,
     `⏰ ${esc(new Date().toISOString())}`,
   ].filter(Boolean).join('\n');
@@ -1293,7 +1293,7 @@ export async function handleContactForm(request, env, origin) {
 
     // Build Telegram message
     const msg = [
-      `📬 *mctl\\.me — Contact Form*`,
+      `📬 *mctl\\.ai — Contact Form*`,
       ``,
       `👤 ${esc(name)}`,
       `📧 ${esc(email)}`,

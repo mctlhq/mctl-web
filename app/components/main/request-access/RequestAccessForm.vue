@@ -23,7 +23,7 @@ const schema = yup.object({
   usecase: yup.string().required(t('validation.required')).max(500),
 });
 
-const { defineField, values, errors, handleSubmit } = useForm<RequestAccessFormData>({ validationSchema: schema });
+const { defineField, values, errors, handleSubmit, resetForm } = useForm<RequestAccessFormData>({ validationSchema: schema });
 
 const [team, teamProps] = defineField('team');
 const [usecase, usecaseProps] = defineField('usecase');
@@ -60,6 +60,16 @@ const displayStatus = computed(() =>
 const isSubmitting = ref(false);
 
 const showSuccessModal = ref(false);
+const acceptedTeam = ref('');
+const acceptedNotice = ref<HTMLElement | null>(null);
+
+watch(showSuccessModal, async (open) => {
+  if (open || !acceptedTeam.value) return;
+  await nextTick();
+  // The submit button is hidden after acceptance. Restore focus to the
+  // receipt unless the modal's contact link has moved it to the contact form.
+  if (!document.activeElement?.closest('#contact')) acceptedNotice.value?.focus();
+});
 
 const turnstileEl = ref<HTMLElement | null>(null);
 const {
@@ -69,7 +79,18 @@ const {
   missingTokenMessageKey,
   render: renderTurnstile,
   reset: resetTurnstile,
+  remove: removeTurnstile,
 } = useTurnstile();
+
+function acceptRequest(team: string) {
+  acceptedTeam.value = team;
+  resetForm({ values: { team: '', usecase: '' } });
+  onInput('');
+  formStatus.value = null;
+  verificationStatus.value = null;
+  removeTurnstile();
+  showSuccessModal.value = true;
+}
 
 onMounted(() => {
   if (turnstileEl.value) {
@@ -101,6 +122,7 @@ function onRetryTurnstile() {
 }
 
 const onSubmit = handleSubmit(async (formData) => {
+  if (isSubmitting.value || acceptedTeam.value) return;
   // Every attempt starts with a clean verification line, so an earlier
   // "still verifying" cannot mask a sign-in or availability error below.
   verificationStatus.value = null;
@@ -136,8 +158,7 @@ const onSubmit = handleSubmit(async (formData) => {
         turnstile_token: turnstileToken.value,
       });
       if (outcome.ok) {
-        formStatus.value = null;
-        showSuccessModal.value = true;
+        acceptRequest(formData.team);
         return;
       }
       if (outcome.signedOut) session.markSignedOut();
@@ -156,8 +177,7 @@ const onSubmit = handleSubmit(async (formData) => {
     })
 
     if (result.success) {
-      formStatus.value = null;
-      showSuccessModal.value = true;
+      acceptRequest(formData.team);
     } else if (result.status === 401 && isAuthResetCode(result.code)) {
       formStatus.value = { message: t('js.auth.expired'), type: 'error' };
       logout();
@@ -172,13 +192,27 @@ const onSubmit = handleSubmit(async (formData) => {
     // too, and this form stays mounted after a successful send, so the
     // widget must reset after every attempt that may have reached
     // siteverify — not only on failure.
-    resetTurnstile()
+    if (!acceptedTeam.value) resetTurnstile()
   }
 });
 </script>
 
 <template>
+  <div aria-live="polite" aria-atomic="true">
+    <section
+      v-if="acceptedTeam"
+      ref="acceptedNotice"
+      class="request-access-form__accepted"
+      tabindex="-1"
+      :aria-label="t('form.accepted_title')"
+    >
+      <h3>{{ t('form.accepted_title') }}</h3>
+      <p>{{ t('form.accepted_detail', { name: acceptedTeam }) }}</p>
+      <a href="/#contact">{{ t('modal.contact') }}</a>
+    </section>
+  </div>
   <BaseForm
+    v-show="!acceptedTeam"
     :submit-text="t('form.submit')"
     :is-loading="isSubmitting"
     :status="displayStatus"
@@ -222,6 +256,16 @@ const onSubmit = handleSubmit(async (formData) => {
 
 <style lang="scss" scoped>
 .request-access-form {
+  &__accepted {
+    padding: 24px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 12px;
+    text-align: left;
+
+    h3 { margin: 0 0 12px; }
+    p { margin: 0 0 16px; }
+  }
+
   &__turnstile {
     margin-top: 16px;
   }

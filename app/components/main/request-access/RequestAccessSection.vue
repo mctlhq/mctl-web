@@ -104,6 +104,7 @@ onMounted(() => {
         {{ sessionNotice }}
       </p>
       <RequestAccessForm
+        :key="zitadel ? `zitadel:${session.view.value?.githubId || 'anonymous'}` : `legacy:${authData?.id || authData?.login || 'anonymous'}`"
         :auth-data="authData"
         :session-mode="zitadel"
       />

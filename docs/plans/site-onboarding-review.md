@@ -700,3 +700,35 @@ has no tenant yet, so creation, catalog convergence and the positive portal
 access check still await the prepared workspace submission. Turnstile showed
 "The verification could not be completed"; the form was left open for the
 owner rather than bypassing verification or submitting an unconfirmed grant.
+
+## Customer workspace acceptance (2026-10-17)
+
+The owner submitted `onboarding-acceptance-test` as mctl-reviewer through the
+cookie flow after renewing the GitHub/ZITADEL session. Workflow
+`create-tenant-s56nf` started at 07:55:06 UTC and succeeded at 07:56:34 UTC.
+The tenant Application is Synced/Healthy. Both main and preview namespaces
+have quotas, limits, network policies and tenant SecretStores. The owner
+membership is principal-keyed, and the portal settings show mctl-reviewer
+with its principal User entity and the new workspace ownership. No manual
+membership or identity database fix was used.
+
+Opening the team Group then exposed a separate catalog-policy defect: the
+entity exists with spec.owner, but Backstage does not emit ownedBy for
+Group/User. Portal PR #176 adds a read-only declared-owner match against
+canonical ownership refs, preserving foreign-tenant denial and existing
+write restrictions. The Group page needs post-release verification.
+
+The accepted-request form also retained the submitted draft after Got it.
+This follow-up clears values and availability/verification state only after
+confirmed success, then leaves a receipt instead of another submit form.
+Failures retain the draft. The receipt reports acceptance, not readiness,
+and is scoped to the current signed-in account. Browser fixture checks cover
+a rejected request preserving values and a successful request clearing them,
+closing the modal to a focused receipt with no visible submit action.
+
+Operator notifications shared by the cookie and legacy flows now use mctl.ai
+branding and app/ops/workflows.mctl.ai links; contact notifications use the
+same brand. Worker tests assert the canonical URLs in both submit paths.
+The legacy-domain redirect routes remain supported.
+
+The principal-mode launch gate, full MCP acceptance and D2 work remain open.
