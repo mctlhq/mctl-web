@@ -8,7 +8,9 @@ Web 7.8.1 adds a cleared form and acceptance receipt after successful submit.
 B1b grants and the API claim-client rollout are applied. The missing portal
 client-audience setting found by live sign-in is corrected and rolled out.
 The test-group workspace creation and principal-keyed portal sign-in are verified.
-Public cutover, legacy retirement, full MCP acceptance and D1/D2 remain open.
+The test-group MCP sign-in and own/foreign workspace authorization are verified.
+D1 locale rollout and D2 production acceptance remain in progress.
+Public cutover and legacy retirement remain separate follow-ups.
 The findings below describe the original audit unless a later record says
 otherwise; implementation is not evidence of successful live acceptance.
 
@@ -628,26 +630,26 @@ portal and MCP; public cutover and C1c; customer Login V2/message texts (D1);
 verified readiness plus idempotent ready notification and Access page (D2).
 Stage E stays outside this first release as agreed above.
 
-### Principal-mode launch dependency
+### Principal-mode launch dependency (updated 2026-10-17)
 
-Public customer MCP access is blocked on mctl-api#377, not just on B1b.
-`customerSigninPrincipal` in `internal/api/oauth_signin_customer.go` deliberately
-refuses customer OAuth sign-in outside `TENANT_AUTHZ_MODE=principal` with
-`customer_not_enabled`; the production manifest still sets `shadow`.
+Production now runs `TENANT_AUTHZ_MODE=principal`. The owner explicitly approved
+shortening the original seven-day shadow window in
+[mctl-gitops#1873](https://github.com/mctlhq/mctl-gitops/pull/1873), merged as
+b1798b838b6de3b04079d63e4a7fa645913dfb80. This is an early-cutover exception, not
+proof that seven days elapsed. The original earliest date was 2026-10-19 21:33
+UTC. Do not remove the customer sign-in guard or introduce a second cutover.
 
-Issue #377 requires seven consecutive clean shadow days starting from
-2026-10-12 21:33 UTC. The earliest cutover is **2026-10-19 21:33 UTC**, only
-with the complete metrics/traffic, keyed-membership and live authorization
-checks in that issue and `mctl-api/docs/principals.md`. Do not bypass that gate
-or remove the guard to finish website acceptance earlier. The date alone is
-not acceptance. After the gate, use a reviewed GitOps change, verify live
-principal authorization and rollback, then finish onboarding MCP acceptance.
+Fresh customer OAuth/MCP was verified at 15:42 UTC on API 4.92.0: the canonical
+review principal is not an admin, can read only its workspace, and is refused
+another tenant. The temporary test credentials were revoked. The acceptance
+record below describes this customer's evidence; platform-wide identity
+coverage must be assessed separately from mctl-api#377's live records.
 
-Before that gate, independent work can finish: C0/C2 and test-group workspace
-creation/portal checks; B1b role-free project grants and narrow claim allowlist;
-D1 copy and D2 verified readiness/notification implementation. Keep public signup
-and legacy retirement pending full portal/MCP acceptance. A ready notification
-must list only capabilities verified at send time, never promise MCP early.
+Public signup and legacy retirement are separate decisions. Keep the legacy
+rollback path for at least 14 days in principal mode (earliest 2026-10-31,
+conditional on clean verification). D1 locale rollout and D2 ready-notification/
+Access acceptance remain the immediate work. A ready notification lists only
+capabilities verified at send time.
 
 Live test-group recheck: `mctl-reviewer` completed GitHub → ZITADEL → website
 sign-in and the form showed the successful availability state for
