@@ -1,12 +1,14 @@
 # Site onboarding review: sign-up, forms, emails, identity
 
-Status: implementation and production acceptance in progress (2026-10-16).
+Status: implementation and production acceptance in progress (2026-10-17).
 Stage A and the signed-identity fix (#133, #136, #137) are released. B0 and local
 hook validation completed; B1 creation/token gates, C0 and C2 are deployed.
-C1a/C1b are released behind the test-group/UI switches (web #147/#149, 7.8.0).
+C1a/C1b are released behind the test-group/UI switches (web #147/#149).
+Web 7.8.1 adds a cleared form and acceptance receipt after successful submit.
 B1b grants and the API claim-client rollout are applied. The missing portal
 client-audience setting found by live sign-in is corrected and rolled out.
-Public cutover, legacy retirement and D1/D2 remain open until verified.
+The test-group workspace creation and principal-keyed portal sign-in are verified.
+Public cutover, legacy retirement, full MCP acceptance and D1/D2 remain open.
 The findings below describe the original audit unless a later record says
 otherwise; implementation is not evidence of successful live acceptance.
 
@@ -732,3 +734,37 @@ same brand. Worker tests assert the canonical URLs in both submit paths.
 The legacy-domain redirect routes remain supported.
 
 The principal-mode launch gate, full MCP acceptance and D2 work remain open.
+
+### Production follow-up delivery
+
+Web #154 and release #151 shipped 7.8.1. The live Rollout is Healthy and
+production JavaScript contains the accepted-request receipt. A delayed-session
+browser fixture (15 seconds) confirms that typing before the initial session
+answer does not discard the draft. Acceptance then clears both fields and
+Got it leaves the receipt; failure preserves the draft.
+
+The same PR deployed Worker version `239961da-39df-4fa1-aef9-e36b1ff1043f`
+through the successful Deploy CF Worker run 39016779304. New operator
+notifications use the canonical mctl.ai URLs. Previously delivered Telegram
+messages keep their original links. No extra production request was submitted
+to test notification formatting; both Worker submit paths are covered by tests.
+
+Portal #176 and release #177 shipped 4.21.1. Claude approved both current
+implementation heads with no unaddressed P1/P2 findings; site generation,
+145 Worker tests, 38 site tests, portal TypeScript compilation and 32 policy
+tests passed. A P3 suggestion to expand the mutation-denial fixture from Group
+to User is deferred; the same read-only condition is shared by both kinds.
+
+Post-rollout browser verification: mctl-reviewer can now open
+`/catalog/default/group/onboarding-acceptance-test`. The page shows the team,
+its one principal-keyed member and one System; My Team is present in the sidebar.
+The earlier Entity not found failure is resolved. Both web and portal are
+Synced/Healthy; centralized release-deploy runs 39016932023 (web) and
+39016763932 (portal) succeeded. The second informational review also passed
+on the final web implementation head `d6eb595`.
+
+This completes the test-group workspace/portal acceptance and the reported
+form/notification corrections. It does not complete D2, other-locale/no-mail
+D1 acceptance, the principal-mode gate, MCP end-to-end acceptance or public
+cutover. The earliest principal cutover remains 2026-10-19 21:33 UTC subject
+to all checks in mctl-api#377; do not treat that date as automatic approval.
