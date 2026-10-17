@@ -1,5 +1,33 @@
 # Changelog
 
+## [7.10.0](https://github.com/mctlhq/mctl-web/compare/7.9.0...7.10.0) (2026-10-17)
+
+
+### Features
+
+* revoke customer sessions through a pinned machine endpoint ([8de2c38](https://github.com/mctlhq/mctl-web/commit/8de2c384996dbbcf45145ff8b17f1dbac25f123d))
+* revoke customer sessions through a pinned machine endpoint ([821fe42](https://github.com/mctlhq/mctl-web/commit/821fe42ae50e66205bff9834ac73fe99971c3e40))
+* run the image as non-root on nginx-unprivileged ([3feaada](https://github.com/mctlhq/mctl-web/commit/3feaada7802a7a35678325b660ab35cfd36c4eb9))
+* run the image as non-root on nginx-unprivileged ([d4e1f19](https://github.com/mctlhq/mctl-web/commit/d4e1f1925c0c43fdd0ba7864b62ad15e3423a1d6))
+
+
+### Bug Fixes
+
+* expose both ports while nginx still listens on 80 ([d878b15](https://github.com/mctlhq/mctl-web/commit/d878b158d1dbf55174c72b925ca1e99d24da2e25))
+* preserve revocation progress across large session scans ([e4f53c1](https://github.com/mctlhq/mctl-web/commit/e4f53c1950807c03c55db4eff88944e8448fbf59))
+
+
+### Documentation
+
+* correct workflow namespace in signup baseline ([cce083a](https://github.com/mctlhq/mctl-web/commit/cce083a58b8085f7049221a716d7369217a58781))
+* plan post-acceptance onboarding stages ([097f8b8](https://github.com/mctlhq/mctl-web/commit/097f8b854953dd9c0d844485b69bea0c6d869603))
+* plan post-acceptance onboarding stages ([6c59211](https://github.com/mctlhq/mctl-web/commit/6c592112ee3468495899948620effe70c5f354c8))
+* record onboarding production acceptance ([b6f8b06](https://github.com/mctlhq/mctl-web/commit/b6f8b06803d6de60dab27d9089c3fdf8c9616a0b))
+* record onboarding production acceptance ([d708b79](https://github.com/mctlhq/mctl-web/commit/d708b793e9462da048b00795482b51174281af4f))
+* record signup capacity and mutation check evidence ([ec00542](https://github.com/mctlhq/mctl-web/commit/ec00542ccd1d35e047981378f6af37e61dc32898))
+* track complete customer deletion through MCP ([66fa007](https://github.com/mctlhq/mctl-web/commit/66fa007622d82dd7ba0fe1a0d5182a9fd0fb0464))
+* track complete customer deletion through MCP ([f6c3f49](https://github.com/mctlhq/mctl-web/commit/f6c3f496b8d23d262c877437c0e36eb050ae4e01))
+
 ## [7.9.0](https://github.com/mctlhq/mctl-web/compare/7.8.1...7.9.0) (2026-10-17)
 
 
