@@ -1,5 +1,24 @@
 # Changelog
 
+## [7.8.1](https://github.com/mctlhq/mctl-web/compare/7.8.0...7.8.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* acknowledge requests and correct notification links ([c0d9a7d](https://github.com/mctlhq/mctl-web/commit/c0d9a7df56320e5887c68f5ebf19f3778109a0ac))
+* acknowledge workspace requests and correct notification links ([4b7b43e](https://github.com/mctlhq/mctl-web/commit/4b7b43ec13884028a036ee58504ebc6b740afc90))
+* preserve drafts during initial session lookup ([d6eb595](https://github.com/mctlhq/mctl-web/commit/d6eb595408881268ff1494f0dbc13466f5556c24))
+
+
+### Documentation
+
+* reconcile onboarding rollout and acceptance status ([be90213](https://github.com/mctlhq/mctl-web/commit/be902130a3798d350fc0dfbbc688b6fdd7605f0e))
+* reconcile onboarding rollout and acceptance status ([34ddb92](https://github.com/mctlhq/mctl-web/commit/34ddb92b94b36473762b64a24e3321881f8e1558))
+* record customer rollout and live acceptance boundaries ([4e47a85](https://github.com/mctlhq/mctl-web/commit/4e47a85d717fb7104c83c83539dcf354f69c9126))
+* record customer rollout and live acceptance boundaries ([cb862d7](https://github.com/mctlhq/mctl-web/commit/cb862d7ca5be4d58c4ea9ff36dde3fdbecca5e79))
+* record the principal-mode gate for public onboarding ([cac6efc](https://github.com/mctlhq/mctl-web/commit/cac6efc31a0646c0cd38f86f7939b110b116061b))
+* record the principal-mode gate for public onboarding ([d71c4d8](https://github.com/mctlhq/mctl-web/commit/d71c4d81ea8bcf7d658923859cf4ef2dced2088d))
+
 ## [7.8.0](https://github.com/mctlhq/mctl-web/compare/7.7.1...7.8.0) (2026-10-16)
 
 
