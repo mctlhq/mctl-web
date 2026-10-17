@@ -130,3 +130,64 @@ wrangler secret put AUTH_FLOW_TEST_GITHUB_IDS
 
 Local run: `wrangler dev --env dev` uses the `mctl-web-dev` client, its own KV
 namespace and `http://localhost:3000` as the only session origin.
+
+
+### Public signup rollout and rollback
+
+The canonical launch gates and live evidence belong in
+[the onboarding plan](../docs/plans/site-onboarding-review.md#post-acceptance-roadmap-2026-10-17).
+Public signup needs three independently deployed switches:
+
+| Layer | Current restricted value | Public value | Delivery |
+| --- | --- | --- | --- |
+| API customer creation | `ZITADEL_HOOK_CUSTOMER_CREATE_GITHUB_IDS=268260640,334465501,47027422` | exactly `*` | GitOps API template; wait for both API replicas |
+| Worker customer operations | `AUTH_FLOW_PUBLIC="false"` | `"true"` | production vars in wrangler.toml; merge triggers Deploy CF Worker |
+| Static site default | `authFlow` fallback `legacy` | `zitadel` | nuxt.config.ts; generate, release, deploy website image |
+
+Do not change the dev environment public flag. Keep the test-group secret,
+legacy paths and identity configuration available during observation. Changing
+an environment variable on the running nginx pod does not change the generated
+site bundle. A URL query switch changes only UI, never API or Worker policy.
+
+Before opening creation, use a fresh non-admin GitHub identity in the restricted
+cohort and run the full positive/negative acceptance in the canonical plan.
+Add its numeric ID through reviewed configuration; never publish its email,
+credentials, cookies or tokens. Existing customers cannot prove first creation.
+Prepare the three activation diffs and record the owner launch decision before
+merging changes that activate them. Apply API, then Worker, then website; verify
+each deployed value/version and health before advancing.
+
+For the first rollout, observe continuously for 60 minutes, sample every five
+minutes, then record checks at 24 hours and seven days. At each sample inspect:
+API identity-hook refusal/error rates and replica readiness; Worker sign-in,
+team/check and submit failures/429s; create-tenant workflow pending/running age
+and terminal outcomes; portal availability and ready-outbox retry/accepted state.
+Use Worker observability, API/portal logs, workflow status and the private outbox.
+Distinguish expected bad credentials, conflict and rate-limit responses from
+unexpected failures. Capture denominators and timestamps; an unavailable source
+is unknown, not zero failures. Do not record request credentials or addresses.
+
+Pause signup and investigate on any isolation/identity mismatch, duplicate
+provisioning or duplicate ready notification; any failed acceptance journey;
+API/portal unavailability lasting five minutes; three consecutive unexpected
+server errors on one journey; a provisioning workflow pending/running beyond
+15 minutes; or a ready notification still retrying 15 minutes after verified
+readiness. Missing monitoring for two consecutive samples also pauses rollout.
+These are initial operational thresholds, not customer service guarantees.
+
+Rollback order:
+
+1. Deploy Worker `AUTH_FLOW_PUBLIC="false"` first and confirm a signed-in
+   account outside the cohort is refused by both team/check and submit.
+2. Restore the API numeric-ID cohort and wait for both replicas to be ready;
+   verify new outside-cohort account creation is refused. Existing accounts
+   continue signing in; do not delete users, tenants or in-flight workflows.
+3. Restore the static website default via a reviewed patch release (or a known
+   restricted image after checking its compatibility). Confirm the generated
+   public page, not merely the source config. Recheck restricted-cohort access.
+4. Observe any already accepted workflows to terminal state and reconcile
+   notifications. Preserve evidence and document the cause before reopening.
+
+The Worker/API tests establish the local policy behavior. They do not prove
+Cloudflare propagation, Kubernetes rollout or actual customer delivery; those
+need deployment and browser evidence recorded in the plan.

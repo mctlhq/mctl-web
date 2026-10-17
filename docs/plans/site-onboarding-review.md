@@ -982,3 +982,31 @@ Status: backlog; independent of public launch unless validation finds a defect.
 
 Done when: the scoped fixtures/checker are merged, deliberate mutations fail,
 CI passes and an upgrade runbook explains how to review intentional drift.
+
+
+### Public signup preparation started (2026-10-17)
+
+Status: preparation in progress; public activation is not complete.
+Production API 4.94.1 has two ready replicas and restricts NEW customer creation
+to the three numeric GitHub IDs configured in GitOps. Existing customer sign-in
+is independent of that creation restriction. The checked-in Worker production
+flag is false and the generated website default is legacy; live Worker settings
+and generated UI still require verification before activation.
+
+The API, portal and website ArgoCD applications are Synced/Healthy. All four
+cluster nodes are Ready; observed memory utilization is 67–73 percent and CPU
+7–11 percent. No running workflows were listed in the argo namespace at this
+check; resource reservations and provisioning capacity still need assessment
+before a public traffic increase.
+
+The [Worker rollout runbook](../../cloudflare-worker/README.md#public-signup-rollout-and-rollback)
+defines switch ownership, activation/rollback order, a 60-minute initial watch,
+24-hour/seven-day follow-ups, monitoring sources and explicit pause thresholds.
+Local baseline: 146 Worker and 38 site tests passed. Additional public-submit
+checks cover a customer outside the cohort, rollback against its existing
+session, and preservation of authentication, CSRF and Turnstile requirements.
+
+Pending acceptance input: a fresh non-admin GitHub identity that has never
+signed into MCTL. The existing mctl-reviewer cannot replace this first-creation
+check. Continue inventory, tests and reviewable launch preparation while this
+input is pending; keep public switches restricted until the live gate passes.
