@@ -982,3 +982,41 @@ Status: backlog; independent of public launch unless validation finds a defect.
 
 Done when: the scoped fixtures/checker are merged, deliberate mutations fail,
 CI passes and an upgrade runbook explains how to review intentional drift.
+
+
+### Public signup preparation started (2026-10-17)
+
+Status: preparation in progress; public activation is not complete.
+Production API 4.94.1 has two ready replicas and restricts NEW customer creation
+to the three numeric GitHub IDs configured in GitOps. Existing customer sign-in
+is independent of that creation restriction. The checked-in Worker production
+flag is false and the generated website default is legacy; live Worker settings
+and generated UI still require verification before activation.
+
+The API, portal and website ArgoCD applications are Synced/Healthy. All four
+cluster nodes are Ready; observed memory utilization is 67–73 percent and CPU
+7–11 percent. The initial workflow query used the wrong namespace (argo) and
+is not evidence of an empty backlog. The corrected argo-workflows query found
+three running maintenance workflows (two shepherd and one token rotation); no
+create-tenant workflow appeared in that running listing. Resource reservations
+and provisioning capacity still need assessment before a public traffic increase.
+
+The [Worker rollout runbook](../../cloudflare-worker/README.md#public-signup-rollout-and-rollback)
+defines switch ownership, activation/rollback order, a 60-minute initial watch,
+24-hour/seven-day follow-ups, monitoring sources and explicit pause thresholds.
+Validation: all 148 Worker and 38 site tests pass. Public-submit checks cover
+a customer outside the cohort, rollback against its existing session, and
+preservation of authentication, CSRF and Turnstile requirements. An intentional
+authorization bypass makes the new checks fail; the bypass was then removed.
+
+Pending acceptance input: a fresh non-admin GitHub identity that has never
+signed into MCTL. The existing mctl-reviewer cannot replace this first-creation
+check. Continue inventory, tests and reviewable launch preparation while this
+input is pending; keep public switches restricted until the live gate passes.
+
+Capacity follow-up: worker-node memory requests are 53–60 percent of allocatable
+memory and limits 106–128 percent; CPU requests are 33–44 percent. Current usage
+is healthy, but overcommitted limits are not guaranteed capacity for new users.
+Before activation, record the effective new-tenant quotas, a conservative initial
+admission budget and the response when that budget is exhausted. This evidence
+is still pending and must not be replaced with the node Ready condition.

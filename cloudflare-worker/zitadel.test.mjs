@@ -568,6 +568,50 @@ test('team/check: AUTH_FLOW_PUBLIC=true opens it to any signed-in customer', asy
   assert.equal(res.status, 200);
 });
 
+test('public submit: opens outside the test group and rollback blocks the existing session', async () => {
+  const env = baseEnv({ AUTH_FLOW_TEST_GITHUB_IDS: OTHER_GITHUB_ID, AUTH_FLOW_PUBLIC: 'true' });
+  const { sessionId } = await signIn(env);
+  const submit = () => request('/api/submit', {
+    method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: SITE,
+    body: { team: 'acme', usecase: 'public acceptance', turnstile_token: 'ok' },
+  });
+  const open = createNetwork();
+  const accepted = await withNetwork(open, () => worker.fetch(submit(), env));
+  assert.equal(accepted.status, 200);
+  assert.equal((await accepted.json()).success, true);
+  assert.equal(open.calls.create.length, 1);
+  assert.equal(open.calls.turnstile, 1);
+  assert.equal(open.calls.legacyGet, 0);
+
+  env.AUTH_FLOW_PUBLIC = 'false';
+  const closed = createNetwork();
+  const denied = await withNetwork(closed, () => worker.fetch(submit(), env));
+  assert.equal(denied.status, 403);
+  assert.equal((await denied.json()).code, 'not_in_test_group');
+  assert.equal(closed.calls.create.length, 0);
+  assert.equal(closed.calls.turnstile, 0);
+  assert.equal(closed.calls.telegram, 0);
+});
+
+test('public submit: still requires authentication, CSRF and successful Turnstile', async () => {
+  const env = baseEnv({ AUTH_FLOW_TEST_GITHUB_IDS: undefined, AUTH_FLOW_PUBLIC: 'true' });
+  const { sessionId } = await signIn(env);
+  const body = { team: 'acme', turnstile_token: 'bad' };
+  for (const [cookies, headers, status] of [
+    [{}, SITE, 401],
+    [{ [SESSION_COOKIE]: sessionId }, { Origin: 'https://mctl.ai' }, 403],
+    [{ [SESSION_COOKIE]: sessionId }, SITE, 400],
+  ]) {
+    const network = createNetwork({ turnstile: { success: false } });
+    const res = await withNetwork(network, () => worker.fetch(request('/api/submit', {
+      method: 'POST', cookies, headers, body,
+    }), env));
+    assert.equal(res.status, status);
+    assert.equal(network.calls.create.length, 0);
+    assert.equal(network.calls.telegram, 0);
+  }
+});
+
 test('team/check: re-presents the stored ID token to the portal and relays the answer', async () => {
   const env = baseEnv();
   const { sessionId } = await signIn(env);
