@@ -1,5 +1,21 @@
 # Changelog
 
+## [7.9.0](https://github.com/mctlhq/mctl-web/compare/7.8.1...7.9.0) (2026-10-17)
+
+
+### Features
+
+* explain the verified workspace-ready follow-up ([599dbdd](https://github.com/mctlhq/mctl-web/commit/599dbddaea3a29e71029f128f39dac26c6ec171a))
+* explain verified workspace-ready follow-up ([0ee8ec8](https://github.com/mctlhq/mctl-web/commit/0ee8ec8d84634a8c0a4d44384f30f9eca124ca4b))
+
+
+### Documentation
+
+* record live customer MCP acceptance and cutover decision ([2537727](https://github.com/mctlhq/mctl-web/commit/2537727e239a727a70c44abd3247ebcf227d761c))
+* record live workspace and portal acceptance ([cdc748f](https://github.com/mctlhq/mctl-web/commit/cdc748f7894f3aee2cce59fbe21f28fd7f4ed235))
+* record live workspace and portal acceptance ([1d3f2a9](https://github.com/mctlhq/mctl-web/commit/1d3f2a9ef475e685407d03b0cc39fd227d9a9e29))
+* replace the superseded principal launch dependency ([acb8533](https://github.com/mctlhq/mctl-web/commit/acb8533d8390de34452fb40ab2d0566e8d43f817))
+
 ## [7.8.1](https://github.com/mctlhq/mctl-web/compare/7.8.0...7.8.1) (2026-10-17)
 
 
