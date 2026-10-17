@@ -191,3 +191,22 @@ Rollback order:
 The Worker/API tests establish the local policy behavior. They do not prove
 Cloudflare propagation, Kubernetes rollout or actual customer delivery; those
 need deployment and browser evidence recorded in the plan.
+
+### Customer account session revocation
+
+`POST /api/internal/customer-sessions/revoke` accepts only a ZITADEL-signed
+machine JWT matching `SESSION_REVOCATION_SUBJECT` and
+`SESSION_REVOCATION_AUDIENCE`. Empty pins disable the endpoint. The lifecycle
+machine lives outside the customer organization and has user-management access
+only to that organization; its dedicated project provides the JWT audience.
+
+The API supplies an approved numeric `github_id` and immutable ZITADEL `subject`.
+The Worker uses its existing `SESSIONS` binding, without a Cloudflare account
+API token. It fences the old subject, deletes matching sessions in bounded
+pages, and verifies a second pass after the KV propagation window. HTTP 202
+requires a retry; only HTTP 200 with `complete: true` proves completion.
+Malformed data, failed reads or invalid pagination fail closed. A replacement
+ZITADEL subject for the same GitHub account is preserved.
+
+Deploy the Worker and pin the public machine subject/project IDs before enabling
+`CUSTOMER_DELETION_ENABLED` in the API. Keep the signup rollout gates unchanged.

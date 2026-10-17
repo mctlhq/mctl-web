@@ -228,7 +228,7 @@ async function signingKey(issuer, kid, nowMs) {
  * iss, aud containing the client, azp equal to the client, exp and iat, the
  * nonce of this sign-in, and that the token belongs to the `customers` org.
  */
-export async function verifyIdToken(idToken, cfg, { nonce, nowSeconds }) {
+async function verifySignedToken(idToken, cfg, nowSeconds) {
   if (typeof idToken !== 'string') return { ok: false, reason: 'malformed' };
   const parts = idToken.split('.');
   if (parts.length !== 3) return { ok: false, reason: 'malformed' };
@@ -251,18 +251,36 @@ export async function verifyIdToken(idToken, cfg, { nonce, nowSeconds }) {
     return { ok: false, reason: 'signature' };
   }
 
-  const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
   if (claims.iss !== cfg.issuer) return { ok: false, reason: 'iss' };
-  if (!aud.includes(cfg.clientId) || claims.azp !== cfg.clientId) return { ok: false, reason: 'aud' };
   if (!Number.isSafeInteger(claims.exp) || claims.exp <= nowSeconds) return { ok: false, reason: 'expired' };
-  if (!Number.isSafeInteger(claims.iat) || claims.iat > nowSeconds + CLOCK_SKEW_SECONDS) {
-    return { ok: false, reason: 'iat' };
-  }
+  if (!Number.isSafeInteger(claims.iat) || claims.iat > nowSeconds + CLOCK_SKEW_SECONDS) return { ok: false, reason: 'iat' };
+  if (claims.nbf !== undefined && (!Number.isSafeInteger(claims.nbf) || claims.nbf > nowSeconds + CLOCK_SKEW_SECONDS)) return { ok: false, reason: 'nbf' };
+  return { ok: true, claims };
+}
+
+export async function verifyIdToken(idToken, cfg, { nonce, nowSeconds }) {
+  const verified = await verifySignedToken(idToken, cfg, nowSeconds);
+  if (!verified.ok) return verified;
+  const { claims } = verified;
+  const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+  if (!aud.includes(cfg.clientId) || claims.azp !== cfg.clientId) return { ok: false, reason: 'aud' };
   if (!timingSafeEqualStrings(claims.nonce, nonce)) return { ok: false, reason: 'nonce' };
   if (claims['urn:zitadel:iam:user:resourceowner:id'] !== cfg.orgId) return { ok: false, reason: 'org' };
   if (typeof claims.sub !== 'string' || !claims.sub) return { ok: false, reason: 'sub' };
   return { ok: true, claims };
 }
+
+export async function verifySessionRevoker(token, env, nowSeconds) {
+  if (!env.SESSION_REVOCATION_SUBJECT || !env.SESSION_REVOCATION_AUDIENCE) return { ok: false, reason: 'not_configured' };
+  const verified = await verifySignedToken(token, zitadelConfig(env), nowSeconds);
+  if (!verified.ok) return verified;
+  const { claims } = verified;
+  const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+  if (claims.sub !== env.SESSION_REVOCATION_SUBJECT || !aud.includes(env.SESSION_REVOCATION_AUDIENCE)) return { ok: false, reason: 'service_identity' };
+  return { ok: true };
+}
+
+export function revokedSubjectKey(subject) { return `revoked-sub:${subject}`; }
 
 /**
  * The person behind verified claims, or `{ ok: false, reason }`. The GitHub
@@ -301,7 +319,10 @@ export async function createSession(kv, { identity, idToken, idTokenExp }, nowSe
   const record = { v: SESSION_VERSION, ...identity, id_token: idToken, exp };
   // `expiration` is absolute, so KV drops the record at the same moment the
   // session ends, whatever the cookie says.
-  await kv.put(await sessionKey(sessionId), JSON.stringify(record), { expiration: exp });
+  if (await kv.get(revokedSubjectKey(identity.sub))) throw new Error('Customer subject is revoked');
+  await kv.put(await sessionKey(sessionId), JSON.stringify(record), {
+    expiration: exp, metadata: { github_id: identity.github_id, sub: identity.sub },
+  });
   return { sessionId, exp };
 }
 
@@ -329,6 +350,9 @@ export async function loadSession(request, kv, nowSeconds) {
     typeof record.github_id !== 'string' ||
     !Number.isSafeInteger(record.exp) || record.exp <= nowSeconds
   ) {
+    return { ok: false, reason: 'invalid' };
+  }
+  if (typeof record.sub !== 'string' || !record.sub || await kv.get(revokedSubjectKey(record.sub))) {
     return { ok: false, reason: 'invalid' };
   }
   return { ok: true, key, session: record };

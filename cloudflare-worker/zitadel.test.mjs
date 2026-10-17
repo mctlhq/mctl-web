@@ -4,6 +4,7 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
 import worker, { signIdentity } from './index.js';
+import { handleSessionRevocation } from './sessionRevocation.js';
 import {
   LOGIN_COOKIE,
   SESSION_COOKIE,
@@ -85,10 +86,17 @@ function createKv() {
       return entry.value;
     },
     async put(key, value, options = {}) {
-      store.set(key, { value, expiration: options.expiration });
+      store.set(key, { value, expiration: options.expiration, metadata: options.metadata });
     },
     async delete(key) {
       store.delete(key);
+    },
+    async list({ prefix, limit, cursor = '' }) {
+      const all = [...store.keys()].filter(k => k.startsWith(prefix) && k > cursor).sort();
+      const names = all.slice(0, limit);
+      const complete = all.length <= limit;
+      return { keys: names.map(name => ({ name, metadata: store.get(name).metadata })),
+        list_complete: complete, ...(complete ? {} : { cursor: names.at(-1) }) };
     },
   };
 }
@@ -872,4 +880,100 @@ test('submit (session): the Telegram status line is escaped once', async () => {
     method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: SITE,
     body: { team: 'acme', turnstile_token: 'ok' } }), env));
   assert.match(network.calls.telegramText, /• ✅ Workflow submitted: `create\\-tenant\\-abc`/);
+});
+
+
+const REVOKER_SUB = '999900000000000001';
+const REVOKER_AUD = '999900000000000002';
+function revocationEnv() {
+  return baseEnv({ SESSION_REVOCATION_SUBJECT: REVOKER_SUB, SESSION_REVOCATION_AUDIENCE: REVOKER_AUD });
+}
+async function revocationRequest(claims = {}, signing = signer, body = {}) {
+  const token = await signing.sign(claimsFor('', { sub: REVOKER_SUB, aud: [REVOKER_AUD], ...claims }));
+  const payload = { github_id: TEST_GITHUB_ID, subject: '395285255046563541', ...body };
+  return request('/api/internal/customer-sessions/revoke', {
+    method: 'POST', body: payload,
+    headers: { Authorization: `Bearer ${token}`, 'Content-Length': String(Buffer.byteLength(JSON.stringify(payload))) },
+  });
+}
+
+test('revocation: only the pinned machine and audience can mutate sessions', async () => {
+  const env = revocationEnv();
+  for (const [claims, signing] of [
+    [{ sub: 'a-customer' }, signer], [{ aud: [CLIENT_ID] }, signer],
+    [{ exp: nowSeconds() - 1 }, signer], [{}, stranger],
+  ]) {
+    const req = await revocationRequest(claims, signing);
+    const res = await withNetwork(createNetwork(), () => handleSessionRevocation(req, env));
+    assert.equal(res.status, 403);
+    assert.equal(env.SESSIONS.store.size, 0);
+  }
+  const anonymous = await handleSessionRevocation(request('/api/internal/customer-sessions/revoke', { method: 'POST' }), env);
+  assert.equal(anonymous.status, 401);
+});
+
+test('revocation: erases only the old subject and fences callbacks and cookies', async () => {
+  const env = revocationEnv();
+  const first = await signIn(env);
+  await signIn(env);
+  const other = await signIn(env, { sub: '395285255046563542', 'mctl:github_id': OTHER_GITHUB_ID });
+  const replacement = await signIn(env, { sub: '395285255046563543' });
+  const now = nowSeconds();
+  const call = async time => withNetwork(createNetwork(), async () => handleSessionRevocation(await revocationRequest(), env, time));
+  assert.equal((await call(now)).status, 202);
+  assert.equal(env.SESSIONS.store.has(await sessionKey(first.sessionId)), false);
+  assert.equal(env.SESSIONS.store.has(await sessionKey(other.sessionId)), true);
+  assert.equal(env.SESSIONS.store.has(await sessionKey(replacement.sessionId)), true);
+  const blocked = await signIn(env);
+  assert.equal(blocked.sessionId, undefined);
+  assert.equal((await call(now + 61)).status, 200);
+  assert.equal((await call(now + 62)).status, 200);
+  assert.equal(env.SESSIONS.store.has(await sessionKey(replacement.sessionId)), true);
+});
+
+test('revocation: a later page failing is not complete and retry resumes', async () => {
+  const env = revocationEnv();
+  for (let i = 0; i < 25; i++) env.SESSIONS.store.set(`sess:${String(i).padStart(4, '0')}`, {
+    value: JSON.stringify({ github_id: OTHER_GITHUB_ID, sub: '395285255046563542' }),
+  });
+  const now = nowSeconds();
+  const list = env.SESSIONS.list;
+  let calls = 0;
+  env.SESSIONS.list = async options => { if (++calls === 2) throw new Error('unreadable later page'); return list(options); };
+  const call = async time => withNetwork(createNetwork(), async () => handleSessionRevocation(await revocationRequest(), env, time));
+  assert.equal((await call(now)).status, 202);
+  assert.equal((await call(now + 61)).status, 503);
+  env.SESSIONS.list = list;
+  assert.equal((await call(now + 62)).status, 202);
+  assert.equal((await call(now + 63)).status, 202);
+  assert.equal((await call(now + 64)).status, 200);
+});
+
+test('revocation: malformed pagination or records are unknown, never a clean result', async () => {
+  const env = revocationEnv();
+  const normal = env.SESSIONS.list;
+  env.SESSIONS.list = async () => ({ keys: [], list_complete: false });
+  const call = async () => withNetwork(createNetwork(), async () => handleSessionRevocation(await revocationRequest(), env));
+  assert.equal((await call()).status, 503);
+  env.SESSIONS.list = normal;
+  env.SESSIONS.store.set('sess:bad', { value: '{bad' });
+  assert.equal((await call()).status, 503);
+});
+
+
+test('revocation: crossing the former cumulative scan cap still persists progress and completes', async () => {
+  const env = revocationEnv();
+  const now = Math.floor(Date.now() / 1000);
+  const subject = '395285255046563541';
+  await env.SESSIONS.put(`revoked-sub:${subject}`, JSON.stringify({
+    v: 1, githubId: TEST_GITHUB_ID, subject, startedAt: now - 61,
+    cursor: '', phase: 1, matched: 0, scanned: 100000, done: false,
+  }));
+  env.SESSIONS.store.set('sess:unrelated-cap', { value: JSON.stringify({ github_id: '123', sub: '456' }) });
+  const res = await withNetwork(createNetwork(), async () => handleSessionRevocation(await revocationRequest(), env, now));
+  assert.equal(res.status, 200);
+  const state = JSON.parse(await env.SESSIONS.get(`revoked-sub:${subject}`));
+  assert.equal(state.scanned, 100001);
+  assert.equal(state.done, true);
+  assert.ok(await env.SESSIONS.get('sess:unrelated-cap'));
 });
