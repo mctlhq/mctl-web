@@ -1020,3 +1020,68 @@ is healthy, but overcommitted limits are not guaranteed capacity for new users.
 Before activation, record the effective new-tenant quotas, a conservative initial
 admission budget and the response when that budget is exhausted. This evidence
 is still pending and must not be replaced with the node Ready condition.
+
+
+## Customer deletion automation (2026-10-17)
+
+Owner request: extend MCP deletion to cover customer account teardown without
+manual ZITADEL, database, portal or Worker session cleanup. This work is in
+progress and is a prerequisite to reusing mctl-reviewer for first-creation
+acceptance. Public signup remains restricted.
+
+Live baseline: MCP mctl_delete_tenant submitted delete-tenant-safe-30a36d56 at
+19:14:42 UTC; it completed Succeeded, 7/7, at 19:16:29 UTC. The workspace API
+reports tenant not found; both tenant namespaces and its Argo application return
+explicit NotFound. Root and shared-pg stayed Synced/Healthy. No manual Kubernetes
+cleanup was needed for that workflow. Tenant sync later removed the portal's
+tenant and membership rows automatically, but retained the ready-email outbox.
+
+Manual reset already performed under the owner's deletion authorization:
+ZITADEL user 395285255046563541 was verified to belong to customers and to be
+mctl-reviewer, then deleted through User v2 (DELETE 200, follow-up GET 404).
+The test principal prn_01M39HRBR3C0QWSEHTYKG75F8C, its two external identities,
+one refresh token and any matching surface challenges/links were removed in a
+bounded primary-database transaction after checking the account and absence of
+commerce or agent-token data. Audit/workflow history remains historical evidence.
+Worker KV enumeration is still unknown: cached local authentication is expired
+and non-interactive Wrangler requires an API credential. Do not claim session
+cleanup complete from that failed read. A temporary administrative inspection
+pod in zitadel must be removed before concluding the reset.
+
+Implementation contract:
+
+- Preserve ordinary workspace deletion. Full customer-account deletion is an
+  explicit, separately confirmed MCP option, initially restricted to a direct
+  human platform administrator. Never infer deleting an identity from deleting
+  one workspace. Refuse platform/staff/service/agent identities, multiple
+  owners, other workspace/team memberships and unknown membership reads.
+- Capture the exact principal, verified GitHub ID and customer ZITADEL subject
+  before deleting GitOps membership. Persist the approved deletion manifest and
+  progress; later steps and retries use that manifest rather than a display
+  login, caller-supplied subject, or a deleted tenant lookup.
+- Disable acting and renewing sessions before teardown. Prevent account
+  recreation while its deletion is in progress. Revoke site/portal/MCP sessions
+  and credentials, delete the customer ZITADEL user, remove active principal and
+  identity links, and clean portal membership/contact/notification data.
+- Portal cleanup must be transactional and retryable. A leased/in-flight email
+  blocks completion until settled. Cancel and redact old ready receipts rather
+  than allowing an old scheduler snapshot to recreate a delivery after deletion.
+- Use dedicated least-privilege credentials: customer-org user management for
+  ZITADEL, production session namespace KV access for Cloudflare, and the
+  existing restricted workflow caller for portal cleanup. Never mount the
+  instance-wide IaC key in the API or grant workflow SQL-superuser access.
+- Add explicit workflow completion steps for portal and account postconditions.
+  Any failed/partial API read, malformed result or later-page error is unknown
+  and fails completion. Preserve durable retry state, audit actor and target,
+  and return the failing stage through MCP workflow status.
+
+Delivery checklist:
+
+- [ ] Portal cleanup, cancellation/redaction and isolation/lease/race tests.
+- [ ] Durable API deletion manifest, authorization guards and staged cleanup.
+- [ ] MCP option, operation schema and workflow preflight/completion wiring.
+- [ ] ZITADEL/Cloudflare credentials, network/configuration and rollout.
+- [ ] Positive/negative and mutation tests, current-head review, CI and releases.
+- [ ] Fresh disposable customer: create, MCP full delete, verify every surface,
+      retry deletion, then recreate without manual intervention.
+- [ ] Finish reviewer reset and record the exact remaining manual limitations.
