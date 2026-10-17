@@ -809,3 +809,31 @@ marker make the corresponding tests fail. Customer Terraform tests pass 16/16;
 dropping Russian fallback deliberately fails locale coverage. These are
 implementation checks; they do not substitute for pending live delivery and
 Access-page acceptance.
+
+## Live customer MCP acceptance (2026-10-17)
+
+The original seven-day shadow timing is superseded by the owner's explicit
+early-cutover decision in mctl-gitops#1873, merged as b1798b838b6de3b04079d63e4a7fa645913dfb80.
+It is an approved exception, not a completed seven-day observation. Both API
+4.92.0 replicas are ready in principal mode. Legacy retirement still requires
+the separate post-cutover observation period (earliest 2026-10-31, subject to
+verification); public signup remains a separate decision.
+
+At 15:42 UTC, a fresh native OAuth authorization-code/PKCE flow selected the
+existing `mctl-reviewer` ZITADEL session. The MCP initialize handshake succeeded.
+`mctl_whoami` returned canonical principal
+`prn_01M39HRBR3C0QWSEHTYKG75F8C`, admin=false, and only
+`onboarding-acceptance-test` membership/access. `mctl_get_tenant` read that
+workspace with the principal-keyed owner entry and returned `access denied` for
+`commerce-proof`. The temporary access and refresh tokens were revoked after
+these read-only checks. No token or authorization code is retained here.
+This closes this customer's GitHub → workspace → portal → MCP read/access
+acceptance; it does not claim the full platform identity matrix or extended
+Stage E grants/revocation are complete.
+
+The new readiness API correctly returned 503 when its preview quota read was
+forbidden. GitOps #1929 adds only a namespace-scoped get/list ResourceQuota
+Role/RoleBinding in enabled preview namespaces. Production delivery and Access
+remain pending this GitOps apply plus portal #178 deployment. The updated portal
+suite passes 1,109 tests with five existing skips, plus TypeScript and backend
+build; page tests prove failed polling removes old capability links.
