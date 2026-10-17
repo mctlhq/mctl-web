@@ -1099,3 +1099,13 @@ Deferred review improvement: the Worker currently scans the complete session
 namespace in bounded pages. Add a subject-keyed session index before platform
 session volume makes a full deletion exceed the workflow retry window. A failed
 workflow retains its subject fence and pagination progress for a later retry.
+
+
+Rollout evidence (2026-10-17): Worker PR #164 merged and its production deploy
+39070965847 succeeded. GitOps bootstrap PR #1951 merged; the `zitadel-iac` job
+completed successfully at 21:27 UTC. The generated lifecycle machine token was
+requested using the same User-Agent as Go's HTTP client: its subject, issuer and
+dedicated project-ID audience matched the configured public identifiers. Only
+boolean results/public IDs were exposed; credentials and JWTs stayed in memory.
+Portal/API reviews and the workflow rollout remain pending. Full deletion and
+public signup remain disabled.
