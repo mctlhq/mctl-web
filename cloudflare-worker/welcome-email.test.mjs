@@ -101,7 +101,7 @@ async function submit(stubOptions, envOverrides = {}, authOverrides = {}) {
 
 test('renderWelcomeEmail: states provisioning and the sign-in fact, nothing more', () => {
   const { subject, html, text } = renderWelcomeEmail({ name: 'Ada', team: 'my-team', year: 2031 });
-  assert.equal(subject, 'Your MCTL workspace "my-team" is being provisioned');
+  assert.equal(subject, 'MCTL: request accepted for workspace "my-team"');
   for (const part of [html, text]) {
     assert.match(part, /my-team/);
     assert.match(part, /Portal sign-in for self-service accounts is not available yet/);
@@ -207,4 +207,14 @@ test('submit: workflow rejected -> 500, no welcome email', async () => {
   assert.equal(res.status, 500);
   assert.equal(body.success, false);
   assert.equal(calls.resend.length, 0);
+});
+
+
+test('customer acceptance promises only a verified follow-up, not immediate access', () => {
+  const email = renderWelcomeEmail({ name: 'Ada', team: 'my-team', customer: true });
+  for (const part of [email.html, email.text]) {
+    assert.match(part, /was accepted/);
+    assert.match(part, /when your workspace access has been verified/);
+    assert.doesNotMatch(part, /is ready|not available yet|ops\.mctl\.ai|api\.mctl\.ai\/mcp/);
+  }
 });

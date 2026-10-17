@@ -249,7 +249,7 @@ const onSubmit = handleSubmit(async (formData) => {
     />
   </BaseForm>
 
-  <SuccessModal v-model="showSuccessModal" />
+  <SuccessModal v-model="showSuccessModal" :customer="sessionMode" />
 </template>
 
 <style lang="scss" scoped>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+defineProps<{ customer?: boolean }>();
 const { t } = useI18n();
 
 const open = defineModel<boolean>({ default: false });
@@ -30,7 +31,7 @@ async function goToContact() {
     <div class="request-access-success">
       <p>{{ t('modal.provisioning') }}</p>
       <p>
-        {{ t('modal.signin_unavailable') }}
+        {{ t(customer ? 'modal.ready_followup' : 'modal.signin_unavailable') }}
         <a href="/#contact" @click.prevent="goToContact">{{ t('modal.contact') }}</a>
       </p>
       <button

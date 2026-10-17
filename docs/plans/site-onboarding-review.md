@@ -8,7 +8,9 @@ Web 7.8.1 adds a cleared form and acceptance receipt after successful submit.
 B1b grants and the API claim-client rollout are applied. The missing portal
 client-audience setting found by live sign-in is corrected and rolled out.
 The test-group workspace creation and principal-keyed portal sign-in are verified.
-Public cutover, legacy retirement, full MCP acceptance and D1/D2 remain open.
+The test-group MCP sign-in and own/foreign workspace authorization are verified.
+D1 locale rollout and D2 production acceptance remain in progress.
+Public cutover and legacy retirement remain separate follow-ups.
 The findings below describe the original audit unless a later record says
 otherwise; implementation is not evidence of successful live acceptance.
 
@@ -628,26 +630,26 @@ portal and MCP; public cutover and C1c; customer Login V2/message texts (D1);
 verified readiness plus idempotent ready notification and Access page (D2).
 Stage E stays outside this first release as agreed above.
 
-### Principal-mode launch dependency
+### Principal-mode launch dependency (updated 2026-10-17)
 
-Public customer MCP access is blocked on mctl-api#377, not just on B1b.
-`customerSigninPrincipal` in `internal/api/oauth_signin_customer.go` deliberately
-refuses customer OAuth sign-in outside `TENANT_AUTHZ_MODE=principal` with
-`customer_not_enabled`; the production manifest still sets `shadow`.
+Production now runs `TENANT_AUTHZ_MODE=principal`. The owner explicitly approved
+shortening the original seven-day shadow window in
+[mctl-gitops#1873](https://github.com/mctlhq/mctl-gitops/pull/1873), merged as
+b1798b838b6de3b04079d63e4a7fa645913dfb80. This is an early-cutover exception, not
+proof that seven days elapsed. The original earliest date was 2026-10-19 21:33
+UTC. Do not remove the customer sign-in guard or introduce a second cutover.
 
-Issue #377 requires seven consecutive clean shadow days starting from
-2026-10-12 21:33 UTC. The earliest cutover is **2026-10-19 21:33 UTC**, only
-with the complete metrics/traffic, keyed-membership and live authorization
-checks in that issue and `mctl-api/docs/principals.md`. Do not bypass that gate
-or remove the guard to finish website acceptance earlier. The date alone is
-not acceptance. After the gate, use a reviewed GitOps change, verify live
-principal authorization and rollback, then finish onboarding MCP acceptance.
+Fresh customer OAuth/MCP was verified at 15:42 UTC on API 4.92.0: the canonical
+review principal is not an admin, can read only its workspace, and is refused
+another tenant. The temporary test credentials were revoked. The acceptance
+record below describes this customer's evidence; platform-wide identity
+coverage must be assessed separately from mctl-api#377's live records.
 
-Before that gate, independent work can finish: C0/C2 and test-group workspace
-creation/portal checks; B1b role-free project grants and narrow claim allowlist;
-D1 copy and D2 verified readiness/notification implementation. Keep public signup
-and legacy retirement pending full portal/MCP acceptance. A ready notification
-must list only capabilities verified at send time, never promise MCP early.
+Public signup and legacy retirement are separate decisions. Keep the legacy
+rollback path for at least 14 days in principal mode (earliest 2026-10-31,
+conditional on clean verification). D1 locale rollout and D2 ready-notification/
+Access acceptance remain the immediate work. A ready notification lists only
+capabilities verified at send time.
 
 Live test-group recheck: `mctl-reviewer` completed GitHub → ZITADEL → website
 sign-in and the form showed the successful availability state for
@@ -768,3 +770,72 @@ form/notification corrections. It does not complete D2, other-locale/no-mail
 D1 acceptance, the principal-mode gate, MCP end-to-end acceptance or public
 cutover. The earliest principal cutover remains 2026-10-19 21:33 UTC subject
 to all checks in mctl-api#377; do not treat that date as automatic approval.
+
+## D1/D2 follow-up implementation (2026-10-17)
+
+API #641 adds a portal-only, canonical-principal readiness observation. Portal
+#178 checks that observation against the current membership and provider-shaped
+catalog Group/User, serves Workspace → Access, and runs an independent durable
+ready-email outbox. No failed/partial read means ready, no provisioning success
+substitutes for catalog convergence, and MCP remains blocked outside its launch
+gate. Production enablement and acceptance follow implementation reviews.
+
+The outbox is one email per tenant/principal. It freezes the recipient, snapshot
+and provider payload before attempting delivery; concurrent workers use a DB
+lease and the same provider idempotency key. Resend retains keys for 24 hours,
+so ambiguous retries stop at 23 hours in `reconcile` rather than risking a
+second send. An accepted provider response means accepted, not delivered. No
+email failure changes provisioning status. Current grants are rechecked before
+retrying the old snapshot, and the email links to current Access.
+
+D1 live first-creation evidence: the complete event listing for the review
+account contains user.human.added, user.human.email.verified and
+user.human.externalidp.added at 2026-10-15 22:46:12.143321 UTC, plus two metadata
+writes. It contains no initial/email-code-added or sent event. The v4.19.2
+notification handler subscribes to code-added events for these messages, not
+human.added/email.verified. Together with the create hook's verified-primary-
+email test, this establishes the no-mail first-create path for this account;
+no mailbox content or credentials were copied into the plan. Source:
+https://github.com/zitadel/zitadel/blob/v4.19.2/internal/notification/handlers/user_notifier.go.
+
+Customer-specific English product copy is extended explicitly to all 15
+supported login locales, preserving staff defaults. The existing locale drift
+checker still covers the instance rebrand; extending its upstream-key check to
+org-specific customer keys remains a non-blocking review follow-up.
+
+Validation so far: the API suite and go vet pass with zero new lint findings;
+three unchanged local gosec findings are not part of this feature. Portal
+TypeScript/backend build and 1,096 tests pass (five existing skips). Mutations
+that bypass ArgoCD convergence, catalog convergence or the durable accepted
+marker make the corresponding tests fail. Customer Terraform tests pass 16/16;
+dropping Russian fallback deliberately fails locale coverage. These are
+implementation checks; they do not substitute for pending live delivery and
+Access-page acceptance.
+
+## Live customer MCP acceptance (2026-10-17)
+
+The original seven-day shadow timing is superseded by the owner's explicit
+early-cutover decision in mctl-gitops#1873, merged as b1798b838b6de3b04079d63e4a7fa645913dfb80.
+It is an approved exception, not a completed seven-day observation. Both API
+4.92.0 replicas are ready in principal mode. Legacy retirement still requires
+the separate post-cutover observation period (earliest 2026-10-31, subject to
+verification); public signup remains a separate decision.
+
+At 15:42 UTC, a fresh native OAuth authorization-code/PKCE flow selected the
+existing `mctl-reviewer` ZITADEL session. The MCP initialize handshake succeeded.
+`mctl_whoami` returned canonical principal
+`prn_01M39HRBR3C0QWSEHTYKG75F8C`, admin=false, and only
+`onboarding-acceptance-test` membership/access. `mctl_get_tenant` read that
+workspace with the principal-keyed owner entry and returned `access denied` for
+`commerce-proof`. The temporary access and refresh tokens were revoked after
+these read-only checks. No token or authorization code is retained here.
+This closes this customer's GitHub → workspace → portal → MCP read/access
+acceptance; it does not claim the full platform identity matrix or extended
+Stage E grants/revocation are complete.
+
+The new readiness API correctly returned 503 when its preview quota read was
+forbidden. GitOps #1929 adds only a namespace-scoped get/list ResourceQuota
+Role/RoleBinding in enabled preview namespaces. Production delivery and Access
+remain pending this GitOps apply plus portal #178 deployment. The updated portal
+suite passes 1,109 tests with five existing skips, plus TypeScript and backend
+build; page tests prove failed polling removes old capability links.
