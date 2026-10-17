@@ -642,6 +642,11 @@ test('submit (session): creates the workspace for the signed-in customer only', 
   });
   assert.equal(network.calls.legacyGet, 0, 'no legacy existence probe');
   assert.equal(network.calls.telegram, 1);
+  assert.ok(network.calls.telegramText.includes('mctl\\.ai'));
+  assert.ok(network.calls.telegramText.includes('https://app\\.mctl\\.ai/'));
+  assert.ok(network.calls.telegramText.includes('https://ops\\.mctl\\.ai/'));
+  assert.ok(network.calls.telegramText.includes('https://workflows\\.mctl\\.ai/'));
+  assert.ok(!network.calls.telegramText.includes('mctl\\.me'));
   assert.equal(network.calls.resend, 1);
 });
 

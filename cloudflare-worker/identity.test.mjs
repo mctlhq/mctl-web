@@ -188,6 +188,11 @@ test('submit: mail, contactEmail and Telegram use only the signed identity', asy
   assert.equal(calls.backstagePost[0].contactEmail, 'octo@example.com');
   assert.equal(calls.backstagePost[0].creatorUserId, 'octocat');
   const tg = calls.telegram[0].text;
+  assert.ok(tg.includes('mctl\\.ai'));
+  assert.ok(tg.includes('https://app\\.mctl\\.ai/'));
+  assert.ok(tg.includes('https://ops\\.mctl\\.ai/'));
+  assert.ok(tg.includes('https://workflows\\.mctl\\.ai/'));
+  assert.ok(!tg.includes('mctl\\.me'));
   assert.match(tg, /github\\\.com\/octocat/);
   assert.doesNotMatch(tg, /evil\.example/);
 });
