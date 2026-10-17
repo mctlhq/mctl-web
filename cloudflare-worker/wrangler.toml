@@ -55,8 +55,8 @@ SESSION_ORIGINS = "https://mctl.ai"
 AUTH_FLOW_PUBLIC = "false"
 # Fail closed until the dedicated customer-lifecycle service/project IDs from
 # zitadel-iac are reviewed and pinned here. These are public identifiers.
-SESSION_REVOCATION_SUBJECT = ""
-SESSION_REVOCATION_AUDIENCE = ""
+SESSION_REVOCATION_SUBJECT = "395567307109172949"
+SESSION_REVOCATION_AUDIENCE = "395567303451739861"
 
 # Server-side sessions. The namespaces are owned by OpenTofu in mctl-gitops
 # (infrastructure/cloudflare/account/workers-kv.tf, mctlhq/mctl-gitops#1909);
