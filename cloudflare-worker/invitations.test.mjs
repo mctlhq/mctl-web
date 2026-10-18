@@ -184,3 +184,24 @@ test('malformed or oversized provider JSON stays a failed delivery with a safe c
     assert.equal(f.rows.has('notified:' + id), false);
   }
 });
+
+test('retry diagnostics never expose arbitrary exception messages or request fields', async () => {
+  const f = fixture(); f.rows.set('request:' + id, JSON.stringify(record));
+  const read = f.env.ACCESS_REQUESTS.get;
+  const secret = 'private-token-contact@example.invalid';
+  f.env.ACCESS_REQUESTS.get = async (key, type) => {
+    if (key === 'request:' + id) throw new Error('https://api.telegram.org/bot' + secret);
+    return read(key, type);
+  };
+  const logs = [], previous = console.error;
+  console.error = (...args) => logs.push(args.join(' '));
+  try { await assert.rejects(retryInvitations(f.env, accepted), /invitation_deliveries_pending/); }
+  finally { console.error = previous; }
+  const output = logs.join('\n');
+  assert.match(output, /delivery_observation_failed/);
+  assert.match(output, new RegExp(id));
+  assert.ok(!output.includes(secret));
+  assert.ok(!output.includes('https://'));
+  assert.ok(!output.includes(body.email));
+  assert.equal(f.rows.has('notified:' + id), false);
+});
