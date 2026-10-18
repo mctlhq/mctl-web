@@ -1303,9 +1303,36 @@ completion callback returned true. Independent reads confirmed the tenant absent
 from the API, the tenant Argo Application NotFound, and both production/preview
 namespaces NotFound. Root-app and shared-pg are Synced/Healthy.
 
-The reviewer is left deleted for the next registration test. The earlier
-replacement subject/principal above must no longer be treated as a live customer.
+At completion of this reset the reviewer was left deleted for the next
+registration test. The deleted subject/principal above is historical; see the
+subsequent successful recreation below for the current identity.
 This is a clean-state repeat for the same historical GitHub identity, not a
 never-before-used GitHub customer: its numeric ID remains in the restricted test
 cohort. No signup cohort/public switch was changed. A fresh external GitHub
 identity remains required for the first-ever outside-cohort acceptance gate.
+
+## Reviewer recreation acceptance (2026-10-18, 21:00–21:06 UTC)
+
+After the complete reset, the owner signed in through GitHub and submitted the
+workspace form. ZITADEL created a new subject 395708750247233237; the API resolved
+a new active principal prn_01M58D1EE581Q7M9RTDTBVP15M for GitHub 268260640. Both
+GitHub and ZITADEL bindings are live; the deleted prior principal was not reused.
+
+Create workflow create-tenant-9nj9m, submitted via the landing-page portal
+backend at 21:00:24 UTC, Succeeded 8/8 at 21:01:37 UTC. The API reports the new
+principal as sole owner, zero services and complete Argo observation. Application
+tenant-onboarding-acceptance-test is Synced/Healthy; production and preview
+namespaces are Active. Root-app and shared-pg remain Synced/Healthy.
+
+Fresh portal GitHub sign-in as mctl-reviewer succeeded. Workspace > Access shows
+Ready, owner, both production and preview Ready, and portal/MCP links. A fresh
+OAuth PKCE MCP check independently verified API whoami id exactly matches the
+new principal, isAdmin=false, and groups/namespaces contain only this workspace.
+MCP initialize and own-workspace read succeeded; commerce-proof was refused with
+access denied. Temporary acceptance OAuth access/refresh credentials were revoked
+after the check. No manual identity/database/Kubernetes cleanup or grants were
+needed in the delete/recreate cycle.
+
+This closes the repeat-customer delete > sign-in > workspace > portal > MCP
+acceptance cycle. It does not replace first-ever outside-cohort acceptance or
+the funded-capacity/admission gates. Public signup remains restricted.
