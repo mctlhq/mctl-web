@@ -1043,10 +1043,11 @@ The test principal prn_01M39HRBR3C0QWSEHTYKG75F8C, its two external identities,
 one refresh token and any matching surface challenges/links were removed in a
 bounded primary-database transaction after checking the account and absence of
 commerce or agent-token data. Audit/workflow history remains historical evidence.
-Worker KV enumeration is still unknown: cached local authentication is expired
-and non-interactive Wrangler requires an API credential. Do not claim session
-cleanup complete from that failed read. A temporary administrative inspection
-pod in zitadel must be removed before concluding the reset.
+Worker session cleanup was subsequently confirmed through the deployed scoped
+machine-JWT revocation endpoint (HTTP 200, complete=true, exact old GitHub ID and
+ZITADEL subject). The temporary administrative inspection pod was removed.
+The historical portal ready outbox still needs cleanup; the full reset is not
+yet complete.
 
 Implementation contract:
 
@@ -1109,3 +1110,25 @@ dedicated project-ID audience matched the configured public identifiers. Only
 boolean results/public IDs were exposed; credentials and JWTs stayed in memory.
 Portal/API reviews and the workflow rollout remain pending. Full deletion and
 public signup remain disabled.
+
+
+Review progress (2026-10-18): API [#666](https://github.com/mctlhq/mctl-api/pull/666)
+and portal [#185](https://github.com/mctlhq/mctl-portal/pull/185) contain the final
+cleanup acknowledgments and are awaiting current-head review and CI. Workflow
+[#1952](https://github.com/mctlhq/mctl-gitops/pull/1952) has current-head approval
+and green checks; merge is held until the API and portal dependencies deploy.
+Worker identity pins [#165](https://github.com/mctlhq/mctl-web/pull/165) deployed
+successfully (run 39071495559).
+
+The API name/GitHub freeze now remains until the final portal acknowledgment
+is durable, including administrator/MCP create-tenant. The portal requires a
+private-cleanup receipt before completion and deletes PID-bound sessions without
+removing staff sessions that share a display login. Provider failures remain
+retryable and auditable; final principal removal checks its affected row count.
+Tests: 1,190 portal tests passed (7 skipped), 33 real PostgreSQL portal-store
+tests passed using installed Backstage migrations and the actual OIDC store,
+and focused API/command/provider plus real PostgreSQL principal tests passed.
+Deliberately omitting offline-session cleanup and the principal deletion
+postcondition made the respective tests fail; both implementations were restored.
+These results do not establish production full-account deletion. Releases,
+feature activation and a create/delete/recreate MCP acceptance run remain pending.
