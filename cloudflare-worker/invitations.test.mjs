@@ -80,6 +80,7 @@ test('HTTP 200 without provider acceptance is not a delivered notification', asy
 test('notifications identify provided contact information and cannot grant access', async () => {
   const f = fixture();
   await notifyInvitation(f.env, record, async (_url, options) => {
+    assert.equal(options.redirect, 'manual');
     const sent = JSON.parse(options.body);
     assert.equal(sent.chat_id, '123'); assert.match(sent.text, /not verified/);
     assert.match(sent.text, /No account, access or workspace/); assert.match(sent.text, new RegExp(id));
@@ -162,4 +163,45 @@ test('an oversized stored cursor resets and oversized provider cursors are never
   f.env.ACCESS_REQUESTS.list = async () => ({ keys: [], list_complete: false, cursor: 'x'.repeat(4097) });
   await assert.rejects(retryInvitations(f.env), /invalid_invitation_listing/);
   assert.equal(f.rows.get('delivery-scan-cursor'), '');
+});
+
+test('Telegram redirects are refused and never create a delivery receipt', async () => {
+  const f = fixture();
+  await assert.rejects(notifyInvitation(f.env, record, async (_url, options) => {
+    assert.equal(options.redirect, 'manual');
+    return new Response(null, {status: 302, headers: {Location: 'https://foreign.example'}});
+  }), /telegram_not_accepted/);
+  assert.equal(f.rows.has('notified:' + id), false);
+});
+
+test('malformed or oversized provider JSON stays a failed delivery with a safe code', async () => {
+  for (const value of ['not-json', 'x'.repeat(32769)]) {
+    const f = fixture();
+    await assert.rejects(notifyInvitation(f.env, record, async () => new Response(value)), error => {
+      assert.equal(error.message, 'telegram_response_invalid');
+      return true;
+    });
+    assert.equal(f.rows.has('notified:' + id), false);
+  }
+});
+
+test('retry diagnostics never expose arbitrary exception messages or request fields', async () => {
+  const f = fixture(); f.rows.set('request:' + id, JSON.stringify(record));
+  const read = f.env.ACCESS_REQUESTS.get;
+  const secret = 'private-token-contact@example.invalid';
+  f.env.ACCESS_REQUESTS.get = async (key, type) => {
+    if (key === 'request:' + id) throw new Error('https://api.telegram.org/bot' + secret);
+    return read(key, type);
+  };
+  const logs = [], previous = console.error;
+  console.error = (...args) => logs.push(args.join(' '));
+  try { await assert.rejects(retryInvitations(f.env, accepted), /invitation_deliveries_pending/); }
+  finally { console.error = previous; }
+  const output = logs.join('\n');
+  assert.match(output, /delivery_observation_failed/);
+  assert.match(output, new RegExp(id));
+  assert.ok(!output.includes(secret));
+  assert.ok(!output.includes('https://'));
+  assert.ok(!output.includes(body.email));
+  assert.equal(f.rows.has('notified:' + id), false);
 });
