@@ -8,7 +8,7 @@ const PREFIX = 'request:';
 const CURSOR = 'delivery-scan-cursor';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const GITHUB = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
-const DELIVERY_ERRORS = new Set(['invalid_invitation_record', 'invalid_invitation_receipt', 'telegram_unconfigured', 'telegram_transport_failed', 'telegram_not_accepted', 'telegram_response_invalid']);
+const DELIVERY_ERRORS = new Set(['invalid_invitation_key', 'invalid_invitation_record', 'invalid_invitation_receipt', 'telegram_unconfigured', 'telegram_transport_failed', 'telegram_not_accepted', 'telegram_response_invalid']);
 function deliveryFailure(error) {
   return DELIVERY_ERRORS.has(error?.message) ? error.message : 'delivery_observation_failed';
 }

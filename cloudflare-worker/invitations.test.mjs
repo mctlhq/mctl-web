@@ -173,3 +173,14 @@ test('Telegram redirects are refused and never create a delivery receipt', async
   }), /telegram_not_accepted/);
   assert.equal(f.rows.has('notified:' + id), false);
 });
+
+test('malformed or oversized provider JSON stays a failed delivery with a safe code', async () => {
+  for (const value of ['not-json', 'x'.repeat(32769)]) {
+    const f = fixture();
+    await assert.rejects(notifyInvitation(f.env, record, async () => new Response(value)), error => {
+      assert.equal(error.message, 'telegram_response_invalid');
+      return true;
+    });
+    assert.equal(f.rows.has('notified:' + id), false);
+  }
+});
