@@ -1022,171 +1022,143 @@ admission budget and the response when that budget is exhausted. This evidence
 is still pending and must not be replaced with the node Ready condition.
 
 
-## Customer deletion automation (2026-10-17)
+## Customer deletion automation — production acceptance (2026-10-18)
 
-Owner request: extend MCP deletion to cover customer account teardown without
-manual ZITADEL, database, portal or Worker session cleanup. This work is in
-progress and is a prerequisite to reusing mctl-reviewer for first-creation
-acceptance. Public signup remains restricted.
+Owner request: full customer-account deletion through MCP, without manual
+ZITADEL, Kubernetes, database, portal or Worker session cleanup. Implementation
+and the production create/full-delete/retry/recreate acceptance are complete.
+Public signup remains restricted; this does not close its independent launch,
+capacity-budget, monitoring and rollback gates.
 
-Live baseline: MCP mctl_delete_tenant submitted delete-tenant-safe-30a36d56 at
-19:14:42 UTC; it completed Succeeded, 7/7, at 19:16:29 UTC. The workspace API
-reports tenant not found; both tenant namespaces and its Argo application return
-explicit NotFound. Root and shared-pg stayed Synced/Healthy. No manual Kubernetes
-cleanup was needed for that workflow. Tenant sync later removed the portal's
-tenant and membership rows automatically, but retained the ready-email outbox.
+### Deployed implementation
 
-Manual reset already performed under the owner's deletion authorization:
-ZITADEL user 395285255046563541 was verified to belong to customers and to be
-mctl-reviewer, then deleted through User v2 (DELETE 200, follow-up GET 404).
-The test principal prn_01M39HRBR3C0QWSEHTYKG75F8C, its two external identities,
-one refresh token and any matching surface challenges/links were removed in a
-bounded primary-database transaction after checking the account and absence of
-commerce or agent-token data. Audit/workflow history remains historical evidence.
-Worker session cleanup was subsequently confirmed through the deployed scoped
-machine-JWT revocation endpoint (HTTP 200, complete=true, exact old GitHub ID and
-ZITADEL subject). The temporary administrative inspection pod was removed.
-Historical portal reset completed on 2026-10-18: the deployed 4.25.1 workspace
-cleanup returned HTTP 200 (cleaned=true, scope=workspace) with the real API
-service token. Its ready-email receipt is cancelled and recipient/snapshot/payload
-are empty; the receipt remains to prevent stale delivery. One exact old-PID
-`auth.user_info` row was removed in a guarded transaction after confirming no
-workspace, membership or principal remained. The old user-info count is now zero.
-This one-time reset predates the new immutable manifest and is not proof of the
-fresh automated full-account lifecycle.
+- [x] Worker scoped session revocation: web [#164](https://github.com/mctlhq/mctl-web/pull/164)
+  and pins [#165](https://github.com/mctlhq/mctl-web/pull/165), deployed. The
+  machine JWT is pinned by subject and audience; bounded scans require a second
+  empty verification pass at least 60 seconds later.
+- [x] Dedicated customer-org lifecycle machine and namespace-read RBAC:
+  GitOps [#1951](https://github.com/mctlhq/mctl-gitops/pull/1951), applied.
+  The machine has only `ORG_USER_MANAGER` in customers, no staff/instance role.
+- [x] Portal customer freeze/cleanup/release/cancellation:
+  [#185](https://github.com/mctlhq/mctl-portal/pull/185),
+  [#189](https://github.com/mctlhq/mctl-portal/pull/189) and service-principal fix
+  [#191](https://github.com/mctlhq/mctl-portal/pull/191), released as **4.25.1**
+  ([#192](https://github.com/mctlhq/mctl-portal/pull/192)).
+  [Deploy 39116804503](https://github.com/mctlhq/mctl-gitops/actions/runs/39116804503)
+  succeeded; the new pod is ready. A real API service-token request confirmed
+  HTTP 200 workspace cleanup; production full deletion also confirmed
+  customer-scoped cleanup. The 4.25.0 unprefixed static-token subject mismatch
+  is fixed and tested against the installed Backstage handler.
+- [x] Durable API manifest, direct-human-admin authorization, immediate
+  cross-replica identity/token fencing, staged cleanup and prepared cancellation:
+  [#666](https://github.com/mctlhq/mctl-api/pull/666), reviewed at head
+  `40dd6fecca593e165c26557a2c280df1abb29939` with no unaddressed P1/P2 and green CI.
+  Released as **4.102.0** via [#692](https://github.com/mctlhq/mctl-api/pull/692);
+  [deploy 39132122179](https://github.com/mctlhq/mctl-gitops/actions/runs/39132122179)
+  succeeded. Both production API replicas run 4.102.0 and are ready.
+- [x] Staged workflow [#1952](https://github.com/mctlhq/mctl-gitops/pull/1952)
+  merged as `656db5b4a823529dd6c92ad1dd02ec6e6438a4a0`; live template verified,
+  `argo-workflows-config` Synced/Healthy. Only resource mutation holds the
+  global GitOps mutex; retryable account/portal callbacks run outside it.
+- [x] Explicit activation [#1961](https://github.com/mctlhq/mctl-gitops/pull/1961)
+  merged as `a2172021b7e53b8b9a1ec8ea8444313c53cbab72` after dependencies.
+  `CUSTOMER_DELETION_ENABLED=true` is present and the rollout completed.
 
-Implementation contract:
+### Operator contract and recovery
 
-- Preserve ordinary workspace deletion. Full customer-account deletion is an
-  explicit, separately confirmed MCP option, initially restricted to a direct
-  human platform administrator. Never infer deleting an identity from deleting
-  one workspace. Refuse platform/staff/service/agent identities, multiple
-  owners, other workspace/team memberships and unknown membership reads.
-- Capture the exact principal, verified GitHub ID and customer ZITADEL subject
-  before deleting GitOps membership. Persist the approved deletion manifest and
-  progress; later steps and retries use that manifest rather than a display
-  login, caller-supplied subject, or a deleted tenant lookup.
-- Disable acting and renewing sessions before teardown. Prevent account
-  recreation while its deletion is in progress. Revoke site/portal/MCP sessions
-  and credentials, delete the customer ZITADEL user, remove active principal and
-  identity links, and clean portal membership/contact/notification data.
-- Portal cleanup must be transactional and retryable. A leased/in-flight email
-  blocks completion until settled. Cancel and redact old ready receipts rather
-  than allowing an old scheduler snapshot to recreate a delivery after deletion.
-- Use dedicated least-privilege credentials: customer-org user management for
-  ZITADEL, a pinned machine-JWT Worker endpoint using its own session KV binding, and the
-  existing restricted workflow caller for portal cleanup. Never mount the
-  instance-wide IaC key in the API or grant workflow SQL-superuser access.
-- Add explicit workflow completion steps for portal and account postconditions.
-  Any failed/partial API read, malformed result or later-page error is unknown
-  and fails completion. Preserve durable retry state, audit actor and target,
-  and return the failing stage through MCP workflow status.
+Ordinary workspace deletion remains unchanged. Full deletion explicitly supplies
+`delete_customer_account="true"`, the exact `customer_principal_id` and
+`confirm="yes"` to `mctl_delete_tenant`. It requires a directly authenticated
+human platform administrator, not a delegated/agent/service caller, and refuses
+self/protected accounts, unrelated authentication identities and other workspace
+memberships. An unreadable observation refuses progress rather than proving
+absence. Do not infer account deletion from workspace disappearance alone.
 
-Delivery checklist:
+Preparation stores the immutable approved tenant/principal/GitHub/issuer/subject
+and immediately fences the old identity and credentials across replicas. A
+principal lock rechecks those identities before begin. Surface mirrors require
+ownership provenance. All lifecycle operations serialize by tenant name across
+successive owners, without holding a transaction over provider HTTP calls.
 
-- [ ] Portal cleanup, cancellation/redaction and isolation/lease/race tests.
-- [ ] Durable API deletion manifest, authorization guards and staged cleanup.
-- [ ] MCP option, operation schema and workflow preflight/completion wiring.
-- [x] ZITADEL lifecycle credentials, Worker public identity pins and rollout.
-- [ ] Positive/negative and mutation tests, current-head review, CI and releases.
-- [ ] Fresh disposable customer: create, MCP full delete, verify every surface,
-      retry deletion, then recreate without manual intervention.
-- [ ] Finish reviewer reset and record the exact remaining manual limitations.
+Before begin, `mctl_cancel_customer_deletion` requires the same exact target and
+confirmation. Cancellation first stamps `cancelled_at`, restoring authentication
+and refusing queued begin; the identity receipt and name fence remain until the
+portal acknowledgment and final local cleanup succeed. Retry retains the exact
+identity. After begin, recovery is forward-only. Disabling the feature stops new
+preparations while preserving approved callbacks and prepared cancellation.
+A completed replay acknowledges only the old manifest and must not destroy a
+replacement workspace with the same name.
 
+### Production evidence
 
-Implementation status (2026-10-17, before review/deployment): the isolated API,
-portal, Worker and GitOps branches contain the complete deletion path. The API
-suite and portal suite passed; real PostgreSQL tests cover principal and portal
-session cleanup. An ArgoCD malformed-list mutation was detected by the new test.
-Production automation and the fresh-customer acceptance run remain pending;
-this entry is not evidence of deployment or completed reviewer reset.
+Historical reset is distinct from fresh automated acceptance. The initial
+workspace deletion `delete-tenant-safe-30a36d56` completed on October 17 without
+manual Kubernetes cleanup, but predated immutable account manifests. Under the
+owner's explicit authorization, the old ZITADEL user, principal/identity/refresh
+rows and Worker sessions were reset separately. On October 18, deployed portal
+cleanup redacted the old ready-email receipt; one exact old-PID `auth.user_info`
+row required a guarded one-time SQL transaction. No old workspace/member/principal
+remained. This historical exception is not claimed as MCP-only deletion.
 
+Fresh lifecycle, with no manual cleanup of the test account:
 
-Deferred review improvement: the Worker currently scans the complete session
-namespace in bounded pages. Add a subject-keyed session index before platform
-session volume makes a full deletion exceed the workflow retry window. A failed
-workflow retains its subject fence and pagination progress for a later retry.
+1. Sign in through GitHub as **mctl-reviewer**, create
+   `onboarding-acceptance-test`: `create-tenant-mm78t` Succeeded. New subject
+   `395662849612973781`, principal `prn_01M57JK9Z4AHPEX9HHRSTFVVAB`.
+   Workspace/production/preview were Ready; portal role owner; ready-email
+   outbox accepted. A separate OAuth/PKCE MCP session reported Admin=false and
+   only this team. After Got it the site retained Request accepted, not the form.
+   One verification failure recovered with the visible Try again control.
+2. Full deletion submitted **through MCP** as direct human admin at
+   **13:40:15 UTC**, `delete-tenant-safe-2f1fc570`, trace
+   `780961a9206b7bb22e63eb5d118c0f49`. Workflow Succeeded at **13:44:39 UTC**.
+   At prepared, the already-issued MCP access token returned 401 and refresh
+   returned invalid_grant; the portal stopped displaying Ready access.
+   Catalog-propagation 503 responses recovered through automatic workflow retry.
+   Final callback retries also converged automatically; no manual cleanup.
+3. Independent postconditions: API tenant not found; both namespaces and tenant
+   Argo application explicitly NotFound; ZITADEL User v2 GET returned 404.
+   Principal, external identity, refresh, surface-link and challenge counts zero.
+   Portal membership/user-info/offline/authorization sessions, PID-bound legacy
+   OIDC rows and per-user notification counts zero. Ready-email receipts cancelled
+   with empty recipient/snapshot/payload and no lease token. Manifest complete
+   with durable released_at. Site and portal require sign-in again. Old MCP
+   access/refresh tokens remain refused. Root and shared-pg Synced/Healthy.
+4. Repeating the same full MCP deletion returned `status=complete` without a new
+   destructive workflow. Re-sign-in with the same GitHub succeeded and the same
+   workspace name was accepted as `create-tenant-4fgtg`. New subject
+   `395665758950000341`, new principal `prn_01M57M85D69EBRDZF5D0T6250H`.
+   `create-tenant-4fgtg` Succeeded, 8/8, at **13:48:32 UTC**. API reports the
+   replacement's new principal as sole owner, no services, and complete Argo
+   observation. Its Argo app is Synced/Healthy; both namespaces Active. Replaying
+   the old principal's full MCP deletion again returned complete without changing
+   this replacement. The old access/refresh tokens still return 401/invalid_grant.
+   Root, shared-pg and API remain Synced/Healthy.
 
+### Validation and retained records
 
-Rollout evidence (2026-10-17): Worker PR #164 merged and its production deploy
-39070965847 succeeded. GitOps bootstrap PR #1951 merged; the `zitadel-iac` job
-completed successfully at 21:27 UTC. The generated lifecycle machine token was
-requested using the same User-Agent as Go's HTTP client: its subject, issuer and
-dedicated project-ID audience matched the configured public identifiers. Only
-boolean results/public IDs were exposed; credentials and JWTs stayed in memory.
-Portal/API reviews and the workflow rollout remain pending. Full deletion and
-public signup remain disabled.
+Serial Go/PostgreSQL principals, auth/CIMD, API, MCP, provider and command suites
+passed after merging current main; current-head CI and new-code lint passed.
+Real challenge/redeem/revoke tests cover live/revoked mirrors, a redeem between
+prepare and begin, unrelated-owner survival and fresh relinking. A real old-index
+upgrade test covers cancelled receipts; all seven optional-table absence
+combinations complete, replay and permit fresh signup. Deliberately restoring
+mirror rejection, the old index, or unconditional optional-table deletes made
+the corresponding tests fail; restored tests passed. Previous mutations also
+cover principal deletion, identity drift after a real administrator merge,
+cancellation/name fences and portal offline-session cleanup.
 
+Execution audit (API/Argo/Scaffolder), non-secret deletion manifests/tombstones and
+redacted non-deliverable ready-email receipts intentionally remain. In a split
+OAuth database, refresh credentials are revoked through the configured store;
+revoked rows there expire under normal retention rather than being purged from
+the principals database. Production uses the shared database and verified zero
+remaining refresh rows. Legacy OIDC admission remains staff-only.
 
-Review progress (2026-10-18): API [#666](https://github.com/mctlhq/mctl-api/pull/666)
-and portal [#185](https://github.com/mctlhq/mctl-portal/pull/185) contain the final
-cleanup acknowledgments and are awaiting current-head review and CI. Workflow
-[#1952](https://github.com/mctlhq/mctl-gitops/pull/1952) has current-head approval
-and green checks; merge is held until the API and portal dependencies deploy.
-Worker identity pins [#165](https://github.com/mctlhq/mctl-web/pull/165) deployed
-successfully (run 39071495559).
-
-The API name/GitHub freeze now remains until the final portal acknowledgment
-is durable, including administrator/MCP create-tenant. The portal requires a
-private-cleanup receipt before completion and deletes PID-bound sessions without
-removing staff sessions that share a display login. Provider failures remain
-retryable and auditable; final principal removal checks its affected row count.
-Tests: 1,190 portal tests passed (7 skipped), 33 real PostgreSQL portal-store
-tests passed using installed Backstage migrations and the actual OIDC store,
-and focused API/command/provider plus real PostgreSQL principal tests passed.
-Deliberately omitting offline-session cleanup and the principal deletion
-postcondition made the respective tests fail; both implementations were restored.
-These results do not establish production full-account deletion. Releases,
-feature activation and a create/delete/recreate MCP acceptance run remain pending.
-
-
-Rollout checkpoint (2026-10-18): portal [#185](https://github.com/mctlhq/mctl-portal/pull/185)
-passed current-head review and CI, merged, and released as **4.24.0** via
-[#188](https://github.com/mctlhq/mctl-portal/pull/188). Central release-deploy run
-39112860062 succeeded; the live backstage deployment reports image 4.24.0 and
-one ready replica. API [#666](https://github.com/mctlhq/mctl-api/pull/666) remains
-under review; full-account deletion is still disabled.
-
-Review required a prepared-only cancellation path. The API now provides
-`mctl_cancel_customer_deletion` for a directly authenticated human administrator,
-with the exact tenant/principal and explicit confirmation. Prepare/cancel/begin
-share the cross-replica run lock. Cancellation stamps `cancelled_at` on a prepared local receipt first, so a queued
-workflow cannot begin, then unfreezes the portal. The exact identity receipt and
-name fence remain until the portal acknowledgment and final local cleanup;
-a failed acknowledgment is retryable. After begin, only forward recovery
-is allowed. Disabling the feature stops new preparations while preserving
-recovery/cancellation of existing approved intents. The corresponding portal
-[#189](https://github.com/mctlhq/mctl-portal/pull/189) passed review and CI and
-merged; its **4.25.0** release [#190](https://github.com/mctlhq/mctl-portal/pull/190)
-has deployed. The service-token subject mismatch found in that version was
-fixed by [#191](https://github.com/mctlhq/mctl-portal/pull/191), released as
-**4.25.1** via [#192](https://github.com/mctlhq/mctl-portal/pull/192). Deploy run
-39116804503 succeeded; the new 4.25.1 pod is ready, and authenticated workspace
-cleanup returned HTTP 200. The API and workflow must still deploy before activation.
-Activation [#1961](https://github.com/mctlhq/mctl-gitops/pull/1961) remains draft.
-
-Additional validation: real PostgreSQL cancellation tests restore the same
-identity before begin, refuse a queued begin after cancellation, and refuse
-cancellation after begin. A deliberate removal of the prepared-only predicate
-made that test fail; restored tests passed. HTTP tests distinguish unreadable
-intent, failed local cancellation, retryable portal failure and forbidden
-callers. The MCP tool checks confirmation and exact target shape and is disabled
-on the shared aggregate. New-code lint reported zero issues.
-
-Retained history is explicit: API audit, Argo workflows and Scaffolder tasks/specs
-and task_events remain execution evidence. Active identity/session/contact and
-per-user notification records are erased. Legacy OIDC is staff-only; its real
-membership lookup is pinned by the PostgreSQL test, and staff rows survive.
-Live read-only inventory found no old reviewer notification/scaffolder rows;
-the historical ready-email receipt is now redacted and the old auth.user_info
-row removed, as recorded above. This initial reset predates immutable deletion manifests and must
-not be confused with the still-pending fresh create/full-delete/recreate MCP proof.
-
-Latest API checkpoint: [#666](https://github.com/mctlhq/mctl-api/pull/666)
-head `7913dd9b76611c9b48d44d29345748aba2e482ef` includes provenance-verified
-surface mirrors and the cancelled-receipt unique-index migration. Real surface
-challenge/redeem/revoke and old-index upgrade tests pass; reverting either fix
-makes its test fail. Serial PostgreSQL integration suites passed after merging
-current main's CIMD OAuth changes. Current-head review and CI are pending.
-Full-account deletion remains disabled; fresh MCP create/delete/retry/recreate
-acceptance is still required.
+Optional P3 follow-ups remain in the approved API review: legacy surface aliases
+after GitHub rename, rollback recreation of the old uniqueness index, clearer
+conflict/audit reporting, terminal-versus-retryable responses, context propagation,
+small cleanup-loop/test-pool improvements and the signup-gate test/message.
+They are separate from the completed blocking fixes. Stage E expanded grants,
+public signup launch gates and legacy retirement no earlier than October 31
+remain separate work.
