@@ -89,8 +89,9 @@ useHead({
 
         <h3>2.5 Website Analytics</h3>
         <p>
-          To learn how many people visit mctl.ai and where they come from, this website loads
-          Umami, an open-source analytics tool that we host ourselves at stats.mctl.ai. No
+          To learn how many people visit mctl.ai and the documentation at docs.mctl.ai, and
+          where they come from, both websites load Umami, an open-source analytics tool that we
+          host ourselves at stats.mctl.ai. No
           analytics data is sent to a third party. Umami sets no cookies. For each page view it
           records the page address (including campaign parameters such as
           <code>utm_source</code>), the referring site, browser, operating system, device type,
