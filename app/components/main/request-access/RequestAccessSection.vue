@@ -4,6 +4,18 @@ import { SIGN_IN_ERROR_KEYS } from '~/lib/zitadelSession';
 import GithubAuth from './GithubAuth.vue';
 
 const runtimeConfig = useRuntimeConfig();
+// Unknown public configuration stays on the invitation path. UI choices do not
+// authorize provisioning; the Worker and identity hook remain authoritative.
+const invitationOnly = ref(true);
+const invited = ref(false);
+const workspaceForm = computed(() => invited.value || !invitationOnly.value);
+onMounted(async () => {
+  try {
+    const response = await fetch(apiUrl('/signup-status'), { cache: 'no-store', credentials: 'omit' });
+    const body = response.ok ? await response.json() : null;
+    if (typeof body?.invitationOnly === 'boolean') invitationOnly.value = body.invitationOnly;
+  } catch { /* Keep the invitation entry when public status is unavailable. */ }
+});
 
 const { t } = useI18n();
 
@@ -101,28 +113,36 @@ onMounted(() => {
   >
     <BaseCard class="request-access__card">
       <p class="request-access__subtitle">
-        {{ t('form.subtitle') }}
+        {{ t(workspaceForm ? 'form.subtitle' : 'invitation.subtitle') }}
       </p>
-      <GithubAuth
-        :user="badgeUser"
-        :auth-error="authError"
-        class="request-access__github-auth"
-        :class="{ 'request-access__github-auth--pending': badgePending }"
-        @clickLogin="handleLogin"
-        @clickLogout="handleLogout"
-      />
-      <p
-        v-if="sessionNotice"
-        class="request-access__notice"
-        role="status"
-      >
-        {{ sessionNotice }}
-      </p>
-      <RequestAccessForm
-        :key="formRevision"
-        :auth-data="authData"
-        :session-mode="zitadel"
-      />
+      <template v-if="!workspaceForm">
+        <h3 class="request-access__invitation-title">{{ t('invitation.title') }}</h3>
+        <InvitationRequestForm />
+        <BaseButton variant="secondary" class="request-access__switch" @click="invited = true">{{ t('invitation.invited') }}</BaseButton>
+      </template>
+      <template v-else>
+        <GithubAuth
+          :user="badgeUser"
+          :auth-error="authError"
+          class="request-access__github-auth"
+          :class="{ 'request-access__github-auth--pending': badgePending }"
+          @clickLogin="handleLogin"
+          @clickLogout="handleLogout"
+        />
+        <p
+          v-if="sessionNotice"
+          class="request-access__notice"
+          role="status"
+        >
+          {{ sessionNotice }}
+        </p>
+        <RequestAccessForm
+          :key="formRevision"
+          :auth-data="authData"
+          :session-mode="zitadel"
+        />
+        <BaseButton v-if="invitationOnly" variant="secondary" class="request-access__switch" @click="invited = false">{{ t('invitation.back') }}</BaseButton>
+      </template>
     </BaseCard>
   </BaseSection>
 </template>
@@ -141,6 +161,9 @@ onMounted(() => {
       width: 600px;
     }
   }
+
+  &__switch { margin-top: 24px; }
+  &__invitation-title { margin-bottom: 24px; }
 
   &__subtitle {
     margin-bottom: 20px;

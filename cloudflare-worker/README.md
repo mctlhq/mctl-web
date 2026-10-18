@@ -210,3 +210,46 @@ ZITADEL subject for the same GitHub account is preserved.
 
 Deploy the Worker and pin the public machine subject/project IDs before enabling
 `CUSTOMER_DELETION_ENABLED` in the API. Keep the signup rollout gates unchanged.
+
+## Invitation requests
+
+While `AUTH_FLOW_PUBLIC` is false, the website shows an invitation request form
+before sign-in. `GET /api/signup-status` exposes only that public boolean; it is
+not authorization. Invited users can still select **Already invited? Sign in**.
+The API's numeric GitHub creation allowlist and the Worker's provisioning checks
+remain authoritative. Opening the UI never opens an account or workspace.
+
+`POST /api/access-requests` requires an allowed Origin, `X-MCTL-Request: 1`, JSON,
+server-side Turnstile verification and bounded contact/project fields. The
+method-specific rate limit is three requests per five minutes per IP/cache
+location. Contact details are user-provided, not verified GitHub identity.
+
+The `ACCESS_REQUESTS` binding uses dedicated production/development KV
+namespaces owned by mctl-gitops#1971. A random `request:<UUID>` record is saved
+with a 90-day TTL **before** HTTP 202 is returned. No token, cookie or IP is stored
+in the request record. A storage failure returns 503, never an acceptance receipt.
+The browser clears fields and replaces the form with its request reference only
+after validating that receipt. There is no public request-list/read endpoint.
+
+Telegram delivery runs after persistence through `waitUntil`; a five-minute
+scheduled scan retries from durable records. Each scan reads at most ten records
+and rotates its cursor so a single delivery failure cannot starve later pages.
+Only a successful Telegram response with `ok=true` and a message ID writes
+`notified:<UUID>`. Failed or malformed KV reads are errors, not a clean queue.
+Search the private Telegram review channel by the request ID; if notification is
+pending, an authorized Cloudflare operator can retrieve that request from the
+KV namespace with Wrangler. Never paste contact records into public issues/logs.
+
+Delivery is **at least once**: concurrent invocations, eventual KV propagation,
+or a lost Telegram acknowledgment can produce the same request notification
+again. The request ID identifies those copies. The immutable request is never
+overwritten or removed by delivery. A network-uncertain form retry may create a
+second request ID; do not interpret it as a second approved invitation.
+Notification copies follow the private Telegram channel's retention, separately
+from KV expiry; process data-removal requests in both places. Do not claim that
+KV expiry automatically removes Telegram messages.
+
+Roll out storage first, then the Worker and website, then hosted-login guidance.
+Rollback the invitation UI/code with a reviewed revert while preserving storage;
+keep public switches restricted. Before public signup, update hosted-login copy,
+verify all creation/provisioning switches and complete the canonical launch gates.
