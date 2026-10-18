@@ -121,7 +121,8 @@ export async function notifyInvitation(env, record, fetchImpl = fetch) {
     response = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text, disable_web_page_preview: true }),
-      signal: AbortSignal.timeout(10_000), redirect: 'error',
+      // Workers supports manual/follow only. Refuse redirects via !ok below.
+      signal: AbortSignal.timeout(10_000), redirect: 'manual',
     });
   } catch { throw new Error('telegram_transport_failed'); }
   if (!response.ok) {
