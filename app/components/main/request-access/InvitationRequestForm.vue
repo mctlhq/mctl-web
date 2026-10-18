@@ -7,10 +7,10 @@ import { SESSION_REQUEST_HEADERS } from '~/lib/zitadelSession';
 const { t, locale } = useI18n();
 const config = useRuntimeConfig();
 const schema = yup.object({
-  name: yup.string().required().max(100),
-  email: yup.string().required().email().max(254),
-  github: yup.string().matches(/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/, { excludeEmptyString: true }),
-  project: yup.string().required().max(1000),
+  name: yup.string().required(t('validation.required')).max(100, t('invitation.too_long')),
+  email: yup.string().required(t('validation.required')).email(t('invitation.invalid_email')).max(254, t('invitation.too_long')),
+  github: yup.string().matches(/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/, { excludeEmptyString: true, message: t('invitation.invalid_github') }),
+  project: yup.string().required(t('validation.required')).max(1000, t('invitation.too_long')),
 });
 const { defineField, errors, handleSubmit, resetForm } = useForm({ validationSchema: schema });
 const [name, nameProps] = defineField('name');
@@ -57,7 +57,7 @@ const submit = handleSubmit(async values => {
       challenge.remove();
     } else {
       message.value = t(response.status === 429 ? 'invitation.rate_limited'
-        : body?.code === 'verification_failed' ? 'js.submit.verification_unavailable'
+        : body?.code === 'verification_failed' ? 'invitation.verification_failed'
         : 'invitation.failed');
     }
   } catch { message.value = t('invitation.failed'); }

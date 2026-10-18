@@ -245,6 +245,11 @@ or a lost Telegram acknowledgment can produce the same request notification
 again. The request ID identifies those copies. The immutable request is never
 overwritten or removed by delivery. A network-uncertain form retry may create a
 second request ID; do not interpret it as a second approved invitation.
+The cron cadence is five minutes, not a delivery-time guarantee: a complete
+retry sweep of N retained requests takes up to `ceil(N / 10) * 5 minutes`.
+Initial delivery is immediate after persistence. At higher request volume,
+move retry work to a pending-only index/queue before promising a retry SLA.
+
 Notification copies follow the private Telegram channel's retention, separately
 from KV expiry; process data-removal requests in both places. Do not claim that
 KV expiry automatically removes Telegram messages.

@@ -131,20 +131,36 @@ export async function retryInvitations(env, fetchImpl = fetch) {
   if (!env.ACCESS_REQUESTS) throw new Error('invitation_storage_unconfigured');
   const cursor = await env.ACCESS_REQUESTS.get(CURSOR);
   if (cursor !== null && (typeof cursor !== 'string' || cursor.length > 4096)) throw new Error('invalid_scan_cursor');
-  const page = await env.ACCESS_REQUESTS.list({ prefix: PREFIX, limit: 10, ...(cursor ? { cursor } : {}) });
+  let page;
+  try {
+    page = await env.ACCESS_REQUESTS.list({ prefix: PREFIX, limit: 10, ...(cursor ? { cursor } : {}) });
+  } catch {
+    // Reset only the traversal position, never a request or delivery receipt.
+    // A rejected stale cursor can recover; this invocation still reports an
+    // unknown/failed listing rather than an empty or successful queue.
+    if (cursor) await env.ACCESS_REQUESTS.put(CURSOR, '', { expirationTtl: INVITATION_RETENTION_SECONDS });
+    throw new Error('invitation_listing_failed');
+  }
   // A failed or malformed read is never an empty successful scan.
-  if (!page || !Array.isArray(page.keys) || typeof page.list_complete !== 'boolean'
+  if (!page || !Array.isArray(page.keys) || page.keys.length > 10 || typeof page.list_complete !== 'boolean'
       || (!page.list_complete && (typeof page.cursor !== 'string' || !page.cursor))) throw new Error('invalid_invitation_listing');
   let failed = false;
   for (const key of page.keys) {
-    if (typeof key?.name !== 'string' || !key.name.startsWith(PREFIX) || !UUID.test(key.name.slice(PREFIX.length))) {
-      throw new Error('invalid_invitation_key');
+    try {
+      if (typeof key?.name !== 'string' || !key.name.startsWith(PREFIX) || !UUID.test(key.name.slice(PREFIX.length))) {
+        throw new Error('invalid_invitation_key');
+      }
+      const record = await env.ACCESS_REQUESTS.get(key.name, 'json');
+      if (record === null) continue; // Explicit KV absence (expiry or propagation).
+      if (!validRecord(record, key.name.slice(PREFIX.length))) throw new Error('invalid_invitation_record');
+      await notifyInvitation(env, record, fetchImpl);
+    } catch {
+      // A corrupt/unreadable item is not a clean observation, but cannot
+      // prevent every later page from receiving its retry. The failed scan
+      // remains visible and revisits the item after the cursor wraps.
+      failed = true;
+      console.error('invitation: request retry pending');
     }
-    const record = await env.ACCESS_REQUESTS.get(key.name, 'json');
-    if (record === null) continue; // Explicit KV absence (expiry or propagation).
-    if (!validRecord(record, key.name.slice(PREFIX.length))) throw new Error('invalid_invitation_record');
-    try { await notifyInvitation(env, record, fetchImpl); }
-    catch { failed = true; console.error('invitation: delivery pending', record.id); }
   }
   // Always rotate after an observed complete page, even if Telegram is down:
   // one failing request must not starve later pages. Every record is revisited.

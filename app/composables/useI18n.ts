@@ -12,6 +12,10 @@ const STORAGE_KEY = 'mctl_lang'
 
 const translations: Record<string, Record<string, string>> = {
   en: {
+    "invitation.invalid_github": "Enter a GitHub username, not a profile URL.",
+    "invitation.invalid_email": "Enter a valid email address.",
+    "invitation.too_long": "Please shorten this field.",
+    "invitation.verification_failed": "Verification failed. Please try again.",
     "invitation.title": "Access is by invitation",
     "invitation.subtitle": "MCTL is welcoming a limited number of teams. Tell us what you want to build; no sign-in is needed to request an invitation.",
     "invitation.submit": "Request access",
@@ -249,6 +253,10 @@ const translations: Record<string, Record<string, string>> = {
   },
 
   ru: {
+    "invitation.invalid_github": "Введите имя пользователя GitHub, а не ссылку на профиль.",
+    "invitation.invalid_email": "Введите корректный email.",
+    "invitation.too_long": "Пожалуйста, сократите текст.",
+    "invitation.verification_failed": "Проверка не пройдена. Попробуйте ещё раз.",
     "invitation.title": "Доступ пока по приглашениям",
     "invitation.subtitle": "Мы постепенно подключаем новые команды. Расскажите о своём проекте — для заявки не нужно входить в аккаунт.",
     "invitation.submit": "Запросить доступ",

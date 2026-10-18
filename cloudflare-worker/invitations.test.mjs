@@ -87,17 +87,46 @@ test('notifications identify provided contact information and cannot grant acces
   });
 });
 
-test('failed/malformed listing and failed record reads never advance the cursor as a clean page', async () => {
-  for (const change of [
-    f => { f.env.ACCESS_REQUESTS.list = async () => { throw new Error('offline'); }; },
-    f => { f.env.ACCESS_REQUESTS.list = async () => ({ keys: [], list_complete: false }); },
-    f => { f.env.ACCESS_REQUESTS.list = async () => ({ keys: [{ name: 'request:' + id }], list_complete: true }); f.env.ACCESS_REQUESTS.get = async key => { if (key.startsWith('request:')) throw new Error('unreadable'); return null; }; },
-    f => { f.rows.set('request:' + id, '{}'); },
+test('failed/malformed listings never advance as a clean observed page', async () => {
+  for (const list of [
+    async () => { throw new Error('offline'); },
+    async () => ({ keys: [], list_complete: false }),
   ]) {
-    const f = fixture(); change(f);
+    const f = fixture(); f.env.ACCESS_REQUESTS.list = list;
     await assert.rejects(retryInvitations(f.env, accepted));
     assert.equal(f.writes.length, 0);
   }
+});
+
+test('unreadable/corrupt records report failure but cannot starve a later healthy page', async () => {
+  const laterId = '1f1ef291-c577-4aa1-b290-8644e0fa0607';
+  for (const bad of ['{}', '{malformed', JSON.stringify({ ...record, version: 2 })]) {
+    const f = fixture(); f.rows.set('request:' + id, bad);
+    f.rows.set('request:' + laterId, JSON.stringify({ ...record, id: laterId }));
+    f.env.ACCESS_REQUESTS.list = async options => options.cursor === 'healthy-page'
+      ? { keys: [{ name: 'request:' + laterId }], list_complete: true }
+      : { keys: [{ name: 'request:' + id }], list_complete: false, cursor: 'healthy-page' };
+    await assert.rejects(retryInvitations(f.env, accepted), /pending/);
+    assert.equal(f.rows.get('delivery-scan-cursor'), 'healthy-page');
+    assert.equal(f.rows.has('notified:' + id), false);
+    await retryInvitations(f.env, accepted);
+    assert.equal(JSON.parse(f.rows.get('notified:' + laterId)).messageId, 17);
+    assert.ok(f.rows.has('request:' + id));
+  }
+});
+
+test('a rejected persisted cursor resets traversal and stays a failed observation until recovery', async () => {
+  const f = fixture(); f.rows.set('delivery-scan-cursor', 'expired-cursor');
+  f.rows.set('request:' + id, JSON.stringify(record));
+  f.env.ACCESS_REQUESTS.list = async options => {
+    if (options.cursor) throw new Error('cursor rejected');
+    return { keys: [{ name: 'request:' + id }], list_complete: true };
+  };
+  await assert.rejects(retryInvitations(f.env, accepted), /listing_failed/);
+  assert.equal(f.rows.get('delivery-scan-cursor'), '');
+  assert.equal(f.rows.has('notified:' + id), false);
+  await retryInvitations(f.env, accepted);
+  assert.equal(JSON.parse(f.rows.get('notified:' + id)).messageId, 17);
 });
 
 test('a failing notification rotates a valid page so later requests are not starved', async () => {
@@ -115,4 +144,13 @@ test('signup status is closed unless the explicit public switch is true', async 
     assert.equal((await res.json()).invitationOnly, value !== 'true');
     assert.equal(res.headers.get('Cache-Control'), 'no-store');
   }
+});
+
+test('invitation preflight permits the site custom header without advertising cookies', async () => {
+  const response = await worker.fetch(new Request('https://mctl.ai/api/access-requests', {
+    method: 'OPTIONS', headers: { Origin: 'https://mctl.ai' },
+  }), {});
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://mctl.ai');
+  assert.equal(response.headers.get('Access-Control-Allow-Credentials'), null);
+  assert.match(response.headers.get('Access-Control-Allow-Headers'), /X-MCTL-Request/);
 });

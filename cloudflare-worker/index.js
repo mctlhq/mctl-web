@@ -59,7 +59,7 @@ const ALLOWED_ORIGINS = new Set(['https://mctl.ai', 'http://localhost:3000']);
 // preflight advertises credentials; the origins that may send the cookie are
 // SESSION_ORIGINS (zitadel.js), which sets Allow-Origin itself.
 const SESSION_COOKIE_PATHS = new Set([
-  '/api/zitadel/session', '/api/zitadel/logout', '/api/team/check', '/api/submit', '/api/access-requests',
+  '/api/zitadel/session', '/api/zitadel/logout', '/api/team/check', '/api/submit',
 ]);
 const LANDING_URL = `https://${BASE_DOMAIN}`;
 const CALLBACK_URL = `https://${BASE_DOMAIN}/api/github/callback`;
@@ -138,6 +138,8 @@ export default {
       return new Response(null, {
         headers: {
           ...corsHeaders(origin),
+          ...(path === '/api/access-requests' && zitadelConfig(env).sessionOrigins.has(origin)
+            ? { 'Access-Control-Allow-Origin': origin } : {}),
           ...(SESSION_COOKIE_PATHS.has(url.pathname) ? credentialCorsHeaders(origin, zitadelConfig(env)) : {}),
         },
       });

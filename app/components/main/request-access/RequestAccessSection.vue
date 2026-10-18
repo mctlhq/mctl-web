@@ -7,8 +7,8 @@ const runtimeConfig = useRuntimeConfig();
 // Unknown public configuration stays on the invitation path. UI choices do not
 // authorize provisioning; the Worker and identity hook remain authoritative.
 const invitationOnly = ref(true);
-const invited = ref(false);
-const workspaceForm = computed(() => invited.value || !invitationOnly.value);
+const entry = ref<'default' | 'invitation' | 'workspace'>('default');
+
 onMounted(async () => {
   try {
     const response = await fetch(apiUrl('/signup-status'), { cache: 'no-store', credentials: 'omit' });
@@ -25,6 +25,8 @@ const { profile, authData, errorCode, logout } = useAuth();
 // session instead of the legacy identity. The legacy path below is unchanged.
 const session = useSession();
 const zitadel = computed(() => session.flow.value === 'zitadel');
+const workspaceForm = computed(() => entry.value === 'workspace' || (entry.value === 'default'
+  && (!invitationOnly.value || (zitadel.value && session.signedIn.value && session.canRequestWorkspace.value))));
 const badgeUser = computed(() => (zitadel.value ? session.profile.value : profile.value));
 // The first session read establishes the identity without remounting a draft
 // typed while that read was pending. Only a later observed account change
@@ -67,6 +69,13 @@ function showAuthError(message: string) {
   setTimeout(() => {
     authError.value = null;
   }, 10000);
+}
+
+function handleInvitedLogin() {
+  entry.value = 'workspace';
+  // Invited customers use the accepted OIDC path, independently of the
+  // still-restricted public default. Its callback selects the session flow.
+  if (!zitadel.value || !session.signedIn.value || !session.canRequestWorkspace.value) session.login();
 }
 
 function handleLogin() {
@@ -118,7 +127,7 @@ onMounted(() => {
       <template v-if="!workspaceForm">
         <h3 class="request-access__invitation-title">{{ t('invitation.title') }}</h3>
         <InvitationRequestForm />
-        <BaseButton variant="secondary" class="request-access__switch" @click="invited = true">{{ t('invitation.invited') }}</BaseButton>
+        <BaseButton variant="secondary" class="request-access__switch" @click="handleInvitedLogin">{{ t('invitation.invited') }}</BaseButton>
       </template>
       <template v-else>
         <GithubAuth
@@ -141,7 +150,7 @@ onMounted(() => {
           :auth-data="authData"
           :session-mode="zitadel"
         />
-        <BaseButton v-if="invitationOnly" variant="secondary" class="request-access__switch" @click="invited = false">{{ t('invitation.back') }}</BaseButton>
+        <BaseButton v-if="invitationOnly" variant="secondary" class="request-access__switch" @click="entry = 'invitation'">{{ t('invitation.back') }}</BaseButton>
       </template>
     </BaseCard>
   </BaseSection>
