@@ -1162,3 +1162,63 @@ small cleanup-loop/test-pool improvements and the signup-gate test/message.
 They are separate from the completed blocking fixes. Stage E expanded grants,
 public signup launch gates and legacy retirement no earlier than October 31
 remain separate work.
+
+## Public signup capacity assessment (2026-10-18, 14:21 UTC)
+
+This is an admission assessment, not permission to open the public switches.
+The control-plane node has a NoSchedule taint and is excluded from customer
+capacity. All three worker nodes were Ready and schedulable.
+
+| Measure | Observed value |
+| --- | --- |
+| Worker allocatable memory | 43.981 GiB (3 x 15012.1 MiB) |
+| Scheduled worker memory requests | 25.266 GiB |
+| Worker memory usage | 68–73 percent (10345–11000 MiB per node) |
+| Worker memory limits / allocatable | 115–126 percent |
+| Platform memory requests outside memory-quota namespaces | 16.031 GiB |
+| Existing namespace memory-request hard allowances | 33.875 GiB |
+| Platform requests plus all existing quota allowances | 49.906 GiB |
+
+The last two quantities count quota-controlled namespaces once, at their full
+hard allowance, and other scheduled platform pods at their current requests.
+Pod request accounting includes regular containers, init containers, persistent
+init sidecars and overhead; node totals match kubectl describe nodes (8582,
+8375 and 8915 MiB). Unknown/malformed resource quantities are errors, not zero.
+These allowances are **ceilings, not scheduler reservations**: empty workspace
+creation can succeed while future use of existing allowances has no funded
+capacity. Present usage or an empty-workspace test cannot prove admission space.
+
+The actual new-customer production quota is requests 1 CPU / 2 GiB, limits
+2 CPU / 3 GiB, 10 pods and 5 PVCs. Preview adds requests 1 CPU / 2 GiB, limits
+4 CPU / 4 GiB, 8 pods and 1 PVC. Each additional workspace therefore grants a
+combined 2 CPU / 4 GiB of request allowance, up to 7 GiB of memory limits and
+6 PVCs. There is no byte-based requests.storage ceiling on those two quotas.
+Do not use the older skill defaults as evidence of these deployed quotas.
+
+Conservative fully funded **automatic public admission budget: 0 additional
+workspaces at the current quota profile**. Even before reserving failure/burst
+headroom, 43.981 - 49.906 GiB is negative. This is not an outage: current pods
+are healthy and requests are schedulable; it means simultaneous use of all
+issued ceilings is overcommitted. Invitation requests may be collected without
+allocating any platform resources. Existing approved test customers continue.
+
+Before assigning a positive automatic budget, choose and review a smaller
+funded starter/preview profile or additional worker capacity, account for PVC
+storage bytes, reserve operational/failure headroom, then recompute the budget
+from a fresh snapshot. Enforce the chosen budget durably across replicas and
+concurrent provisioning: exhaustion must save/queue an invitation and create
+no identity/workflow/grants, with a clear capacity message. Recheck after each
+pilot admission. Do not silently resize existing customer quotas or purchase
+infrastructure as part of this assessment.
+
+### Restricted-customer isolation checks (2026-10-18)
+
+Live OAuth used mctl-reviewer with Admin=false and the replacement principal
+prn_01M57M85D69EBRDZF5D0T6250H. The owned workspace returned HTTP 200;
+foreign workspace labs and an unknown workspace returned HTTP 403. Repeating
+create-tenant for the existing workspace returned HTTP 403 without a workflow
+identifier, before provisioning. This does not replace the still-pending first
+sign-in of a never-before-used GitHub account outside the test cohort, or a
+controlled failed-provisioning/recovery acceptance check. The owner has been
+asked for an additional suitable GitHub login; do not reuse the historical
+reviewer account as evidence of first-ever customer acceptance.
