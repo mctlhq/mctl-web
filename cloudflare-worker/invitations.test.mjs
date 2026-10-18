@@ -148,14 +148,14 @@ test('signup status is closed unless the explicit public switch is true', async 
 
 test('invitation preflight permits the site custom header without advertising cookies', async () => {
   const response = await worker.fetch(new Request('https://mctl.ai/api/access-requests', {
-    method: 'OPTIONS', headers: { Origin: 'https://mctl.ai' },
-  }), {});
-  assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://mctl.ai');
+    method: 'OPTIONS', headers: { Origin: 'https://staging.example' },
+  }), { SESSION_ORIGINS: 'https://staging.example' });
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://staging.example');
   assert.equal(response.headers.get('Access-Control-Allow-Credentials'), null);
   assert.match(response.headers.get('Access-Control-Allow-Headers'), /X-MCTL-Request/);
 });
 
- test('an oversized stored cursor resets and oversized provider cursors are never saved', async () => {
+test('an oversized stored cursor resets and oversized provider cursors are never saved', async () => {
   const f = fixture(); f.rows.set('delivery-scan-cursor', 'x'.repeat(4097));
   await assert.rejects(retryInvitations(f.env), /invalid_scan_cursor/);
   assert.equal(f.rows.get('delivery-scan-cursor'), '');

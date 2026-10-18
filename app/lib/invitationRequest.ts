@@ -7,3 +7,14 @@ export function invitationReceipt(status: number, body: unknown): string | null 
     && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value.requestId)
     ? value.requestId : null
 }
+
+export function invitationEntryView(input: {
+  entry: 'default' | 'invitation' | 'workspace'; invitationOnly: boolean;
+  flow: 'legacy' | 'zitadel'; signedIn: boolean; canRequestWorkspace: boolean;
+  legacySignedIn: boolean; authError: boolean;
+}) {
+  const signedIn = input.flow === 'zitadel' ? input.signedIn : input.legacySignedIn
+  const eligible = input.flow === 'legacy' ? signedIn : signedIn && input.canRequestWorkspace
+  const workspace = input.entry === 'workspace' || (input.entry === 'default' && (!input.invitationOnly || eligible))
+  return { workspace, badge: workspace || signedIn || input.authError }
+}

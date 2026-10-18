@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { invitationEntryView } from '~/lib/invitationRequest';
 import { SIGN_IN_ERROR_KEYS } from '~/lib/zitadelSession';
 
 import GithubAuth from './GithubAuth.vue';
@@ -19,14 +20,20 @@ onMounted(async () => {
 
 const { t } = useI18n();
 
-const { profile, authData, errorCode, logout } = useAuth();
+const { profile, authData, errorCode, logout, isAuth } = useAuth();
 
 // `?auth_flow=zitadel` (C1b): the same badge and form, fed by the Worker's
 // session instead of the legacy identity. The legacy path below is unchanged.
 const session = useSession();
 const zitadel = computed(() => session.flow.value === 'zitadel');
-const workspaceForm = computed(() => entry.value === 'workspace' || (entry.value === 'default'
-  && (!invitationOnly.value || (zitadel.value && session.signedIn.value && session.canRequestWorkspace.value))));
+const authError = ref<string | null>(null);
+const entryView = computed(() => invitationEntryView({
+  entry: entry.value, invitationOnly: invitationOnly.value,
+  flow: zitadel.value ? 'zitadel' : 'legacy', signedIn: session.signedIn.value,
+  canRequestWorkspace: session.canRequestWorkspace.value,
+  legacySignedIn: isAuth.value, authError: !!authError.value,
+}));
+const workspaceForm = computed(() => entryView.value.workspace);
 const badgeUser = computed(() => (zitadel.value ? session.profile.value : profile.value));
 // The first session read establishes the identity without remounting a draft
 // typed while that read was pending. Only a later observed account change
@@ -61,8 +68,6 @@ const sessionNotice = computed(() => {
 const { baseUrlFront } = runtimeConfig.public;
 
 const githubLoginUrl = `${apiUrl('/github/login')}?redirect_to=${encodeURIComponent(baseUrlFront)}`;
-
-const authError = ref<string | null>(null);
 
 function showAuthError(message: string) {
   authError.value = message;
@@ -125,7 +130,7 @@ onMounted(() => {
         {{ t(workspaceForm ? 'form.subtitle' : 'invitation.subtitle') }}
       </p>
       <GithubAuth
-        v-if="workspaceForm || (zitadel && session.signedIn.value) || authError"
+        v-if="entryView.badge"
         :user="badgeUser"
         :auth-error="authError"
         class="request-access__github-auth"

@@ -149,20 +149,25 @@ export async function retryInvitations(env, fetchImpl = fetch) {
       || (!page.list_complete && (typeof page.cursor !== 'string' || !page.cursor || page.cursor.length > 4096))) throw new Error('invalid_invitation_listing');
   let failed = false;
   for (const key of page.keys) {
+    let phase = 'key';
+    const requestId = typeof key?.name === 'string' && key.name.startsWith(PREFIX) && UUID.test(key.name.slice(PREFIX.length)) ? key.name.slice(PREFIX.length) : 'unknown';
     try {
       if (typeof key?.name !== 'string' || !key.name.startsWith(PREFIX) || !UUID.test(key.name.slice(PREFIX.length))) {
         throw new Error('invalid_invitation_key');
       }
+      phase = 'read';
       const record = await env.ACCESS_REQUESTS.get(key.name, 'json');
       if (record === null) continue; // Explicit KV absence (expiry or propagation).
+      phase = 'record';
       if (!validRecord(record, key.name.slice(PREFIX.length))) throw new Error('invalid_invitation_record');
+      phase = 'delivery';
       await notifyInvitation(env, record, fetchImpl);
     } catch {
       // A corrupt/unreadable item is not a clean observation, but cannot
       // prevent every later page from receiving its retry. The failed scan
       // remains visible and revisits the item after the cursor wraps.
       failed = true;
-      console.error('invitation: request retry pending');
+      console.error('invitation: request retry pending', requestId, phase);
     }
   }
   // Always rotate after an observed complete page, even if Telegram is down:
