@@ -1,5 +1,31 @@
 # Changelog
 
+## [7.12.0](https://github.com/mctlhq/mctl-web/compare/7.11.0...7.12.0) (2026-10-18)
+
+
+### Features
+
+* count mctl.ai visitors with self-hosted Umami ([945321a](https://github.com/mctlhq/mctl-web/commit/945321ad7f5c31808ab5ac9f572d50dfba6867dd))
+* count mctl.ai visitors with self-hosted Umami ([eec26ee](https://github.com/mctlhq/mctl-web/commit/eec26eeee28f657e9901970de2f15060577bc599))
+
+
+### Bug Fixes
+
+* classify invitation delivery failures without secrets ([cb1731a](https://github.com/mctlhq/mctl-web/commit/cb1731a6abde168f8e038d9846b84b5bfa0791b3))
+* restore invitation Telegram delivery in Workers ([4bb9b52](https://github.com/mctlhq/mctl-web/commit/4bb9b52a5637626ac50e1f26b9776fbdc68f9b41))
+* use supported Workers redirect mode for Telegram ([e2c7839](https://github.com/mctlhq/mctl-web/commit/e2c783940de87dae54be06dbcda476153db8e7f8))
+
+
+### Documentation
+
+* confirm invitation rollout and automatic delivery recovery ([d692e4b](https://github.com/mctlhq/mctl-web/commit/d692e4b86fa7a20739dd182d828bd4c2ef330e96))
+* confirm invitation rollout and signup capacity gates ([7a743c8](https://github.com/mctlhq/mctl-web/commit/7a743c859865436dcc64e2bb9bd18d2fbebbe272))
+* **privacy:** cover docs.mctl.ai in the analytics section ([0dd4c11](https://github.com/mctlhq/mctl-web/commit/0dd4c11ef9fa8f4342f4f25288020b6de922277e))
+* record complete reviewer reset through MCP ([dea5d3d](https://github.com/mctlhq/mctl-web/commit/dea5d3d39cc1129c9ce67b75dec31ad792592325))
+* record complete reviewer reset through MCP ([d90b586](https://github.com/mctlhq/mctl-web/commit/d90b5867bba41c2097cb61a91ea04e04e024a638))
+* verify reviewer recreation through portal and MCP ([b5681e1](https://github.com/mctlhq/mctl-web/commit/b5681e1c842940d84dd1c2423f3bf5cffe16f905))
+* verify reviewer workspace recreation and MCP isolation ([e858711](https://github.com/mctlhq/mctl-web/commit/e858711a9026f20fe6cfa566657281ca03e53933))
+
 ## [7.11.0](https://github.com/mctlhq/mctl-web/compare/7.10.1...7.11.0) (2026-10-18)
 
 
