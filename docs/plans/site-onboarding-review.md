@@ -1081,7 +1081,7 @@ Delivery checklist:
 - [ ] Portal cleanup, cancellation/redaction and isolation/lease/race tests.
 - [ ] Durable API deletion manifest, authorization guards and staged cleanup.
 - [ ] MCP option, operation schema and workflow preflight/completion wiring.
-- [ ] ZITADEL lifecycle credentials, Worker public identity pins and rollout.
+- [x] ZITADEL lifecycle credentials, Worker public identity pins and rollout.
 - [ ] Positive/negative and mutation tests, current-head review, CI and releases.
 - [ ] Fresh disposable customer: create, MCP full delete, verify every surface,
       retry deletion, then recreate without manual intervention.
@@ -1132,3 +1132,41 @@ Deliberately omitting offline-session cleanup and the principal deletion
 postcondition made the respective tests fail; both implementations were restored.
 These results do not establish production full-account deletion. Releases,
 feature activation and a create/delete/recreate MCP acceptance run remain pending.
+
+
+Rollout checkpoint (2026-10-18): portal [#185](https://github.com/mctlhq/mctl-portal/pull/185)
+passed current-head review and CI, merged, and released as **4.24.0** via
+[#188](https://github.com/mctlhq/mctl-portal/pull/188). Central release-deploy run
+39112860062 succeeded; the live backstage deployment reports image 4.24.0 and
+one ready replica. API [#666](https://github.com/mctlhq/mctl-api/pull/666) remains
+under review; full-account deletion is still disabled.
+
+Review required a prepared-only cancellation path. The API now provides
+`mctl_cancel_customer_deletion` for a directly authenticated human administrator,
+with the exact tenant/principal and explicit confirmation. Prepare/cancel/begin
+share the cross-replica run lock. Cancellation removes only the prepared local
+intent first, so a queued workflow cannot begin, then unfreezes the portal;
+a failed portal acknowledgment is retryable. After begin, only forward recovery
+is allowed. Disabling the feature stops new preparations while preserving
+recovery/cancellation of existing approved intents. The corresponding portal
+[#189](https://github.com/mctlhq/mctl-portal/pull/189) passed review and CI and
+merged; its **4.25.0** release [#190](https://github.com/mctlhq/mctl-portal/pull/190)
+is pending. It must deploy before activation, along with the API and workflow.
+Activation [#1961](https://github.com/mctlhq/mctl-gitops/pull/1961) remains draft.
+
+Additional validation: real PostgreSQL cancellation tests restore the same
+identity before begin, refuse a queued begin after cancellation, and refuse
+cancellation after begin. A deliberate removal of the prepared-only predicate
+made that test fail; restored tests passed. HTTP tests distinguish unreadable
+intent, failed local cancellation, retryable portal failure and forbidden
+callers. The MCP tool checks confirmation and exact target shape and is disabled
+on the shared aggregate. New-code lint reported zero issues.
+
+Retained history is explicit: API audit, Argo workflows and Scaffolder tasks/specs
+and task_events remain execution evidence. Active identity/session/contact and
+per-user notification records are erased. Legacy OIDC is staff-only; its real
+membership lookup is pinned by the PostgreSQL test, and staff rows survive.
+Live read-only inventory found no old reviewer notification/scaffolder rows;
+one ready-email receipt and one auth.user_info row still require the historical
+reset cleanup. This initial reset predates immutable deletion manifests and must
+not be confused with the still-pending fresh create/full-delete/recreate MCP proof.
