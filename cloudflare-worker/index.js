@@ -28,6 +28,8 @@
  * above, which they do not change.
  */
 
+import { handleInvitationRequest, retryInvitations } from './invitations.js';
+
 import { handleSessionRevocation } from './sessionRevocation.js';
 
 import {
@@ -80,6 +82,7 @@ const BACKSTAGE_APP_URL = 'https://app.mctl.ai';
 // real user spends, so exhausting it costs an attacker a 404 and nothing else.
 const RATE_LIMITS = {
   'POST /api/submit':  { max: 5,  windowSec: 300 },
+  'POST /api/access-requests': { max: 3, windowSec: 300 },
   'POST /api/contact': { max: 3,  windowSec: 300 },
   'GET /api/github/login': { max: 10, windowSec: 60 },
   'POST /api/github/check-team': { max: 20, windowSec: 60 },
@@ -102,7 +105,7 @@ const BOT_UA_FRAGMENTS = [
 ];
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
     const origin = request.headers.get('Origin') || '';
@@ -135,6 +138,8 @@ export default {
       return new Response(null, {
         headers: {
           ...corsHeaders(origin),
+          ...(path === '/api/access-requests' && zitadelConfig(env).sessionOrigins.has(origin)
+            ? { 'Access-Control-Allow-Origin': origin } : {}),
           ...(SESSION_COOKIE_PATHS.has(url.pathname) ? credentialCorsHeaders(origin, zitadelConfig(env)) : {}),
         },
       });
@@ -215,13 +220,23 @@ export default {
       return handleFormSubmit(request, env, origin);
     }
 
+    if (request.method === 'GET' && path === '/api/signup-status') {
+      return jsonResponse({ invitationOnly: env.AUTH_FLOW_PUBLIC !== 'true' }, 200, { 'Cache-Control': 'no-store' }, origin);
+    }
+    if (request.method === 'POST' && path === '/api/access-requests') {
+      return handleInvitationRequest(request, env, ctx, verifyTurnstileToken);
+    }
+
     // Contact form submission
     if (request.method === 'POST' && path === '/api/contact') {
       return handleContactForm(request, env, origin);
     }
 
     return new Response('Not Found', { status: 404 });
-  }
+  },
+  scheduled(_controller, env, ctx) {
+    ctx.waitUntil(retryInvitations(env));
+  },
 };
 
 // ─── Rate Limiting (Cache API) ──────────────────────────────────────────────

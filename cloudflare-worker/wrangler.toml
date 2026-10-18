@@ -34,6 +34,10 @@ preview_urls = true
 enabled = true
 head_sampling_rate = 1
 
+# Delivery retries use stored requests, never an in-memory queue.
+[triggers]
+crons = ["*/5 * * * *"]
+
 # Non-secret config vars — plain values, safe to keep in git.
 [vars]
 # GitHub logins exempt from tenant-provisioning limits, comma-separated.
@@ -65,6 +69,11 @@ SESSION_REVOCATION_AUDIENCE = "395567303451739861"
 binding = "SESSIONS"
 id = "a42b3ef582994c48a87f14d9d8701379"
 
+# Invitation requests and notification receipts are isolated from sessions.
+[[kv_namespaces]]
+binding = "ACCESS_REQUESTS"
+id = "2149dd41c954493cba6228264aa99454"
+
 # `wrangler dev --env dev`: the mctl-web-dev client and a namespace of its own,
 # so a local run can never read or write a production session. [vars] and
 # bindings are not inherited by an environment, hence the full list.
@@ -82,3 +91,7 @@ AUTH_FLOW_PUBLIC = "false"
 [[env.dev.kv_namespaces]]
 binding = "SESSIONS"
 id = "078d270d14204f75be694fcbecb1c12a"
+
+[[env.dev.kv_namespaces]]
+binding = "ACCESS_REQUESTS"
+id = "b96d4023d7894ec09aff86db427b7498"

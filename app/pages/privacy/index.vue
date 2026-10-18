@@ -73,6 +73,20 @@ useHead({
           so you can finish the workspace request.
         </p>
 
+        <h3>2.4 Invitation Requests</h3>
+        <p>
+          When you request an invitation, we save your name, contact email, optional GitHub
+          username and project description to review your request and reply to you. These
+          details are provided by you, not verified through GitHub. A request does not create
+          an account or workspace and does not grant access.
+        </p>
+        <p>
+          Saved requests expire from our request store after 90 days. A copy is sent to our
+          private Telegram review channel; those messages follow the channel's retention
+          settings and are not automatically removed by expiry in the request store.
+          Contact privacy@mctl.ai to request removal of your request and its notification copy.
+        </p>
+
         <h2>3. How We Use Your Data</h2>
         <ul>
           <li><strong>Authentication</strong> — verifying your identity on every API request</li>

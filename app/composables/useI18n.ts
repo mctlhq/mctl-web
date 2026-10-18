@@ -12,6 +12,23 @@ const STORAGE_KEY = 'mctl_lang'
 
 const translations: Record<string, Record<string, string>> = {
   en: {
+    "invitation.invalid_github": "Enter a GitHub username, not a profile URL.",
+    "invitation.invalid_email": "Enter a valid email address.",
+    "invitation.too_long": "Please shorten this field.",
+    "invitation.verification_failed": "Verification failed. Please try again.",
+    "invitation.title": "Access is by invitation",
+    "invitation.subtitle": "MCTL is welcoming a limited number of teams. Tell us what you want to build; no sign-in is needed to request an invitation.",
+    "invitation.submit": "Request access",
+    "invitation.github": "GitHub username (optional)",
+    "invitation.invited": "Already invited? Sign in",
+    "invitation.back": "Request an invitation instead",
+    "invitation.saved_title": "Your request is saved",
+    "invitation.saved_detail": "We will review your request and contact you by email. You do not need to submit it again. An invitation does not create a workspace automatically.",
+    "invitation.reference": "Request reference:",
+    "invitation.failed": "We could not confirm that your request was saved. Please try again or use the contact form below.",
+    "invitation.rate_limited": "Too many requests. Please try again in five minutes.",
+    "invitation.privacy": "We use these details to review your request and contact you. The saved request expires after 90 days. A copy is sent to our private Telegram review channel.",
+
     // Meta
     'meta.title': 'MCTL \u2014 Kubernetes Platform for Growing Product Teams',
     'meta.description': 'Self-service Kubernetes for product teams. GitOps, secrets, team isolation \u2014 production-ready from day one. No platform team required.',
@@ -236,6 +253,23 @@ const translations: Record<string, Record<string, string>> = {
   },
 
   ru: {
+    "invitation.invalid_github": "Введите имя пользователя GitHub, а не ссылку на профиль.",
+    "invitation.invalid_email": "Введите корректный email.",
+    "invitation.too_long": "Пожалуйста, сократите текст.",
+    "invitation.verification_failed": "Проверка не пройдена. Попробуйте ещё раз.",
+    "invitation.title": "Доступ пока по приглашениям",
+    "invitation.subtitle": "Мы постепенно подключаем новые команды. Расскажите о своём проекте — для заявки не нужно входить в аккаунт.",
+    "invitation.submit": "Запросить доступ",
+    "invitation.github": "Имя пользователя GitHub (необязательно)",
+    "invitation.invited": "Уже есть приглашение? Войти",
+    "invitation.back": "Запросить приглашение",
+    "invitation.saved_title": "Заявка сохранена",
+    "invitation.saved_detail": "Мы рассмотрим заявку и свяжемся с вами по email. Повторно отправлять её не нужно. Приглашение не создаёт workspace автоматически.",
+    "invitation.reference": "Номер заявки:",
+    "invitation.failed": "Не удалось подтвердить сохранение заявки. Попробуйте ещё раз или воспользуйтесь контактной формой ниже.",
+    "invitation.rate_limited": "Слишком много запросов. Попробуйте через пять минут.",
+    "invitation.privacy": "Эти данные нужны для рассмотрения заявки и связи с вами. Сохранённая заявка удаляется через 90 дней. Копия поступает в наш закрытый канал Telegram.",
+
     // Meta
     'meta.title': 'MCTL \u2014 Kubernetes \u0431\u0435\u0437 DevOps-\u0438\u043d\u0436\u0435\u043d\u0435\u0440\u043e\u0432 \u0432 \u0448\u0442\u0430\u0442\u0435',
     'meta.description': 'Kubernetes \u0434\u043b\u044f \u043f\u0440\u043e\u0434\u0443\u043a\u0442\u043e\u0432\u044b\u0445 \u043a\u043e\u043c\u0430\u043d\u0434: GitOps, \u0441\u0435\u043a\u0440\u0435\u0442\u044b \u0438 \u0438\u0437\u043e\u043b\u044f\u0446\u0438\u044f \u0438\u0437 \u043a\u043e\u0440\u043e\u0431\u043a\u0438. \u0414\u0435\u043f\u043b\u043e\u0439 \u0432 \u043f\u0440\u043e\u0434 \u0441 \u043f\u0435\u0440\u0432\u043e\u0433\u043e \u0434\u043d\u044f \u2014 \u0431\u0435\u0437 \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0435\u043d\u043d\u043e\u0439 \u043a\u043e\u043c\u0430\u043d\u0434\u044b.',
