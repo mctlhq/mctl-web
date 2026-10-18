@@ -1,5 +1,13 @@
 # Changelog
 
+## [7.10.1](https://github.com/mctlhq/mctl-web/compare/7.10.0...7.10.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* drop transitional port 80, restore build-time nginx -t ([9017c22](https://github.com/mctlhq/mctl-web/commit/9017c223fff2f629d6e0bbe77348321e6f65e9f5))
+* drop transitional port 80, restore build-time nginx -t ([0a9fc19](https://github.com/mctlhq/mctl-web/commit/0a9fc19ac9eedd925492c9f34e679fdccdc3958c))
+
 ## [7.10.0](https://github.com/mctlhq/mctl-web/compare/7.9.0...7.10.0) (2026-10-17)
 
 
