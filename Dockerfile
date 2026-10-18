@@ -27,13 +27,9 @@ FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:378d0c32f6562f7fd9629170797f
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/.output/public/ /usr/share/nginx/html/
 USER 101:101
-# No build-time `nginx -t` while nginx.conf still has the transitional
-# `listen 80`: the test binds every listen socket, and uid 101 cannot bind 80
-# inside the build sandbox. Add `RUN nginx -t && rm -rf /tmp/*` back together
-# with dropping that line (the rm keeps /tmp empty, see portfolio 0.1.46).
-# Port contract: 8080 is the target. Port 80 stays open only until mctl-gitops
-# admins/mctl-web moves service.containerPort to 8080; the release after that
-# drops `listen 80` from nginx.conf, and 80 from EXPOSE with it.
-EXPOSE 80 8080
+# Fail the build on a broken config. The test writes nginx's temp directories
+# into /tmp; the rm keeps the image's /tmp empty (see portfolio 0.1.46).
+RUN nginx -t && rm -rf /tmp/*
+EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s CMD wget -q --spider http://127.0.0.1:8080/healthz || exit 1
 CMD ["nginx", "-g", "daemon off;"]
