@@ -1167,7 +1167,7 @@ remain separate work.
 
 Owner authorized a clear invitation-only entry, a saved access request and a
 Telegram notification before completing fresh-customer checks and capacity work.
-Implementation is in progress: website invitation form (English/Russian),
+Deployed in web 7.11.0 with Worker delivery fix #177: website invitation form (English/Russian),
 separate invited-user sign-in, durable request receipt, Turnstile/origin/rate
 checks and at-least-once Telegram delivery with scheduled retries. It grants no
 access and creates no platform identity or workspace.
@@ -1181,8 +1181,107 @@ privacy page and Worker runbook. Delivery failures preserve saved requests;
 unknown reads never count as an empty queue.
 
 Hosted-login guidance [#1973](https://github.com/mctlhq/mctl-gitops/pull/1973)
-explains invitations and points to the request form; hold its merge until the
-website form is deployed. Worker/site rollout, a saved production test request
-and provider-accepted Telegram notification remain pending. No public switch is
-being opened by this work. Fresh never-before-used non-admin GitHub acceptance,
-isolation/failure cases and an initial capacity/admission budget still follow.
+is merged and applied: ZITADEL is Synced/Healthy, its IaC job succeeded and all
+15 applied hosted-login translation resources contain the invitation title and
+https://mctl.ai/#request-access. No public switch was opened.
+
+Production acceptance: browser submission at **15:01:07 UTC** returned the saved
+receipt **7d4f5ce5-00e4-41fa-b001-d688b4317c7e** and replaced the form fields with
+confirmation. An independent production KV read confirmed the immutable record
+with synthetic contact information. Initial Telegram delivery failed because
+Workers rejects fetch redirect:error although Node accepts it. The record
+remained durable and cron retries continued without falsely recording delivery.
+Web [#177](https://github.com/mctlhq/mctl-web/pull/177), merge 4bb9b52a5637626ac50e1f26b9776fbdc68f9b41,
+uses supported manual redirects and refuses non-2xx replies. Worker deploy
+[39160853465](https://github.com/mctlhq/mctl-web/actions/runs/39160853465) succeeded.
+The scheduled retry accepted the **same** original request at **19:55:44 UTC**;
+the matching invitation notification is visible in the configured private bot
+chat. An independent KV read confirms notified:7d4f5ce5-00e4-41fa-b001-d688b4317c7e
+with provider messageId 3388 beside the unchanged original request record. No resubmission or manual replay was needed. This proves persistence and
+recovery of notification delivery after a real production failure; it does not
+prove recovery from an intentionally failed workspace-provisioning workflow.
+
+Validation: 169 Worker and 41 site tests; actual workerd reproduces the former
+unsupported-mode TypeError and exercises the corrected helper to the provider.
+Tests reject redirects, malformed/oversized provider JSON and arbitrary secret-
+bearing errors in logs. Restoring either the unsupported redirect mode or raw
+exception logging makes the corresponding regression test fail. The primary
+feature and delivery fix each have current-head Claude approval without open
+P1/P2 findings; technical CI passed. Frontend deployment
+[39138379184](https://github.com/mctlhq/mctl-gitops/actions/runs/39138379184)
+succeeded and the ready production deployment uses ghcr.io/mctlhq/mctl-web:7.11.0.
+
+Fresh never-before-used non-admin GitHub acceptance, controlled provisioning
+failure/recovery, and a funded positive admission budget remain launch gates.
+The invitation-request stage is live and does not grant access or resources.
+
+## Public signup capacity assessment (2026-10-18, 14:21 UTC)
+
+This is an admission assessment, not permission to open the public switches.
+The control-plane node has a NoSchedule taint and is excluded from customer
+capacity. All three worker nodes were Ready and schedulable.
+
+| Measure | Observed value |
+| --- | --- |
+| Worker allocatable memory | 43.981 GiB (3 x 15012.1 MiB) |
+| Scheduled worker memory requests | 25.266 GiB |
+| Worker memory usage | 68–73 percent (10345–11000 MiB per node) |
+| Worker memory limits / allocatable | 115–126 percent |
+| Platform memory requests outside memory-quota namespaces | 16.031 GiB |
+| Existing namespace memory-request hard allowances | 33.875 GiB |
+| Platform requests plus all existing quota allowances | 49.906 GiB |
+
+The last two quantities count quota-controlled namespaces once, at their full
+hard allowance, and other scheduled platform pods at their current requests.
+Pod request accounting includes regular containers, init containers, persistent
+init sidecars and overhead; node totals match kubectl describe nodes (8582,
+8375 and 8915 MiB). Unknown/malformed resource quantities are errors, not zero.
+These allowances are **ceilings, not scheduler reservations**: empty workspace
+creation can succeed while future use of existing allowances has no funded
+capacity. Present usage or an empty-workspace test cannot prove admission space.
+
+The actual new-customer production quota is requests 1 CPU / 2 GiB, limits
+2 CPU / 3 GiB, 10 pods and 5 PVCs. Preview adds requests 1 CPU / 2 GiB, limits
+4 CPU / 4 GiB, 8 pods and 1 PVC. Each additional workspace therefore grants a
+combined 2 CPU / 4 GiB of request allowance, up to 7 GiB of memory limits and
+6 PVCs. There is no byte-based requests.storage ceiling on those two quotas.
+Do not use the older skill defaults as evidence of these deployed quotas.
+
+Conservative fully funded **automatic public admission budget: 0 additional
+workspaces at the current quota profile**. Even before reserving failure/burst
+headroom, 43.981 - 49.906 GiB is negative. This is not an outage: current pods
+are healthy and requests are schedulable; it means simultaneous use of all
+issued ceilings is overcommitted. Invitation requests may be collected without
+allocating any platform resources. Existing approved test customers continue.
+
+Before assigning a positive automatic budget, choose and review a smaller
+funded starter/preview profile or additional worker capacity, account for PVC
+storage bytes, reserve operational/failure headroom, then recompute the budget
+from a fresh snapshot. Enforce the chosen budget durably across replicas and
+concurrent provisioning: exhaustion must save/queue an invitation and create
+no identity/workflow/grants, with a clear capacity message. Recheck after each
+pilot admission. Do not silently resize existing customer quotas or purchase
+infrastructure as part of this assessment.
+
+### Restricted-customer isolation checks (2026-10-18)
+
+Live OAuth used mctl-reviewer with Admin=false and the replacement principal
+prn_01M57M85D69EBRDZF5D0T6250H. The owned workspace returned HTTP 200;
+foreign workspace labs and an unknown workspace returned HTTP 403. Repeating
+create-tenant for the existing workspace returned HTTP 403 without a workflow
+identifier, before provisioning. This does not replace the still-pending first
+sign-in of a never-before-used GitHub account outside the test cohort, or a
+controlled failed-provisioning/recovery acceptance check. The owner has been
+asked for an additional suitable GitHub login; do not reuse the historical
+reviewer account as evidence of first-ever customer acceptance.
+
+Invitation UI review follow-ups (non-blocking P3 from web #175): reserve a
+hydration-stable badge/session entry to avoid form movement and a draft lost
+during session resolution; show standalone auth-error feedback without a
+ten-second legacy sign-in affordance; mount the receipt announcement region
+before updating its text and move focus to the receipt. Keep these distinct
+from the reviewed blocking fixes and production delivery acceptance.
+
+Worker delivery review #177 retains one non-blocking P3 test-cleanup nit: an
+unused fixture row in the redaction test; the test correctly exercises failure
+before that row is read.
