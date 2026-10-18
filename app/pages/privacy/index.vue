@@ -14,7 +14,7 @@ useHead({
     <div class="container">
       <p class="section-tag">Legal</p>
       <h1>Privacy Policy</h1>
-      <p class="subtitle">Effective date: October 14, 2026</p>
+      <p class="subtitle">Effective date: October 18, 2026</p>
     </div>
   </section>
 
@@ -87,6 +87,19 @@ useHead({
           Contact privacy@mctl.ai to request removal of your request and its notification copy.
         </p>
 
+        <h3>2.5 Website Analytics</h3>
+        <p>
+          To learn how many people visit mctl.ai and the documentation at docs.mctl.ai, and
+          where they come from, both websites load Umami, an open-source analytics tool that we
+          host ourselves at stats.mctl.ai. No
+          analytics data is sent to a third party. Umami sets no cookies. For each page view it
+          records the page address (including campaign parameters such as
+          <code>utm_source</code>), the referring site, browser, operating system, device type,
+          screen size, language, and country, region and city derived from your IP address.
+          Your IP address and user agent are used to compute an anonymous visitor identifier;
+          the IP address itself is not stored.
+        </p>
+
         <h2>3. How We Use Your Data</h2>
         <ul>
           <li><strong>Authentication</strong> — verifying your identity on every API request</li>
@@ -101,6 +114,7 @@ useHead({
           <li><strong>Access tokens</strong> — 1 hour by default; not stored server-side after validation</li>
           <li><strong>Refresh tokens</strong> — up to 30 days; stored server-side as a hash until they expire or are revoked</li>
           <li><strong>Audit logs</strong> — retained for 90 days, then automatically purged</li>
+          <li><strong>Website analytics</strong> — page-view records without IP addresses; kept on our servers with no automatic expiry</li>
           <li><strong>Profile data</strong> (username, email) — retained while your account is active; deleted within 30 days of an account deletion request</li>
         </ul>
 
