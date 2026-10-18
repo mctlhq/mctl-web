@@ -41,6 +41,16 @@ export default defineNuxtConfig({
         // release could restyle the site without a change here. Bump on purpose.
         { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.7.0/mctl.css' },
       ],
+      script: [
+        // Self-hosted Umami (stats.mctl.ai). data-domains keeps previews and
+        // local builds out of the numbers; the website ID is public by design.
+        {
+          src: 'https://stats.mctl.ai/insights.js',
+          defer: true,
+          'data-website-id': '3735c207-d9bb-4968-8394-7a51c13a58d2',
+          'data-domains': 'mctl.ai',
+        },
+      ],
     },
   },
   components: [
