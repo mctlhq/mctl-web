@@ -1285,3 +1285,27 @@ from the reviewed blocking fixes and production delivery acceptance.
 Worker delivery review #177 retains one non-blocking P3 test-cleanup nit: an
 unused fixture row in the redaction test; the test correctly exercises failure
 before that row is read.
+
+## Owner-requested reviewer reset (2026-10-18, 20:21 UTC)
+
+The owner explicitly requested complete deletion of mctl-reviewer to repeat clean
+MCTL registration. Live MCP inventory confirmed one exclusively owned workspace,
+onboarding-acceptance-test, with no services and complete Argo observation. The
+target was the replacement principal prn_01M57M85D69EBRDZF5D0T6250H (GitHub ID
+268260640; ZITADEL subject 395665758950000341).
+
+MCP delete-tenant was submitted with delete_customer_account=true and the exact
+principal, workflow delete-tenant-safe-7fccd202, trace
+2f046fef430b8bdba9e95d27d8f634cb. Workflow Succeeded at 20:21:02 UTC. Customer
+account completion and portal cleanup recovered through automatic retries; no
+manual identity, database or Kubernetes cleanup was performed. The final account
+completion callback returned true. Independent reads confirmed the tenant absent
+from the API, the tenant Argo Application NotFound, and both production/preview
+namespaces NotFound. Root-app and shared-pg are Synced/Healthy.
+
+The reviewer is left deleted for the next registration test. The earlier
+replacement subject/principal above must no longer be treated as a live customer.
+This is a clean-state repeat for the same historical GitHub identity, not a
+never-before-used GitHub customer: its numeric ID remains in the restricted test
+cohort. No signup cohort/public switch was changed. A fresh external GitHub
+identity remains required for the first-ever outside-cohort acceptance gate.
