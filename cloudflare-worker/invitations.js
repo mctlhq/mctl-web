@@ -8,6 +8,11 @@ const PREFIX = 'request:';
 const CURSOR = 'delivery-scan-cursor';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const GITHUB = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
+const DELIVERY_ERRORS = new Set(['invalid_invitation_record', 'invalid_invitation_receipt', 'telegram_unconfigured', 'telegram_transport_failed', 'telegram_not_accepted', 'telegram_response_invalid']);
+function deliveryFailure(error) {
+  return DELIVERY_ERRORS.has(error?.message) ? error.message : 'delivery_observation_failed';
+}
+
 const EMAIL = /^[^\s@\x00-\x1f]+@[^\s@\x00-\x1f]+\.[^\s@\x00-\x1f]+$/;
 
 export async function readBoundedJson(stream, maxBytes) {
@@ -78,8 +83,8 @@ export async function handleInvitationRequest(request, env, ctx, verifyTurnstile
   }
   // A notification failure never changes an accepted request into an unsaved
   // one. The scheduled scan retries from the durable record, not process state.
-  const delivery = notifyInvitation(env, record).catch(() => {
-    console.error('invitation: delivery pending', record.id);
+  const delivery = notifyInvitation(env, record).catch(error => {
+    console.error('invitation: delivery pending', record.id, deliveryFailure(error));
   });
   if (ctx?.waitUntil) ctx.waitUntil(delivery);
   else await delivery;
@@ -119,8 +124,13 @@ export async function notifyInvitation(env, record, fetchImpl = fetch) {
       signal: AbortSignal.timeout(10_000), redirect: 'error',
     });
   } catch { throw new Error('telegram_transport_failed'); }
-  if (!response.ok) { await response.body?.cancel(); throw new Error('telegram_not_accepted'); }
-  const payload = await readBoundedJson(response.body, 32768);
+  if (!response.ok) {
+    console.error('invitation: Telegram HTTP refusal', record.id, response.status);
+    await response.body?.cancel(); throw new Error('telegram_not_accepted');
+  }
+  let payload;
+  try { payload = await readBoundedJson(response.body, 32768); }
+  catch { throw new Error('telegram_response_invalid'); }
   if (payload?.ok !== true || !Number.isSafeInteger(payload.result?.message_id)) throw new Error('telegram_not_accepted');
   const expiration = Math.floor(Date.parse(record.createdAt) / 1000) + INVITATION_RETENTION_SECONDS + 86400;
   await env.ACCESS_REQUESTS.put(receiptKey, JSON.stringify({ version: 1, id: record.id, messageId: payload.result.message_id }), { expiration });
@@ -162,12 +172,12 @@ export async function retryInvitations(env, fetchImpl = fetch) {
       if (!validRecord(record, key.name.slice(PREFIX.length))) throw new Error('invalid_invitation_record');
       phase = 'delivery';
       await notifyInvitation(env, record, fetchImpl);
-    } catch {
+    } catch (error) {
       // A corrupt/unreadable item is not a clean observation, but cannot
       // prevent every later page from receiving its retry. The failed scan
       // remains visible and revisits the item after the cursor wraps.
       failed = true;
-      console.error('invitation: request retry pending', requestId, phase);
+      console.error('invitation: request retry pending', requestId, phase, deliveryFailure(error));
     }
   }
   // Always rotate after an observed complete page, even if Telegram is down:
