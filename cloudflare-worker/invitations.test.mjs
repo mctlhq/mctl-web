@@ -154,3 +154,12 @@ test('invitation preflight permits the site custom header without advertising co
   assert.equal(response.headers.get('Access-Control-Allow-Credentials'), null);
   assert.match(response.headers.get('Access-Control-Allow-Headers'), /X-MCTL-Request/);
 });
+
+ test('an oversized stored cursor resets and oversized provider cursors are never saved', async () => {
+  const f = fixture(); f.rows.set('delivery-scan-cursor', 'x'.repeat(4097));
+  await assert.rejects(retryInvitations(f.env), /invalid_scan_cursor/);
+  assert.equal(f.rows.get('delivery-scan-cursor'), '');
+  f.env.ACCESS_REQUESTS.list = async () => ({ keys: [], list_complete: false, cursor: 'x'.repeat(4097) });
+  await assert.rejects(retryInvitations(f.env), /invalid_invitation_listing/);
+  assert.equal(f.rows.get('delivery-scan-cursor'), '');
+});

@@ -124,27 +124,28 @@ onMounted(() => {
       <p class="request-access__subtitle">
         {{ t(workspaceForm ? 'form.subtitle' : 'invitation.subtitle') }}
       </p>
+      <GithubAuth
+        v-if="workspaceForm || (zitadel && session.signedIn.value) || authError"
+        :user="badgeUser"
+        :auth-error="authError"
+        class="request-access__github-auth"
+        :class="{ 'request-access__github-auth--pending': badgePending }"
+        @clickLogin="handleLogin"
+        @clickLogout="handleLogout"
+      />
+      <p
+        v-if="sessionNotice"
+        class="request-access__notice"
+        role="status"
+      >
+        {{ sessionNotice }}
+      </p>
       <template v-if="!workspaceForm">
         <h3 class="request-access__invitation-title">{{ t('invitation.title') }}</h3>
         <InvitationRequestForm />
         <BaseButton variant="secondary" class="request-access__switch" @click="handleInvitedLogin">{{ t('invitation.invited') }}</BaseButton>
       </template>
       <template v-else>
-        <GithubAuth
-          :user="badgeUser"
-          :auth-error="authError"
-          class="request-access__github-auth"
-          :class="{ 'request-access__github-auth--pending': badgePending }"
-          @clickLogin="handleLogin"
-          @clickLogout="handleLogout"
-        />
-        <p
-          v-if="sessionNotice"
-          class="request-access__notice"
-          role="status"
-        >
-          {{ sessionNotice }}
-        </p>
         <RequestAccessForm
           :key="formRevision"
           :auth-data="authData"

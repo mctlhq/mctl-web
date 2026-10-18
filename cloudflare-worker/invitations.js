@@ -130,7 +130,10 @@ export async function notifyInvitation(env, record, fetchImpl = fetch) {
 export async function retryInvitations(env, fetchImpl = fetch) {
   if (!env.ACCESS_REQUESTS) throw new Error('invitation_storage_unconfigured');
   const cursor = await env.ACCESS_REQUESTS.get(CURSOR);
-  if (cursor !== null && (typeof cursor !== 'string' || cursor.length > 4096)) throw new Error('invalid_scan_cursor');
+  if (cursor !== null && (typeof cursor !== 'string' || cursor.length > 4096)) {
+    await env.ACCESS_REQUESTS.put(CURSOR, '', { expirationTtl: INVITATION_RETENTION_SECONDS });
+    throw new Error('invalid_scan_cursor');
+  }
   let page;
   try {
     page = await env.ACCESS_REQUESTS.list({ prefix: PREFIX, limit: 10, ...(cursor ? { cursor } : {}) });
@@ -143,7 +146,7 @@ export async function retryInvitations(env, fetchImpl = fetch) {
   }
   // A failed or malformed read is never an empty successful scan.
   if (!page || !Array.isArray(page.keys) || page.keys.length > 10 || typeof page.list_complete !== 'boolean'
-      || (!page.list_complete && (typeof page.cursor !== 'string' || !page.cursor))) throw new Error('invalid_invitation_listing');
+      || (!page.list_complete && (typeof page.cursor !== 'string' || !page.cursor || page.cursor.length > 4096))) throw new Error('invalid_invitation_listing');
   let failed = false;
   for (const key of page.keys) {
     try {
