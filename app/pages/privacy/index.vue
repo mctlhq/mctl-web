@@ -14,7 +14,7 @@ useHead({
     <div class="container">
       <p class="section-tag">Legal</p>
       <h1>Privacy Policy</h1>
-      <p class="subtitle">Effective date: October 18, 2026</p>
+      <p class="subtitle">Effective date: October 19, 2026</p>
     </div>
   </section>
 
@@ -114,7 +114,7 @@ useHead({
           <li><strong>Access tokens</strong> — 1 hour by default; not stored server-side after validation</li>
           <li><strong>Refresh tokens</strong> — up to 30 days; stored server-side as a hash until they expire or are revoked</li>
           <li><strong>Audit logs</strong> — retained for 90 days, then automatically purged</li>
-          <li><strong>Website analytics</strong> — page-view records without IP addresses; kept on our servers with no automatic expiry</li>
+          <li><strong>Website analytics</strong> — page-view records without IP addresses; deleted automatically after 2 years</li>
           <li><strong>Profile data</strong> (username, email) — retained while your account is active; deleted within 30 days of an account deletion request</li>
         </ul>
 
