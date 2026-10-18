@@ -1046,8 +1046,14 @@ commerce or agent-token data. Audit/workflow history remains historical evidence
 Worker session cleanup was subsequently confirmed through the deployed scoped
 machine-JWT revocation endpoint (HTTP 200, complete=true, exact old GitHub ID and
 ZITADEL subject). The temporary administrative inspection pod was removed.
-The historical portal ready outbox still needs cleanup; the full reset is not
-yet complete.
+Historical portal reset completed on 2026-10-18: the deployed 4.25.1 workspace
+cleanup returned HTTP 200 (cleaned=true, scope=workspace) with the real API
+service token. Its ready-email receipt is cancelled and recipient/snapshot/payload
+are empty; the receipt remains to prevent stale delivery. One exact old-PID
+`auth.user_info` row was removed in a guarded transaction after confirming no
+workspace, membership or principal remained. The old user-info count is now zero.
+This one-time reset predates the new immutable manifest and is not proof of the
+fresh automated full-account lifecycle.
 
 Implementation contract:
 
@@ -1144,14 +1150,19 @@ under review; full-account deletion is still disabled.
 Review required a prepared-only cancellation path. The API now provides
 `mctl_cancel_customer_deletion` for a directly authenticated human administrator,
 with the exact tenant/principal and explicit confirmation. Prepare/cancel/begin
-share the cross-replica run lock. Cancellation removes only the prepared local
-intent first, so a queued workflow cannot begin, then unfreezes the portal;
-a failed portal acknowledgment is retryable. After begin, only forward recovery
+share the cross-replica run lock. Cancellation stamps `cancelled_at` on a prepared local receipt first, so a queued
+workflow cannot begin, then unfreezes the portal. The exact identity receipt and
+name fence remain until the portal acknowledgment and final local cleanup;
+a failed acknowledgment is retryable. After begin, only forward recovery
 is allowed. Disabling the feature stops new preparations while preserving
 recovery/cancellation of existing approved intents. The corresponding portal
 [#189](https://github.com/mctlhq/mctl-portal/pull/189) passed review and CI and
 merged; its **4.25.0** release [#190](https://github.com/mctlhq/mctl-portal/pull/190)
-is pending. It must deploy before activation, along with the API and workflow.
+has deployed. The service-token subject mismatch found in that version was
+fixed by [#191](https://github.com/mctlhq/mctl-portal/pull/191), released as
+**4.25.1** via [#192](https://github.com/mctlhq/mctl-portal/pull/192). Deploy run
+39116804503 succeeded; the new 4.25.1 pod is ready, and authenticated workspace
+cleanup returned HTTP 200. The API and workflow must still deploy before activation.
 Activation [#1961](https://github.com/mctlhq/mctl-gitops/pull/1961) remains draft.
 
 Additional validation: real PostgreSQL cancellation tests restore the same
@@ -1167,6 +1178,15 @@ and task_events remain execution evidence. Active identity/session/contact and
 per-user notification records are erased. Legacy OIDC is staff-only; its real
 membership lookup is pinned by the PostgreSQL test, and staff rows survive.
 Live read-only inventory found no old reviewer notification/scaffolder rows;
-one ready-email receipt and one auth.user_info row still require the historical
-reset cleanup. This initial reset predates immutable deletion manifests and must
+the historical ready-email receipt is now redacted and the old auth.user_info
+row removed, as recorded above. This initial reset predates immutable deletion manifests and must
 not be confused with the still-pending fresh create/full-delete/recreate MCP proof.
+
+Latest API checkpoint: [#666](https://github.com/mctlhq/mctl-api/pull/666)
+head `7913dd9b76611c9b48d44d29345748aba2e482ef` includes provenance-verified
+surface mirrors and the cancelled-receipt unique-index migration. Real surface
+challenge/redeem/revoke and old-index upgrade tests pass; reverting either fix
+makes its test fail. Serial PostgreSQL integration suites passed after merging
+current main's CIMD OAuth changes. Current-head review and CI are pending.
+Full-account deletion remains disabled; fresh MCP create/delete/retry/recreate
+acceptance is still required.
