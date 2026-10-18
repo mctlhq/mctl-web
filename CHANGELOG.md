@@ -1,5 +1,33 @@
 # Changelog
 
+## [7.11.0](https://github.com/mctlhq/mctl-web/compare/7.10.1...7.11.0) (2026-10-18)
+
+
+### Features
+
+* save invitation requests before notifying reviewers ([d83c72a](https://github.com/mctlhq/mctl-web/commit/d83c72a43f2ab29a999ede821b3886942753f815))
+* save invitation requests before notifying reviewers ([61479a8](https://github.com/mctlhq/mctl-web/commit/61479a85b36bc72c3b081fed2de97edf0eaf7b96))
+
+
+### Bug Fixes
+
+* preserve legacy sessions in invitation entry ([8b9d271](https://github.com/mctlhq/mctl-web/commit/8b9d27134c4f9d15479015da4f401c9ae92c5ff5))
+* preserve live identity when switching invitation forms ([a0bdfe9](https://github.com/mctlhq/mctl-web/commit/a0bdfe9e6dd2226f4c608824237ed44099940ed3))
+* recover invitation delivery scans without hiding errors ([58466fd](https://github.com/mctlhq/mctl-web/commit/58466fdbc2f4cbb64a549f74331ba4f8d680a574))
+* retain invitation sign-in feedback and recover invalid cursors ([a5984b1](https://github.com/mctlhq/mctl-web/commit/a5984b177a602ac187a60b8c538428d710e0b088))
+
+
+### Documentation
+
+* close production MCP deletion acceptance ([76c187a](https://github.com/mctlhq/mctl-web/commit/76c187a8bd2fd85c90a8d186c27d31a89f8ee029))
+* close production MCP deletion acceptance ([1922b80](https://github.com/mctlhq/mctl-web/commit/1922b804bc006b6b36fac6fa27df284615624136))
+* record customer deletion review and remaining rollout ([acae034](https://github.com/mctlhq/mctl-web/commit/acae03476a27ad8e56dbeea291f56a8ff67bea18))
+* record customer deletion review and remaining rollout ([9a9033c](https://github.com/mctlhq/mctl-web/commit/9a9033c506dcb19f01576efcb0a35f24871d3c82))
+* record deletion cancellation and portal rollout ([c924e5a](https://github.com/mctlhq/mctl-web/commit/c924e5aa15e17ec1e017a4af0de770f2bd43f149))
+* record deletion cancellation and portal rollout ([218da17](https://github.com/mctlhq/mctl-web/commit/218da173ba108d4fd750d47ff4d21c4b49b909aa))
+* record portal cleanup and deletion rollout gates ([51b48f1](https://github.com/mctlhq/mctl-web/commit/51b48f1c0544ecff6f285abf74f67ff2e108bd4d))
+* record portal cleanup and deletion rollout gates ([fe0c9e0](https://github.com/mctlhq/mctl-web/commit/fe0c9e091c648826db4991a0341f0ee07e5e9afb))
+
 ## [7.10.1](https://github.com/mctlhq/mctl-web/compare/7.10.0...7.10.1) (2026-10-18)
 
 
