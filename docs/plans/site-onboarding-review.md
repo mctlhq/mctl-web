@@ -1162,3 +1162,27 @@ small cleanup-loop/test-pool improvements and the signup-gate test/message.
 They are separate from the completed blocking fixes. Stage E expanded grants,
 public signup launch gates and legacy retirement no earlier than October 31
 remain separate work.
+
+## Invitation entry before public signup (2026-10-18)
+
+Owner authorized a clear invitation-only entry, a saved access request and a
+Telegram notification before completing fresh-customer checks and capacity work.
+Implementation is in progress: website invitation form (English/Russian),
+separate invited-user sign-in, durable request receipt, Turnstile/origin/rate
+checks and at-least-once Telegram delivery with scheduled retries. It grants no
+access and creates no platform identity or workspace.
+
+Storage GitOps [#1971](https://github.com/mctlhq/mctl-gitops/pull/1971) is merged;
+[apply 39134979879](https://github.com/mctlhq/mctl-gitops/actions/runs/39134979879)
+created only two isolated KV namespaces (production/dev), 0 updates or destroys.
+Production storage has prevent_destroy; immutable saved requests expire after
+90 days. Notification copies have separate Telegram retention, documented in the
+privacy page and Worker runbook. Delivery failures preserve saved requests;
+unknown reads never count as an empty queue.
+
+Hosted-login guidance [#1973](https://github.com/mctlhq/mctl-gitops/pull/1973)
+explains invitations and points to the request form; hold its merge until the
+website form is deployed. Worker/site rollout, a saved production test request
+and provider-accepted Telegram notification remain pending. No public switch is
+being opened by this work. Fresh never-before-used non-admin GitHub acceptance,
+isolation/failure cases and an initial capacity/admission budget still follow.
