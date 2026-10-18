@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { invitationEntryView } from '~/lib/invitationRequest';
+import { invitationEntryView, shouldStartInvitedLogin } from '~/lib/invitationRequest';
 import { SIGN_IN_ERROR_KEYS } from '~/lib/zitadelSession';
 
 import GithubAuth from './GithubAuth.vue';
@@ -80,7 +80,7 @@ function handleInvitedLogin() {
   entry.value = 'workspace';
   // Invited customers use the accepted OIDC path, independently of the
   // still-restricted public default. Its callback selects the session flow.
-  if (!zitadel.value || !session.signedIn.value || !session.canRequestWorkspace.value) session.login();
+  if (shouldStartInvitedLogin(zitadel.value ? 'zitadel' : 'legacy', session.signedIn.value, isAuth.value)) session.login();
 }
 
 function handleLogin() {

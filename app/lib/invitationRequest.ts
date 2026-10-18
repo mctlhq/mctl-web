@@ -18,3 +18,9 @@ export function invitationEntryView(input: {
   const workspace = input.entry === 'workspace' || (input.entry === 'default' && (!input.invitationOnly || eligible))
   return { workspace, badge: workspace || signedIn || input.authError }
 }
+
+// Switching back from the invitation form must preserve the current identity.
+// Anonymous invited visitors start OIDC; a live session needs no new redirect.
+export function shouldStartInvitedLogin(flow: 'legacy' | 'zitadel', signedIn: boolean, legacySignedIn: boolean): boolean {
+  return !(flow === 'zitadel' ? signedIn : legacySignedIn)
+}

@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { invitationReceipt, invitationEntryView } from './invitationRequest.ts'
+import { invitationReceipt, invitationEntryView, shouldStartInvitedLogin } from './invitationRequest.ts'
 const id = '9e1ef291-c577-4aa1-b290-8644e0fa0607'
 test('only an explicit saved-request receipt confirms acceptance', () => {
   assert.equal(invitationReceipt(202, { success: true, requestId: id }), id)
@@ -22,4 +22,12 @@ test('invitation entry preserves both identities and errors without granting wor
   assert.deepEqual(invitationEntryView({ ...anonymous, entry: 'workspace' }), { workspace: true, badge: true })
   assert.deepEqual(invitationEntryView({ ...anonymous, invitationOnly: false }), { workspace: true, badge: true })
   assert.deepEqual(invitationEntryView({ ...anonymous, flow: 'zitadel', legacySignedIn: true }), { workspace: false, badge: false })
+})
+
+test('invited entry preserves live sessions and redirects only anonymous visitors', () => {
+  for (const flow of ['legacy', 'zitadel'] as const) {
+    for (const signedIn of [true, false]) for (const legacySignedIn of [true, false]) {
+      assert.equal(shouldStartInvitedLogin(flow, signedIn, legacySignedIn), flow === 'zitadel' ? !signedIn : !legacySignedIn)
+    }
+  }
 })
