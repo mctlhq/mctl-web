@@ -1,5 +1,13 @@
 # Changelog
 
+## [7.12.1](https://github.com/mctlhq/mctl-web/compare/7.12.0...7.12.1) (2026-10-19)
+
+
+### Documentation
+
+* **privacy:** state the 2-year analytics retention ([98ba44b](https://github.com/mctlhq/mctl-web/commit/98ba44bf3df10808b449256f6f4880baa7bf9690))
+* **privacy:** state the 2-year analytics retention ([b90798c](https://github.com/mctlhq/mctl-web/commit/b90798c2d7f875fdb1048d4dee283ca7e729c427))
+
 ## [7.12.0](https://github.com/mctlhq/mctl-web/compare/7.11.0...7.12.0) (2026-10-18)
 
 
