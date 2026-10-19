@@ -73,3 +73,33 @@ test('a corrupt or unreadable record is explicitly partial and does not hide hea
  const body=await response.json();assert.equal(body.requests.length,1);assert.equal(body.complete,false);assert.equal(body.traversal_complete,true);assert.equal(body.observation,'partial');assert.deepEqual(body.issues,[{id:bad,error:'record_unreadable'}]);
  }
 });
+
+test('a rejected decision replay cannot mint an approval mirror',async()=>{
+ const {env,decision,request}=fixture();decision.status='rejected';let calls=0;const provider=async()=>{calls++;return Response.json({id:'rejected-id'})};
+ assert.equal((await serveSignupAdmin(request(),env,provider)).status,200);
+ decision.status='approved';assert.equal((await serveSignupAdmin(request(),env,provider)).status,409);
+ assert.equal(await invitationAllowed(env,'19205780'),false);assert.equal(calls,1);
+});
+test('changed identity, expiry or email reason conflicts before any mirror write',async()=>{
+ for(const field of ['github_id','expires_at','reason']) {
+ const {env,data,decision,request}=fixture();let calls=0;const provider=async()=>{calls++;return Response.json({id:'email-id'})};
+ assert.equal((await serveSignupAdmin(request(),env,provider)).status,200);
+ const original=JSON.stringify([...data.entries()]);
+ decision[field]=field==='github_id'?'99999999':field==='expires_at'?new Date(Date.now()+5*86400000).toISOString():'Changed reason';
+ assert.equal((await serveSignupAdmin(request(),env,provider)).status,409,field);
+ assert.equal(JSON.stringify([...data.entries()]),original,'conflict made a durable write');assert.equal(calls,1);assert.equal(await invitationAllowed(env,'99999999'),false);
+ }
+});
+test('an uncertain provider failure binds retries to the original decision too',async()=>{
+ const {env,decision,request}=fixture();
+ assert.equal((await serveSignupAdmin(request(),env,async()=>new Response(null,{status:503}))).status,503);
+ decision.github_id='99999999';let called=false;
+ assert.equal((await serveSignupAdmin(request(),env,async()=>{called=true})).status,409);
+ assert.equal(called,false);assert.equal(await invitationAllowed(env,'99999999'),false);
+ decision.github_id='19205780';assert.equal((await serveSignupAdmin(request(),env,async()=>Response.json({id:'recovered-email'}))).status,200);
+});
+test('approval shorter than minimum KV TTL is invalid and grants nothing',async()=>{
+ const {env,data,decision,request}=fixture();decision.expires_at=new Date(Date.now()+30000).toISOString();let called=false;
+ assert.equal((await serveSignupAdmin(request(),env,async()=>{called=true})).status,400);
+ assert.equal(await invitationAllowed(env,'19205780'),false);assert.equal(data.has('decision-intent:'+id),false);assert.equal(called,false);
+});

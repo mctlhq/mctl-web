@@ -61,20 +61,39 @@ export async function serveSignupAdmin(request, env, fetchImpl = fetch) {
     if (!UUID.test(d?.request?.id) || !['approved', 'rejected'].includes(d.status) || typeof d.reason !== 'string' || d.reason.length < 3 || d.reason.length > 1000) return reply(400, { error: 'Invalid decision' });
     const original = await record(env.ACCESS_REQUESTS, d.request.id);
     if (!original || ['id', 'name', 'email', 'github', 'project'].some(k => original[k] !== d.request[k]) || Date.parse(original.createdAt) !== Date.parse(d.request.createdAt)) return reply(409, { error: 'Saved request differs' });
+    let expiration;
     if (d.status === 'approved') {
       const expiry = Date.parse(d.expires_at);
-      if (!ID.test(d.github_id) || !/^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/.test(d.github_login) || !Number.isFinite(expiry) || expiry <= Date.now() || expiry > Date.now() + 7 * 86400000 + 60000) return reply(400, { error: 'Invalid approval' });
-      const key = 'approved:' + d.github_id;
-      const mirror = { version: 1, id: original.id, github_id: d.github_id, expires_at: d.expires_at };
-      const previous = await env.ACCESS_REQUESTS.get(key, 'json');
-      if (JSON.stringify(previous) !== JSON.stringify(mirror)) await env.ACCESS_REQUESTS.put(key, JSON.stringify(mirror), { expiration: Math.ceil(expiry / 1000) });
+      expiration = Math.ceil(expiry / 1000);
+      if (typeof d.github_id !== 'string' || !ID.test(d.github_id) || typeof d.github_login !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/.test(d.github_login) || !Number.isFinite(expiry) || expiration < Math.floor(Date.now() / 1000) + 60 || expiry > Date.now() + 7 * 86400000 + 60000) return reply(400, { error: 'Invalid approval' });
     }
+    // The API owns the immutable decision and serializes delivery with a lease.
+    // Bind retries to its full immutable payload before touching the UI mirror.
+    const material = JSON.stringify({ request: original, status: d.status, reason: d.reason, actor: d.actor || '',
+      github_id: d.status === 'approved' ? d.github_id : '', github_login: d.status === 'approved' ? d.github_login : '', expires_at: d.status === 'approved' ? d.expires_at : null });
+    const decisionHash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(material)))].map(n => n.toString(16).padStart(2, '0')).join('');
     const receiptKey = 'decision-delivered:' + original.id;
     const receipt = await env.ACCESS_REQUESTS.get(receiptKey, 'json');
     if (receipt !== null) {
-      if (receipt?.id !== original.id || typeof receipt.delivery_id !== 'string' || !receipt.delivery_id) throw new Error('invalid_receipt');
-      if (receipt.status !== d.status) return reply(409, { error: 'An immutable decision has already been delivered' });
+      if (receipt?.id !== original.id || typeof receipt.delivery_id !== 'string' || !receipt.delivery_id || !/^[a-f0-9]{64}$/.test(receipt.decision_hash)) throw new Error('invalid_receipt');
+      if (receipt.status !== d.status || receipt.decision_hash !== decisionHash) return reply(409, { error: 'An immutable decision has already been delivered' });
       return reply(200, { id: receipt.id, delivery_id: receipt.delivery_id });
+    }
+    const intentKey = 'decision-intent:' + original.id;
+    const intent = await env.ACCESS_REQUESTS.get(intentKey, 'json');
+    if (intent !== null) {
+      if (intent?.id !== original.id || !/^[a-f0-9]{64}$/.test(intent.decision_hash)) throw new Error('invalid_intent');
+      if (intent.decision_hash !== decisionHash) return reply(409, { error: 'A different immutable decision is pending delivery' });
+    } else {
+      await env.ACCESS_REQUESTS.put(intentKey, JSON.stringify({ id: original.id, decision_hash: decisionHash }), { expirationTtl: INVITATION_RETENTION_SECONDS });
+    }
+    if (d.status === 'approved') {
+      // Recheck the provider's minimum TTL immediately before writing.
+      if (expiration < Math.floor(Date.now() / 1000) + 60) return reply(400, { error: 'Approval expires too soon' });
+      const key = 'approved:' + d.github_id;
+      const mirror = { version: 1, id: original.id, github_id: d.github_id, expires_at: d.expires_at };
+      const previous = await env.ACCESS_REQUESTS.get(key, 'json');
+      if (JSON.stringify(previous) !== JSON.stringify(mirror)) await env.ACCESS_REQUESTS.put(key, JSON.stringify(mirror), { expiration });
     }
     if (!env.RESEND_API_KEY) return reply(503, { error: 'Decision email unavailable' });
     const text = d.status === 'approved'
@@ -88,7 +107,7 @@ export async function serveSignupAdmin(request, env, fetchImpl = fetch) {
     if (!response.ok) { await response.body?.cancel(); throw new Error('email_refused'); }
     const payload = await readBoundedJson(response.body, 32768);
     if (typeof payload?.id !== 'string' || !payload.id || payload.id.length > 200) throw new Error('invalid_email_receipt');
-    await env.ACCESS_REQUESTS.put(receiptKey, JSON.stringify({ id: original.id, status: d.status, delivery_id: payload.id }), { expirationTtl: INVITATION_RETENTION_SECONDS });
+    await env.ACCESS_REQUESTS.put(receiptKey, JSON.stringify({ id: original.id, status: d.status, decision_hash: decisionHash, delivery_id: payload.id }), { expirationTtl: INVITATION_RETENTION_SECONDS });
     return reply(200, { id: original.id, delivery_id: payload.id });
   } catch {
     console.error('invitation administration: observation or delivery incomplete');
