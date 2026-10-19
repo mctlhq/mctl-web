@@ -37,14 +37,18 @@ export async function serveSignupAdmin(request, env, fetchImpl = fetch) {
       if (cursor.length > 4096) return reply(400, { error: 'Invalid cursor' });
       const page = await env.ACCESS_REQUESTS.list({ prefix: 'request:', limit: 20, ...(cursor ? { cursor } : {}) });
       if (!page || !Array.isArray(page.keys) || page.keys.length > 20 || typeof page.list_complete !== 'boolean' || (!page.list_complete && (typeof page.cursor !== 'string' || !page.cursor || page.cursor === cursor || page.cursor.length > 4096))) throw new Error('invalid_listing');
-      const seen = new Set(), records = [];
+      const seen = new Set(), records = [], issues = [];
       for (const key of page.keys) {
         if (typeof key?.name !== 'string' || !key.name.startsWith('request:') || seen.has(key.name)) throw new Error('invalid_listing');
         seen.add(key.name);
-        const value = await record(env.ACCESS_REQUESTS, key.name.slice(8));
-        if (value !== null) records.push(value);
+        const id = key.name.slice(8);
+        if (!UUID.test(id)) throw new Error('invalid_listing');
+        try {
+          const value = await record(env.ACCESS_REQUESTS, id);
+          if (value !== null) records.push(value);
+        } catch { issues.push({ id, error: 'record_unreadable' }); }
       }
-      return reply(200, { requests: records, complete: page.list_complete, cursor: page.list_complete ? '' : page.cursor });
+      return reply(200, { requests: records, issues, traversal_complete: page.list_complete, complete: page.list_complete && issues.length === 0, observation: issues.length ? 'partial' : 'complete', cursor: page.list_complete ? '' : page.cursor });
     }
     if (request.method === 'GET' && url.pathname.startsWith(prefix + '/requests/')) {
       const id = url.pathname.slice((prefix + '/requests/').length);

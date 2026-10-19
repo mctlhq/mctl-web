@@ -42,7 +42,7 @@ test('provider redirect/invalid receipt remains pending without delivery receipt
  }
 });
 test('listing failures and corrupt records are unavailable, never empty queue',async()=>{
- for(const mode of ['failure','malformed','corrupt','duplicate']){
+ for(const mode of ['failure','malformed','duplicate']){
  const {env,data}=fixture();
  if(mode==='failure')env.ACCESS_REQUESTS.list=async()=>{throw new Error('unavailable')};
  if(mode==='malformed')env.ACCESS_REQUESTS.list=async()=>({keys:[]});
@@ -62,4 +62,14 @@ test('a changed immutable decision is a permanent conflict, with no second email
  const {env,decision,request}=fixture();let calls=0;const provider=async()=>{calls++;return Response.json({id:'email-id'})};
  assert.equal((await serveSignupAdmin(request(),env,provider)).status,200);
  decision.status='rejected';assert.equal((await serveSignupAdmin(request(),env,provider)).status,409);assert.equal(calls,1);
+});
+
+test('a corrupt or unreadable record is explicitly partial and does not hide healthy requests',async()=>{
+ for(const mode of ['corrupt','unreadable']) {
+ const {env,data}=fixture();const bad='a6829b55-2c7d-40a1-bdba-8d056370eced';data.set('request:'+bad,{});
+ env.ACCESS_REQUESTS.list=async()=>({keys:[{name:'request:'+id},{name:'request:'+bad}],list_complete:true});
+ if(mode==='unreadable'){const read=env.ACCESS_REQUESTS.get;env.ACCESS_REQUESTS.get=async key=>{if(key==='request:'+bad)throw new Error('unavailable');return read(key)}}
+ const response=await serveSignupAdmin(new Request('https://mctl.ai/api/internal/invitations/requests'),env);assert.equal(response.status,200);
+ const body=await response.json();assert.equal(body.requests.length,1);assert.equal(body.complete,false);assert.equal(body.traversal_complete,true);assert.equal(body.observation,'partial');assert.deepEqual(body.issues,[{id:bad,error:'record_unreadable'}]);
+ }
 });
