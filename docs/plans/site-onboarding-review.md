@@ -1337,7 +1337,7 @@ This closes the repeat-customer delete > sign-in > workspace > portal > MCP
 acceptance cycle. It does not replace first-ever outside-cohort acceptance or
 the funded-capacity/admission gates. Public signup remains restricted.
 
-## Invitation administration implementation (2026-10-18; in progress)
+## Invitation administration implementation (2026-10-19)
 
 The next delivery adds direct-human administrator MCP commands to list requests,
 record approved/rejected decisions with actor and reason, read/set a funded
@@ -1447,3 +1447,56 @@ platform requests outside quota namespaces, 33.875 GiB issued namespace
 allowances and 49.781 GiB combined commitments. Worker readiness and complete
 quota status were observed; duplicate quota accounting would fail the read.
 The funded additional-workspace budget remains zero.
+
+## Invitation administration validation and follow-ups (2026-10-19)
+
+Implementation PRs: [web #183](https://github.com/mctlhq/mctl-web/pull/183),
+[API #712](https://github.com/mctlhq/mctl-api/pull/712), and
+[portal #194](https://github.com/mctlhq/mctl-portal/pull/194). All passed current-head
+Claude review with no unaddressed P1/P2 findings and technical CI. The Worker
+bridge is deployed; API and portal rollout verification is recorded below.
+Worker tests: 185. Portal tests with PostgreSQL: 279 across 17 suites, including
+rollback on admission refusal and concurrent owner uniqueness. API tests include
+12 concurrent decisions/claims for one slot, private/public gating, reserved and
+existing-name refusal, bound owner retry, foreign-workspace refusal, and legacy
+login/team membership inspection even when no principal exists. Unreadable
+membership or pagination stays unknown. Deliberately removing the budget,
+operation gate, tool hint or unreadable-membership guard makes its detector fail.
+
+Non-blocking API review follow-ups (P3): use the shared surface identity accessor;
+distinguish decision-source 404/conflict from transport errors and audit applicant
+PII reads; remove the unused database listing method or add an explicitly stale
+mirror fallback; replace positional identity-hook callbacks with named fields.
+The current behavior refuses decisions when the authoritative source is
+unavailable. None of these follow-ups increases the funded capacity budget.
+
+No real applicant has been approved/rejected or emailed as part of validation.
+Notification code uses the existing Resend integration and is covered by provider
+contract/retry tests; actual applicant delivery remains to be observed following
+a separately authorized decision. Provider acceptance is not mailbox delivery.
+The saved applicant GitHub handle remains unverified contact data until resolved
+by the administrator and subsequently proven by GitHub OAuth.
+
+### Production MCP acceptance
+
+API 4.106.0 ([release #718](https://github.com/mctlhq/mctl-api/pull/718))
+was built/published and GitOps-bumped successfully by deployment run
+[39207815017](https://github.com/mctlhq/mctl-gitops/actions/runs/39207815017).
+Both API replicas observed the new deployment generation; admins-mctl-api,
+root-app and shared-pg were Synced/Healthy. A fresh direct-human administrator
+MCP session found all three commands and read capacity slots=0, used=0,
+available=0. Complete pagination returned two pending submissions, including
+the real applicant's existing request; no decision or notification was sent.
+The Worker bridge separately rejects an unauthenticated read with HTTP 401.
+
+Portal [4.26.0 release #195](https://github.com/mctlhq/mctl-portal/pull/195)
+was deployed successfully by run
+[39208192378](https://github.com/mctlhq/mctl-gitops/actions/runs/39208192378).
+At 06:16 UTC the sole portal pod was Ready on 4.26.0 and the old replica was
+gone; admins-mctl-portal and root-app were Synced/Healthy. Both the new customer
+path and legacy landing-page creation now call the central admission service
+before workflow submission. A second production MCP read again observed a
+complete queue, two pending requests and capacity 0/0/0.
+Public signup remains restricted. A funded positive budget, first-ever
+outside-cohort acceptance, repeated-request/failure recovery checks and the
+public launch/rollback decision remain separate launch gates.
