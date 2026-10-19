@@ -1357,8 +1357,8 @@ email/name are contact data, never proof of GitHub ownership. Private applicant
 records are excluded from the shared MCP portal allowlist.
 
 Delivery gates: API/store authorization and concurrency tests; Worker listing,
-identity mirror and email failure tests; portal refusal before any DB/workflow
-side effect; Claude review and CI for every non-trivial PR; staged deployment
+identity mirror and email failure tests; portal refusal rolls back uncommitted tenant/member rows before any
+workflow submission; Claude review and CI for every non-trivial PR; staged deployment
 with zero capacity; real queue/capacity observation. Portal UI/Telegram approval
 buttons are not part of the first MCP delivery. First-ever outside-cohort
 acceptance remains pending until a reviewed positive budget exists.
@@ -1412,3 +1412,38 @@ starter profile (for example 512 MiB production + 256 MiB preview) requires its
 own implementation/review, CPU/pod/storage-byte budgets and fresh validation;
 this arithmetic alone does not authorize three new customers. Alternatives are
 more worker capacity or retiring genuinely unused workloads after owner review.
+
+## Process resource candidates (2026-10-19; not applied)
+
+Follow-up process-level candidates (read-only, 2026-10-19): the three static
+services admins/mctl-web, mctl-docs and mctl-design each request 128 MiB. Their
+seven-day five-minute sampled concurrent working-set peaks/p95 are respectively
+15.9/13.8, 19.8/14.8 and 20.3/19.1 MiB. Investigate reducing requests to 64 MiB
+while retaining current limits, saving 192 MiB of scheduler requests. This is
+not physical RAM released and does not reduce the full namespace ceiling until
+its quota is separately changed. karabu/draw-with-friends requests 256 MiB vs
+47.5/45.2 MiB sampled peak/p95; 128 MiB requests is a candidate with the limit
+unchanged, subject to rollout/load validation.
+
+Two labs development deployments merit an owner/traffic check before suspension:
+mctl-telegram-preview (256 MiB requests; peak/p95 63.3/52.3 MiB) and
+pelican-proxy-staging (192 MiB requests; 85.4/84.5 MiB). Suspending both would
+remove 448 MiB of scheduler requests, not necessarily that much live RAM. If
+they remain needed, 128 MiB requests each is a smaller review candidate (192 MiB
+combined request reduction, unchanged limits). Do not classify them as unused
+from their names or low memory alone. agent-worker-preview already requests
+128 MiB and has sampled concurrent peak/p95 255.6/105.2 MiB; do not reduce it on
+this evidence. Concurrent deployment-level peaks may include rollout overlap.
+
+observability-eval is a real Tempo stateful workload (tempo-0), not an empty
+evaluation namespace: requests 512 MiB, limit 1 GiB. Keep those process resources
+while assessing the namespace's unused quota margin. Reducing Tempo's request
+below its observed 361.8 MiB sampled namespace peak is not proposed. No workload
+or quota has been changed by this investigation.
+
+A fresh Kubernetes snapshot at 2026-10-19 05:41 UTC reproduced the values above:
+43.981 GiB worker allocatable memory, 25.516 GiB scheduled requests, 15.906 GiB
+platform requests outside quota namespaces, 33.875 GiB issued namespace
+allowances and 49.781 GiB combined commitments. Worker readiness and complete
+quota status were observed; duplicate quota accounting would fail the read.
+The funded additional-workspace budget remains zero.
