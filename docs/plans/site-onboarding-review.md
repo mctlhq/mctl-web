@@ -15,6 +15,13 @@ Public cutover, Stage E, legacy retirement, and optional hardening are planned i
 The findings below describe the original audit unless a later record says
 otherwise; implementation is not evidence of successful live acceptance.
 
+Latest private-rollout update (2026-10-19, 20:31 UTC): invitation administration
+is deployed, the reviewer test account/workspace is fully removed, and one
+bounded starter slot is funded (slots=1, used=0, available=1 at verification).
+The real external applicant remains pending; public signup is still restricted.
+See [Compact starter workspace rollout](#compact-starter-workspace-rollout-2026-10-19-complete)
+for the final profile, deployed versions and resource evidence.
+
 This is the canonical review of the path from mctl.ai to a working workspace. It
 covers the website copy, the forms, the welcome email, and how a new person gets
 an identity that the portal and mctl-api accept. It replaces any earlier draft.
@@ -1546,3 +1553,108 @@ With the illustrative 20% operational reserve, no additional current-profile
 4 GiB workspace is fully funded. Signup capacity stays zero; no real invitation
 was approved and public signup was not enabled. A compact starter profile or
 additional worker capacity remains a separate decision and implementation.
+
+## Compact starter workspace rollout (2026-10-19; complete)
+
+The owner authorized preparing one funded invitation slot by reducing previously
+reviewed unused quota margins and implementing a compact creation profile.
+The real applicant remains pending; approval/email is not part of this step.
+All eval environments are excluded. Capacity was held at zero throughout rollout;
+the final verified one-slot setting is recorded below.
+
+Profile `starter` is an authoritative create-tenant generator branch:
+
+| Dimension | Production | Preview |
+| --- | --- | --- |
+| CPU requests / limits | 500m / 2 | 100m / 500m |
+| Memory requests / limits | 512 MiB / 1 GiB | 256 MiB / 512 MiB |
+| Pods / Services | 5 / 5 | 3 / 3 |
+| PVC count / requested storage | 1 / 10 GiB | 0 / 0 |
+
+The PVC limit accounts for the provider's minimum volume size
+([Hetzner volume overview](https://docs.hetzner.com/cloud/volumes/overview/)).
+Workspace creation does not itself allocate a volume. The cap bounds requested
+PVC bytes, not ephemeral root filesystems, provider billing policy or shared
+PostgreSQL data service entitlements. Current observed CSI attachment counts are
+3, 3 and 4 across the workers. No new provider resources are purchased by this
+rollout. Existing workspaces and eval environments are not converted.
+
+[GitOps #2021](https://github.com/mctlhq/mctl-gitops/pull/2021) fixes the generated
+starter production and preview quotas even when caller quota arguments are
+larger, preserving standard provisioning for administrators/pilot callers.
+[API #724](https://github.com/mctlhq/mctl-api/pull/724) normalizes starter operation
+parameters and refuses standard/oversized funded claims. [Portal #196](https://github.com/mctlhq/mctl-portal/pull/196)
+sends the same envelope in customer and legacy landing claims, local rows and
+workflow submission. Deploy workflow first, then API and portal.
+
+Additional quota changes: six empty previews 512 -> 256 MiB each (1.5 GiB),
+admins production 3 -> 2 GiB (1 GiB), karabu production 2 GiB -> 512 MiB
+(1.5 GiB). These remove 4 GiB issued memory allowance, not physical usage.
+Read-only pre-change accounting at 16:43 UTC: 43.981 GiB allocatable worker
+memory and 36.781 GiB commitments. After this reduction plus one 0.75 GiB starter,
+expected commitment is 33.531 GiB, leaving about 1.65 GiB beyond the 8.796 GiB
+20% operational memory reserve. This is not an N+1 guarantee. CPU request
+allowances plus outside-namespace requests are about 20.445 cores before the
+starter, or 21.045 after it, below 23.1 worker allocatable cores; the 20% reserve
+in this assessment applies to memory. A fresh live assessment is required before
+setting capacity=1. Public signup switches remain closed.
+
+Validation so far: real generator execution + rendered quota assertions,
+standard compatibility, unknown-profile refusal, end-to-end parameter binding;
+removing the storage cap makes its test fail. PostgreSQL-backed API/store/MCP
+suites pass; portal 281 tests in 17 suites and TypeScript pass on Node 22.
+All source PRs passed current-head Claude review without unaddressed P1/P2
+findings and technical CI; production verification is recorded below.
+
+The starter CPU envelope includes deployment headroom: four containers using the
+generated LimitRange defaults (old/new app plus workflow main/executor) fit the
+500m request / 2 CPU limit budget. [GitOps #2024](https://github.com/mctlhq/mctl-gitops/pull/2024),
+[API #726](https://github.com/mctlhq/mctl-api/pull/726) and [portal #200](https://github.com/mctlhq/mctl-portal/pull/200)
+align this envelope. Reverting the CPU allowance makes the coexistence test fail.
+Memory/PVC bounds remain unchanged. The corrected envelope is deployed.
+
+### Final production and capacity proof
+
+API **4.108.1** ([release #727](https://github.com/mctlhq/mctl-api/pull/727)) and
+portal **4.27.1** ([release #201](https://github.com/mctlhq/mctl-portal/pull/201))
+were published and GitOps-bumped successfully:
+[API run 39318667870](https://github.com/mctlhq/mctl-gitops/actions/runs/39318667870),
+[portal run 39318669852](https://github.com/mctlhq/mctl-gitops/actions/runs/39318669852).
+Both API pods and the sole portal pod observed the exact releases and were
+Ready; old portal/API replicas were gone. The live create-tenant generator's
+script exactly matched reviewed source, SHA256
+`1c98d576cc41c62bb07861197ddf2caa8f0cde258618803f852674951ac81ce2`.
+All six changed tenant apps, API, portal, root-app and shared-pg were
+Synced/Healthy. The six preview quota spec/status values are 256 MiB; admins
+production is 2 GiB and karabu production is 512 MiB. No eval setting changed.
+
+At 20:30:42 UTC, with the hypothetical new slot included:
+
+| Budget | Commitment including one starter | Available capacity |
+| --- | ---: | ---: |
+| Worker memory requests/issued allowances | 33.531 GiB | 43.981 GiB |
+| Operational memory reserve | 8.796 GiB (20%) | 1.653 GiB additional margin after reserve |
+| CPU requests/issued allowances | 21.045 cores | 23.1 cores |
+| Pod requests/issued allowances | 219 | 330 |
+| New PVC entitlement | At most 1 production PVC / 10 GiB; no preview PVC | No volume allocated during this rollout |
+
+Memory commitments before the new slot were 32.781 GiB. Reads checked worker
+readiness, complete/reconciled quota status, init/sidecar/overhead accounting,
+the deployed generator and all required application/release readiness. Old
+quota and old API/portal states deliberately refused the preflight. The checks
+were repeated immediately before the capacity change. This reserve is a memory
+operational margin, not an N+1 guarantee or a 20% CPU reserve.
+
+A direct-human administrator then used MCP `mctl_signup_capacity` with an
+assessment reason and explicit confirmation to set slots from 0 to **1**.
+The returned state was **slots=1, used=0, available=1**. A complete queue read
+again found two pending requests, including the real applicant; no decision,
+email, ZITADEL user creation or customer provisioning was performed. Public
+signup switches were not changed. The next acceptance step is an explicit
+applicant decision, their GitHub sign-in and observation of the actual starter
+workspace, portal and MCP access.
+
+Non-blocking review follow-ups remain: replace positional admission arguments
+with a named envelope; extend MCP field descriptions and exact submitted-field /
+unspent-refusal assertions; name the CI profile-test step explicitly; reuse the
+portal profile variable. These do not change the funded envelope or its limit.
