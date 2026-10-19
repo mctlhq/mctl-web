@@ -1500,3 +1500,49 @@ complete queue, two pending requests and capacity 0/0/0.
 Public signup remains restricted. A funded positive budget, first-ever
 outside-cohort acceptance, repeated-request/failure recovery checks and the
 public launch/rollback decision remain separate launch gates.
+
+## Authorized reviewer removal and preview quota reduction (2026-10-19)
+
+The owner explicitly authorized complete removal of the MCTL test customer
+mctl-reviewer and its onboarding-acceptance-test workspace, and reduction of the
+empty preview allowances. All `*-eval` environments were excluded from scope.
+This supersedes the recreated reviewer's active state recorded above; the
+historical acceptance results remain evidence of that earlier run.
+
+Direct-human administrator MCP `mctl_delete_tenant` was called with
+`delete_customer_account=true` and the exact exclusive-owner principal
+prn_01M58D1EE581Q7M9RTDTBVP15M. Inventory observed zero services and complete Argo
+visibility. Workflow `delete-tenant-safe-5b7e4180` Succeeded at 06:41:40 UTC.
+It removed GitOps, Kubernetes, Vault and shared-resource configuration, then
+completed IdP deletion, site/API session revocation, private portal cleanup,
+principal/identity purge and portal name release. Catalog convergence initially
+returned 503 and the site's paginated KV revocation returned 202; built-in
+retries completed both without manual cleanup. Historical audit and the old
+subject revocation manifest remain intentionally for safe retries and rejection
+of old credentials. The external GitHub account itself is outside MCTL deletion.
+
+Postconditions observed: tenant API reports not found; both production and
+preview namespaces and all matching Argo applications are absent; no matching
+shared-pg Database or ExternalSecret metadata remains. The final account
+completion audit succeeded. root-app and shared-pg remained Synced/Healthy.
+
+[GitOps PR #2006](https://github.com/mctlhq/mctl-gitops/pull/2006) was merged and
+reconciled. Existing preview request-memory ceilings for admins, commerce-proof,
+erpact, karabu, labs and mctl changed from 2 GiB to 512 MiB each, reducing issued
+allowance by 9 GiB. Live inventory before the change observed no pods, PVCs or
+charged resources in any of the six. Helm lint passed, and all six rendered
+before/after comparisons differed only in the intended ResourceQuota field.
+All six spec/status quotas now report 512 MiB and their tenant applications are
+Synced/Healthy. Production quotas, pod memory limits, global defaults and eval
+resources were unchanged; observability-eval still has its 1536 MiB ceiling.
+Deleting the test production+preview namespaces removed another 4 GiB, for
+**13 GiB less issued request-memory allowance** in total, not 13 GiB physical
+RAM recovered.
+
+Read-only snapshot at 06:41:51 UTC: allocatable worker memory 43.981 GiB,
+scheduled requests 26.516 GiB, platform requests outside quota namespaces
+16.906 GiB, namespace allowances 20.875 GiB, combined commitments 37.781 GiB.
+With the illustrative 20% operational reserve, no additional current-profile
+4 GiB workspace is fully funded. Signup capacity stays zero; no real invitation
+was approved and public signup was not enabled. A compact starter profile or
+additional worker capacity remains a separate decision and implementation.
