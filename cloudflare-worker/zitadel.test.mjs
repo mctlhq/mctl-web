@@ -79,11 +79,11 @@ function createKv() {
   const store = new Map();
   return {
     store,
-    async get(key) {
+    async get(key, type) {
       const entry = store.get(key);
       if (!entry) return null;
       if (entry.expiration && entry.expiration <= nowSeconds()) return null;
-      return entry.value;
+      return type === 'json' ? JSON.parse(entry.value) : entry.value;
     },
     async put(key, value, options = {}) {
       store.set(key, { value, expiration: options.expiration, metadata: options.metadata });
@@ -977,4 +977,41 @@ test('revocation: crossing the former cumulative scan cap still persists progres
   assert.equal(state.scanned, 100001);
   assert.equal(state.done, true);
   assert.ok(await env.SESSIONS.get('sess:unrelated-cap'));
+});
+
+test('invited customer: current approval admits session, team check and submit; removal denies the same session', async () => {
+ const env=baseEnv({AUTH_FLOW_TEST_GITHUB_IDS:OTHER_GITHUB_ID});
+ const {sessionId}=await signIn(env), cookies={[SESSION_COOKIE]:sessionId};
+ await env.ACCESS_REQUESTS.put('approved:'+TEST_GITHUB_ID,JSON.stringify({version:1,id:'f6829b55-2c7d-40a1-bdba-8d056370eced',github_id:TEST_GITHUB_ID,expires_at:new Date(Date.now()+86400000).toISOString()}));
+ const view=await worker.fetch(request('/api/zitadel/session',{cookies}),env);
+ assert.equal(view.status,200);assert.equal((await view.json()).canRequestWorkspace,true);
+ const network=createNetwork();
+ const check=await withNetwork(network,()=>worker.fetch(request('/api/team/check',{method:'POST',cookies,headers:SITE,body:{name:'acme'}}),env));assert.equal(check.status,200);assert.equal(network.calls.availability.length,1);
+ const submit=await withNetwork(network,()=>worker.fetch(request('/api/submit',{method:'POST',cookies,headers:SITE,body:{team:'acme',turnstile_token:'ok'}}),env));assert.equal(submit.status,200);assert.equal(network.calls.create.length,1);
+ await env.ACCESS_REQUESTS.delete('approved:'+TEST_GITHUB_ID);
+ const after=await worker.fetch(request('/api/zitadel/session',{cookies}),env);assert.equal((await after.json()).canRequestWorkspace,false);
+ const denied=await withNetwork(network,()=>worker.fetch(request('/api/team/check',{method:'POST',cookies,headers:SITE,body:{name:'acme'}}),env));assert.equal(denied.status,403);assert.equal(network.calls.availability.length,1,'denied request added no availability call');
+});
+
+test('invitation observation failure: session view, team check and submit all refuse before provisioning', async () => {
+ for(const mode of ['unreadable','malformed','unconfigured']) {
+ const env=baseEnv({AUTH_FLOW_TEST_GITHUB_IDS:OTHER_GITHUB_ID});const {sessionId}=await signIn(env);const cookies={[SESSION_COOKIE]:sessionId};
+ if(mode==='unreadable')env.ACCESS_REQUESTS.get=async()=>{throw new Error('unavailable')};
+ if(mode==='malformed')await env.ACCESS_REQUESTS.put('approved:'+TEST_GITHUB_ID,'{}');
+ if(mode==='unconfigured')delete env.ACCESS_REQUESTS;
+ const network=createNetwork();
+ const view=await worker.fetch(request('/api/zitadel/session',{cookies}),env);assert.equal(view.status,503,mode);
+ for(const path of ['/api/team/check','/api/submit']) {
+ const response=await withNetwork(network,()=>worker.fetch(request(path,{method:'POST',cookies,headers:SITE,body:{name:'acme',team:'acme',turnstile_token:'ok'}}),env));assert.equal(response.status,503,mode+path);
+ }
+ assert.equal(network.calls.availability.length,0);assert.equal(network.calls.create.length,0);assert.equal(network.calls.turnstile,0);
+ }
+});
+
+test('internal invitation routes have bounded rate budgets, including per-ID reads',async()=>{
+ const env=baseEnv();
+ for(const [method,path,limit] of [['GET','/api/internal/invitations/requests',30],['GET','/api/internal/invitations/requests/f6829b55-2c7d-40a1-bdba-8d056370eced',60],['POST','/api/internal/invitations/decision',30]]) {
+ for(let n=0;n<limit;n++) {const response=await worker.fetch(request(path,{method}),env);assert.notEqual(response.status,429)}
+ const limited=await worker.fetch(request(path,{method}),env);assert.equal(limited.status,429,path);
+ }
 });

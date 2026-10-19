@@ -35,8 +35,8 @@ export async function serveSignupAdmin(request, env, fetchImpl = fetch) {
     if (request.method === 'GET' && url.pathname === prefix + '/requests') {
       const cursor = url.searchParams.get('cursor') || '';
       if (cursor.length > 4096) return reply(400, { error: 'Invalid cursor' });
-      const page = await env.ACCESS_REQUESTS.list({ prefix: 'request:', limit: 100, ...(cursor ? { cursor } : {}) });
-      if (!page || !Array.isArray(page.keys) || page.keys.length > 100 || typeof page.list_complete !== 'boolean' || (!page.list_complete && (typeof page.cursor !== 'string' || !page.cursor || page.cursor === cursor || page.cursor.length > 4096))) throw new Error('invalid_listing');
+      const page = await env.ACCESS_REQUESTS.list({ prefix: 'request:', limit: 20, ...(cursor ? { cursor } : {}) });
+      if (!page || !Array.isArray(page.keys) || page.keys.length > 20 || typeof page.list_complete !== 'boolean' || (!page.list_complete && (typeof page.cursor !== 'string' || !page.cursor || page.cursor === cursor || page.cursor.length > 4096))) throw new Error('invalid_listing');
       const seen = new Set(), records = [];
       for (const key of page.keys) {
         if (typeof key?.name !== 'string' || !key.name.startsWith('request:') || seen.has(key.name)) throw new Error('invalid_listing');
@@ -68,7 +68,8 @@ export async function serveSignupAdmin(request, env, fetchImpl = fetch) {
     const receiptKey = 'decision-delivered:' + original.id;
     const receipt = await env.ACCESS_REQUESTS.get(receiptKey, 'json');
     if (receipt !== null) {
-      if (receipt?.id !== original.id || receipt.status !== d.status || typeof receipt.delivery_id !== 'string' || !receipt.delivery_id) throw new Error('invalid_receipt');
+      if (receipt?.id !== original.id || typeof receipt.delivery_id !== 'string' || !receipt.delivery_id) throw new Error('invalid_receipt');
+      if (receipt.status !== d.status) return reply(409, { error: 'An immutable decision has already been delivered' });
       return reply(200, { id: receipt.id, delivery_id: receipt.delivery_id });
     }
     if (!env.RESEND_API_KEY) return reply(503, { error: 'Decision email unavailable' });

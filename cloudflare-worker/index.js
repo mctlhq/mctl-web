@@ -94,6 +94,9 @@ const RATE_LIMITS = {
   'GET /api/zitadel/callback': { max: 30, windowSec: 60 },
   'GET /api/zitadel/session': { max: 60, windowSec: 60 },
   'POST /api/team/check': { max: 20, windowSec: 60 },
+  'GET /api/internal/invitations/requests': { max: 30, windowSec: 60 },
+  'GET /api/internal/invitations/requests/:id': { max: 60, windowSec: 60 },
+  'POST /api/internal/invitations/decision': { max: 30, windowSec: 60 },
   'POST /api/internal/customer-sessions/revoke': { max: 30, windowSec: 60 },
 };
 
@@ -149,7 +152,9 @@ export default {
     // Rate limiting for sensitive endpoints. See RATE_LIMITS on why the method
     // is part of the lookup, and rateBucket below on why the initiator is part
     // of the counter key but not of the lookup.
-    const rateKey = `${request.method} ${path}`;
+    const ratePath = request.method === 'GET' && path.startsWith('/api/internal/invitations/requests/')
+      ? '/api/internal/invitations/requests/:id' : path;
+    const rateKey = `${request.method} ${ratePath}`;
     const limit = RATE_LIMITS[rateKey];
     if (limit) {
       const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';

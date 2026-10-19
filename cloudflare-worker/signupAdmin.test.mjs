@@ -57,3 +57,9 @@ test('expired approval denies, unreadable or malformed approval throws',async()=
  data.set('approved:19205780',{});await assert.rejects(invitationAllowed(env,'19205780'));
  env.ACCESS_REQUESTS.get=async()=>{throw new Error('unavailable')};await assert.rejects(invitationAllowed(env,'19205780'));
 });
+
+test('a changed immutable decision is a permanent conflict, with no second email',async()=>{
+ const {env,decision,request}=fixture();let calls=0;const provider=async()=>{calls++;return Response.json({id:'email-id'})};
+ assert.equal((await serveSignupAdmin(request(),env,provider)).status,200);
+ decision.status='rejected';assert.equal((await serveSignupAdmin(request(),env,provider)).status,409);assert.equal(calls,1);
+});
