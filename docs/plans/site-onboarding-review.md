@@ -1546,3 +1546,53 @@ With the illustrative 20% operational reserve, no additional current-profile
 4 GiB workspace is fully funded. Signup capacity stays zero; no real invitation
 was approved and public signup was not enabled. A compact starter profile or
 additional worker capacity remains a separate decision and implementation.
+
+## Compact starter workspace rollout (2026-10-19; in progress)
+
+The owner authorized preparing one funded invitation slot by reducing previously
+reviewed unused quota margins and implementing a compact creation profile.
+The real applicant remains pending; approval/email is not part of this step.
+All eval environments are excluded. Capacity remains zero until live verification.
+
+Profile `starter` is an authoritative create-tenant generator branch:
+
+| Dimension | Production | Preview |
+| --- | --- | --- |
+| CPU requests / limits | 250m / 1 | 100m / 500m |
+| Memory requests / limits | 512 MiB / 1 GiB | 256 MiB / 512 MiB |
+| Pods / Services | 5 / 5 | 3 / 3 |
+| PVC count / requested storage | 1 / 10 GiB | 0 / 0 |
+
+The PVC limit accounts for the provider's minimum volume size
+([Hetzner volume overview](https://docs.hetzner.com/cloud/volumes/overview/)).
+Workspace creation does not itself allocate a volume. The cap bounds requested
+PVC bytes, not ephemeral root filesystems, provider billing policy or shared
+PostgreSQL data service entitlements. Current observed CSI attachment counts are
+3, 3 and 4 across the workers. No new provider resources are purchased by this
+rollout. Existing workspaces and eval environments are not converted.
+
+[GitOps #2021](https://github.com/mctlhq/mctl-gitops/pull/2021) fixes the generated
+starter production and preview quotas even when caller quota arguments are
+larger, preserving standard provisioning for administrators/pilot callers.
+[API #724](https://github.com/mctlhq/mctl-api/pull/724) normalizes starter operation
+parameters and refuses standard/oversized funded claims. [Portal #196](https://github.com/mctlhq/mctl-portal/pull/196)
+sends the same envelope in customer and legacy landing claims, local rows and
+workflow submission. Deploy workflow first, then API and portal.
+
+Additional quota changes: six empty previews 512 -> 256 MiB each (1.5 GiB),
+admins production 3 -> 2 GiB (1 GiB), karabu production 2 GiB -> 512 MiB
+(1.5 GiB). These remove 4 GiB issued memory allowance, not physical usage.
+Read-only pre-change accounting at 16:43 UTC: 43.981 GiB allocatable worker
+memory and 36.781 GiB commitments. After this reduction plus one 0.75 GiB starter,
+expected commitment is 33.531 GiB, leaving about 1.65 GiB beyond the 8.796 GiB
+20% operational memory reserve. This is not an N+1 guarantee. CPU request
+allowances plus outside-namespace requests are about 20.445 cores before the
+starter, or 20.795 after it, below 23.1 worker allocatable cores; the 20% reserve
+in this assessment applies to memory. A fresh live assessment is required before
+setting capacity=1. Public signup switches remain closed.
+
+Validation so far: real generator execution + rendered quota assertions,
+standard compatibility, unknown-profile refusal, end-to-end parameter binding;
+removing the storage cap makes its test fail. PostgreSQL-backed API/store/MCP
+suites pass; portal 281 tests in 17 suites and TypeScript pass on Node 22.
+Current-head Claude review, technical CI and production rollout are pending.
