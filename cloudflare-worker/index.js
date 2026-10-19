@@ -1,3 +1,4 @@
+import { handleSignupAdmin, invitationAllowed } from './signupAdmin.js';
 /**
  * Cloudflare Worker for mctl.ai landing page
  * - GitHub OAuth (login + callback)
@@ -170,6 +171,8 @@ export default {
         );
       }
     }
+
+    if (path.startsWith('/api/internal/invitations/')) return handleSignupAdmin(request, env);
 
     if (request.method === 'POST' && path === '/api/internal/customer-sessions/revoke') {
       return handleSessionRevocation(request, env);
@@ -1027,7 +1030,11 @@ export async function handleSessionInfo(request, env, origin) {
     const clear = loaded.reason === 'invalid' ? { 'Set-Cookie': clearSessionCookie() } : {};
     return sessionJson({ signedIn: false }, 200, origin, cfg, clear);
   }
-  return sessionJson(sessionView(cfg, loaded.session), 200, origin, cfg);
+  try {
+    const view = sessionView(cfg, loaded.session);
+    if (!view.canRequestWorkspace) view.canRequestWorkspace = await invitationAllowed(env, loaded.session.github_id);
+    return sessionJson(view, 200, origin, cfg);
+  } catch { return sessionJson({ error: 'Invitation could not be verified' }, 503, origin, cfg); }
 }
 
 // POST /api/zitadel/logout: ends the session here and hands back the URL
@@ -1082,7 +1089,10 @@ async function requireSession(request, env, origin) {
       ),
     };
   }
-  if (!mayUseCookieFlow(cfg, loaded.session)) {
+  let admitted = mayUseCookieFlow(cfg, loaded.session);
+  try { if (!admitted) admitted = await invitationAllowed(env, loaded.session.github_id); }
+  catch { return { response: sessionJson({ error: 'Invitation could not be verified' }, 503, origin, cfg) }; }
+  if (!admitted) {
     return {
       response: sessionJson(
         { error: 'Self-service workspaces are not open to this account yet', code: 'not_in_test_group' },

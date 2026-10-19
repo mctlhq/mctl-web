@@ -112,6 +112,7 @@ function baseEnv(overrides = {}) {
     SESSION_ORIGINS: 'https://mctl.ai',
     AUTH_FLOW_TEST_GITHUB_IDS: TEST_GITHUB_ID,
     SESSIONS: createKv(),
+    ACCESS_REQUESTS: createKv(),
     BACKSTAGE_LANDING_TOKEN: 'test-landing-token',
     TURNSTILE_SECRET_KEY: 'test-turnstile-secret',
     TELEGRAM_BOT_TOKEN: 'test-bot-token',

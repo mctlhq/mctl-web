@@ -1336,3 +1336,79 @@ needed in the delete/recreate cycle.
 This closes the repeat-customer delete > sign-in > workspace > portal > MCP
 acceptance cycle. It does not replace first-ever outside-cohort acceptance or
 the funded-capacity/admission gates. Public signup remains restricted.
+
+## Invitation administration implementation (2026-10-18; in progress)
+
+The next delivery adds direct-human administrator MCP commands to list requests,
+record approved/rejected decisions with actor and reason, read/set a funded
+workspace budget, and notify the original applicant by email. No real pending
+applicant has been approved. No quota or public-signup switch is changed.
+
+Authority lives in PostgreSQL, not eventually consistent KV. Approval and claim
+share one transaction lock with the capacity counter; default capacity is zero.
+An unused approval expires after seven days. A claim is pinned to a verified
+GitHub numeric identity, principal and workspace before provisioning; ambiguous
+workflow failure keeps the reservation. Full verified customer deletion releases
+it transactionally. The site's private lifecycle-service bridge reads immutable
+KV submissions and delivers decisions through the existing Resend integration.
+Email retries use a stable provider idempotency key and a bounded retry window;
+uncertain older deliveries remain pending for reconciliation. Applicant-provided
+email/name are contact data, never proof of GitHub ownership. Private applicant
+records are excluded from the shared MCP portal allowlist.
+
+Delivery gates: API/store authorization and concurrency tests; Worker listing,
+identity mirror and email failure tests; portal refusal before any DB/workflow
+side effect; Claude review and CI for every non-trivial PR; staged deployment
+with zero capacity; real queue/capacity observation. Portal UI/Telegram approval
+buttons are not part of the first MCP delivery. First-ever outside-cohort
+acceptance remains pending until a reviewed positive budget exists.
+
+## Quota compression investigation (2026-10-18, 21:39 UTC)
+
+Fresh read-only Kubernetes accounting: worker allocatable memory 43.981 GiB;
+scheduled requests 25.516 GiB; requests outside memory-quota namespaces
+15.906 GiB; full namespace request allowances 33.875 GiB; combined commitment
+49.781 GiB. This updates the earlier 14:21 snapshot, not its accounting method.
+Seven empty preview namespaces account for 14 GiB of issued request allowance:
+admins, commerce-proof, erpact, karabu, labs, mctl and
+onboarding-acceptance-test (each with the `-preview` suffix). No preview pods
+were using quota in this snapshot. Reducing their ceilings frees funded
+allowance, not current physical RAM. Historical absence of a metric is not proof
+that a namespace was unused throughout the observation window.
+
+Candidate changes for review, not applied:
+
+| Namespace/profile | Current request-memory ceiling | Candidate | Allowance reduction | Current charged requests |
+| --- | ---: | ---: | ---: | ---: |
+| Seven empty previews | 7 x 2 GiB | 7 x 512 MiB | 10.5 GiB | 0 |
+| admins | 3 GiB | 2 GiB | 1 GiB | 1152 MiB |
+| karabu | 2 GiB | 512 MiB | 1.5 GiB | 256 MiB |
+| observability-eval | 1536 MiB | 768 MiB | 768 MiB | 512 MiB |
+| onboarding-acceptance-test production | 2 GiB | 512 MiB | 1.5 GiB | 0 |
+
+The preview reduction must change each existing tenant's GitOps values as well
+as defaults for future previews; a global default alone does not reduce
+already issued ceilings. Confirm preview deployment requirements and the
+observability evaluation's purpose before applying. admins grew from 768 MiB
+to 1152 MiB charged requests during this investigation, so 1536 MiB would leave
+little rollout/job margin; 2 GiB is the initial review candidate.
+
+A seven-day VictoriaMetrics query first aggregates concurrent container working
+sets by namespace (deduplicating namespace/pod/container), then takes the
+maximum and p95 at five-minute resolution. Observed peak/p95 MiB: admins
+503.6/463.1, karabu 47.5/45.2, observability-eval 361.8/143.1. These are working
+sets, not reservations, and five-minute samples may miss brief peaks. They
+support investigating unused quota headroom, not reducing workload memory
+limits blindly. No database, shared PostgreSQL, Argo CD or monitoring process
+memory reduction is proposed on this evidence.
+
+The table would reduce combined commitments to 34.531 GiB. With an illustrative
+20% operational memory reserve (8.796 GiB), only 0.653 GiB remains; the current
+4 GiB production+preview customer profile still funds **zero** additional
+workspaces. This is not an N+1 failure-capacity guarantee. Using 256 MiB previews
+instead of 512 MiB would reduce commitments to 32.781 GiB and leave 2.403 GiB
+under that same reserve, still below one current-profile workspace. A smaller
+starter profile (for example 512 MiB production + 256 MiB preview) requires its
+own implementation/review, CPU/pod/storage-byte budgets and fresh validation;
+this arithmetic alone does not authorize three new customers. Alternatives are
+more worker capacity or retiring genuinely unused workloads after owner review.
