@@ -21,7 +21,7 @@ test('private transport refuses missing service credentials',async()=>{
 });
 test('approval mirrors only verified numeric identity and sends once with stable key',async()=>{
  const {env,request}=fixture();let calls=0;
- const provider=async(url,options)=>{calls++;assert.equal(url,'https://api.resend.com/emails');assert.equal(options.redirect,'manual');assert.equal(options.headers['Idempotency-Key'],'signup-decision/'+id+'/approved');const body=JSON.parse(options.body);assert.deepEqual(body.to,['test@example.com']);return Response.json({id:'email-123'})};
+ const provider=async(url,options)=>{calls++;assert.equal(url,'https://api.resend.com/emails');assert.equal(options.redirect,'manual');assert.equal(options.headers['Idempotency-Key'],'signup-decision/'+id+'/approved');const body=JSON.parse(options.body);assert.deepEqual(body.to,['test@example.com']);assert.match(body.text,/https:\/\/mctl\.ai\/#request-access/);assert.doesNotMatch(body.text,/#contact/);return Response.json({id:'email-123'})};
  assert.equal(await invitationAllowed(env,'19205780'),false);
  assert.equal((await serveSignupAdmin(request(),env,provider)).status,200);
  assert.equal(await invitationAllowed(env,'19205780'),true);
