@@ -1,5 +1,35 @@
 # Changelog
 
+## [7.13.0](https://github.com/mctlhq/mctl-web/compare/7.12.1...7.13.0) (2026-10-23)
+
+
+### Features
+
+* bridge durable invitation decisions and applicant email ([ba70d6c](https://github.com/mctlhq/mctl-web/commit/ba70d6c811efd64c3af8aea6d477cbd7b3ffb9b4))
+
+
+### Bug Fixes
+
+* bind decision retries before updating invitation mirror ([fa89cdd](https://github.com/mctlhq/mctl-web/commit/fa89cdd0e16b7d2e1463492308935091d63fa544))
+* **deps:** bump vite and launch-editor for HIGH CVEs ([dc20e60](https://github.com/mctlhq/mctl-web/commit/dc20e600a2f64e59d1138b671a5193ed41b7db84))
+* **deps:** bump vite and launch-editor for HIGH CVEs ([f902978](https://github.com/mctlhq/mctl-web/commit/f90297825eb9242a49e8058687f174dcc26a6d0a))
+* keep invitation queue usable with unreadable records ([56e13a6](https://github.com/mctlhq/mctl-web/commit/56e13a6da0bac3a426b9518596670e57936824e4))
+* **ui:** pin design tokens to ui.mctl.ai 0.14.0 ([1a9417a](https://github.com/mctlhq/mctl-web/commit/1a9417a1b41a7b974a7cd1a82d0d91fc1d40c41f))
+* **ui:** pin design tokens to ui.mctl.ai 0.14.0 ([f545b67](https://github.com/mctlhq/mctl-web/commit/f545b676bbd18e1b73ac363e4d47de48e3306e09))
+
+
+### Documentation
+
+* confirm invitation administration production rollout ([df5a5c1](https://github.com/mctlhq/mctl-web/commit/df5a5c1e56560c7dac19ba00f0288f55f9dbb2cf))
+* confirm invitation administration production rollout ([654de04](https://github.com/mctlhq/mctl-web/commit/654de04e119ceeea550ccc70d6768b9f5cb13de8))
+* confirm one funded starter workspace slot ([8c5a822](https://github.com/mctlhq/mctl-web/commit/8c5a822c298f07d35e163eb72f1d6536663067b7))
+* confirm one funded starter workspace slot ([498004d](https://github.com/mctlhq/mctl-web/commit/498004d4b49a24b1e5be6144e0ccffb76ba05190))
+* plan bounded starter workspace rollout ([08bc374](https://github.com/mctlhq/mctl-web/commit/08bc374fb59461b30c54b7fda6a4a4b91c33d326))
+* record reviewer removal and preview quota reduction ([870777c](https://github.com/mctlhq/mctl-web/commit/870777c07f150f4beb9ac863717a2f341b408d35))
+* record reviewer removal and preview quota reduction ([8e18314](https://github.com/mctlhq/mctl-web/commit/8e1831433085c0eeca9415b0e3f43cf96d730f19))
+* record signup resource compression candidates ([f8d9038](https://github.com/mctlhq/mctl-web/commit/f8d903843cc032357cfbd07cf5c7bb12861e9d99))
+* record signup resource compression candidates ([01eaef6](https://github.com/mctlhq/mctl-web/commit/01eaef634f489551473ffd5070a745ed5d4a9405))
+
 ## [7.12.1](https://github.com/mctlhq/mctl-web/compare/7.12.0...7.12.1) (2026-10-19)
 
 
