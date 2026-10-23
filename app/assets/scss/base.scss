@@ -43,9 +43,12 @@
 
 // `clip`, not `hidden`: hidden on both html and body turns body into a scroll
 // container that never scrolls, and the sticky site header (.mctl-site-header)
-// would then stick to it instead of to the viewport.
+// would then stick to it instead of to the viewport. html alone may say
+// `hidden` first for Safari < 16, which drops `clip`: on html it propagates
+// to the viewport and leaves sticky working.
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
   overflow-x: clip;
 }
 

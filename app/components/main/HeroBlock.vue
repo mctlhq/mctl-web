@@ -70,7 +70,9 @@ const { t } = useI18n()
 // link are mctl.ai's own.
 .hero-block {
   position: relative;
-  overflow: clip;
+  // Plain `hidden`: nothing inside the hero is sticky, and the minifier
+  // would fold a `hidden` + `clip` pair into `clip`, which Safari < 16 drops.
+  overflow: hidden;
 
   &__intro {
     position: relative;

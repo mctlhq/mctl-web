@@ -107,9 +107,9 @@ function closeMenu() {
     left: 0;
     width: 100%;
     height: 100vh;
-    background: var(--site-header-bg);
-    backdrop-filter: blur(var(--site-header-blur));
-    border-bottom: 1px solid var(--site-header-border);
+    background: var(--site-header-bg, rgba(10, 11, 13, 0.8));
+    backdrop-filter: blur(var(--site-header-blur, 12px));
+    border-bottom: 1px solid var(--site-header-border, var(--color-line));
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
