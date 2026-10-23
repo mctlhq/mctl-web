@@ -1,5 +1,18 @@
 # Changelog
 
+## [7.14.0](https://github.com/mctlhq/mctl-web/compare/7.13.0...7.14.0) (2026-10-23)
+
+
+### Features
+
+* adopt the shared public-site layout from mctl-design 0.15.0 ([be9287f](https://github.com/mctlhq/mctl-web/commit/be9287fde07b1335d2f6a966f4bd3f5c445783a8))
+* adopt the shared public-site layout from mctl-design 0.15.0 ([96692ac](https://github.com/mctlhq/mctl-web/commit/96692ac589009ddb485abe3788d7125b3f9105ac))
+
+
+### Bug Fixes
+
+* keep header fallbacks and old-Safari overflow on the site shell ([5b3d2da](https://github.com/mctlhq/mctl-web/commit/5b3d2dad19d8179483d4e14087072becc2c31b5b))
+
 ## [7.13.0](https://github.com/mctlhq/mctl-web/compare/7.12.1...7.13.0) (2026-10-23)
 
 
