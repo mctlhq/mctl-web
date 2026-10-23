@@ -97,7 +97,7 @@ export async function serveSignupAdmin(request, env, fetchImpl = fetch) {
     }
     if (!env.RESEND_API_KEY) return reply(503, { error: 'Decision email unavailable' });
     const text = d.status === 'approved'
-      ? `Your MCTL invitation has been approved for GitHub @${d.github_login}.\n\nSign in with this GitHub account at https://mctl.ai/#contact within seven days to request your workspace. This invitation is tied to your GitHub identity.\n\nDecision: ${d.reason}\nRequest ID: ${original.id}`
+      ? `Your MCTL invitation has been approved for GitHub @${d.github_login}.\n\nWithin seven days, open https://mctl.ai/#request-access, choose "Already invited? Sign in" and continue with this GitHub account to request your workspace. Make sure that GitHub account has a verified primary email (GitHub > Settings > Emails). This invitation is tied to your GitHub identity.\n\nDecision: ${d.reason}\nRequest ID: ${original.id}`
       : `Your MCTL invitation request has been declined.\n\nDecision: ${d.reason}\n\nYou can contact us at https://mctl.ai/#contact.\nRequest ID: ${original.id}`;
     const response = await fetchImpl('https://api.resend.com/emails', {
       method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(10000),
