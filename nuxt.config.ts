@@ -38,8 +38,14 @@ export default defineNuxtConfig({
           href: 'https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap',
         },
         // Pinned: the unversioned URL is a moving target, so a design-system
-        // release could restyle the site without a change here. Bump on purpose.
-        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.14.0/mctl.css' },
+        // release could restyle the site without a change here. Bump on purpose,
+        // and bump all three together: global.css and site.css read the tokens
+        // mctl.css defines, so mixing versions is pinned in name only.
+        // site.css is the shared public-site shell (.mctl-site-*) that
+        // mctl.ai, docs.mctl.ai and tg.mctl.ai lay out with.
+        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.15.0/mctl.css' },
+        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.15.0/global.css' },
+        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.15.0/site.css' },
       ],
       script: [
         // Self-hosted Umami (stats.mctl.ai). data-domains keeps previews and

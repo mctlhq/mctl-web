@@ -14,7 +14,7 @@ useHead({
   <!-- Hero -->
   <section class="docs-hero">
     <div class="docs-hero-glow"></div>
-    <div class="container">
+    <div class="mctl-site-container">
       <p class="section-tag">Documentation</p>
       <h1>Platform Documentation</h1>
       <p class="subtitle">Everything you need to understand, evaluate, and start using mctl</p>
@@ -23,7 +23,7 @@ useHead({
 
   <!-- What is mctl? -->
   <section class="docs-section docs-section-default">
-    <div class="container">
+    <div class="mctl-site-container">
       <p class="section-tag">Overview</p>
       <h2 class="section-title">What is mctl?</h2>
       <div class="docs-text">
@@ -50,7 +50,7 @@ useHead({
 
   <!-- Who is it for? -->
   <section class="docs-section docs-section-alt">
-    <div class="container">
+    <div class="mctl-site-container">
       <p class="section-tag">Use Cases</p>
       <h2 class="section-title">Who is it for?</h2>
       <div class="audience-grid">
@@ -93,7 +93,7 @@ useHead({
 
   <!-- How it works -->
   <section class="docs-section docs-section-default">
-    <div class="container">
+    <div class="mctl-site-container">
       <p class="section-tag">Architecture</p>
       <h2 class="section-title">How it works</h2>
       <div class="docs-diagram">
@@ -158,7 +158,7 @@ useHead({
 
   <!-- Platform components -->
   <section class="docs-section docs-section-alt">
-    <div class="container">
+    <div class="mctl-site-container">
       <p class="section-tag">Components</p>
       <h2 class="section-title">Platform components</h2>
       <div class="component-grid">
@@ -204,7 +204,7 @@ useHead({
 
   <!-- Four ways to interact -->
   <section class="docs-section docs-section-default">
-    <div class="container">
+    <div class="mctl-site-container">
       <p class="section-tag">Interfaces</p>
       <h2 class="section-title">Four ways to interact</h2>
       <div class="interface-grid">
@@ -248,7 +248,7 @@ useHead({
 
   <!-- Getting started -->
   <section class="docs-section docs-section-alt">
-    <div class="container">
+    <div class="mctl-site-container">
       <p class="section-tag">Quick Start</p>
       <h2 class="section-title">Getting started</h2>
       <div class="quickstart-grid">
@@ -299,7 +299,6 @@ useHead({
 <style scoped>
 .docs-hero {
   padding: var(--section-py) 0 2.5rem;
-  text-align: center;
   background: var(--color-bg-secondary);
   position: relative;
   overflow: hidden;
@@ -331,8 +330,6 @@ useHead({
   color: var(--color-text-muted);
   margin-bottom: 0;
   max-width: 580px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .docs-section {
@@ -348,8 +345,7 @@ useHead({
 }
 
 .docs-text {
-  max-width: 760px;
-  margin: 0 auto;
+  max-width: var(--mctl-layout-prose-width, 720px);
   color: var(--color-text-muted);
   font-size: var(--text-label-size, 15.2px);
   line-height: 1.8;
@@ -473,8 +469,8 @@ useHead({
 }
 
 .agent-callout {
-  max-width: 760px;
-  margin: 2rem auto 0;
+  max-width: var(--mctl-layout-prose-width, 720px);
+  margin: 2rem 0 0;
   background: var(--color-terminal);
   border: 1px solid var(--color-glass-border);
   border-radius: 12px;

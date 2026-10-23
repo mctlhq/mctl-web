@@ -36,8 +36,6 @@ const cards = [
 
 <style lang="scss" scoped>
 .audience-section {
-  text-align: center;
-
   &__list {
     display: flex;
     flex-direction: column;
@@ -55,16 +53,13 @@ const cards = [
   &__card {
     --card-bg: var(--color-bg-secondary);
     height: 100%;
+    text-align: center;
 
     &:hover {
       border-color: var(--color-accent);
       transform: translateY(-6px);
       box-shadow: var(--shadow-overlay, 0 16px 48px rgba(0, 0, 0, 0.48));
     }
-  }
-
-  &__card-title {
-    text-align: center;
   }
 
   &__card-description {

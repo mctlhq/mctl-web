@@ -39,16 +39,17 @@ const { t } = useI18n();
 .orchestration-diagram {
   margin-top: 80px;
 
+  // Spans the section's content box like the card grids do, so its first box
+  // starts on the same left edge as the section title.
   display: flex;
-  justify-content: center;
   gap: 1rem;
-  flex-wrap: wrap;
 
   text-align: center;
 
   &__box {
     --card-padding: 40px 32px;
-    width: clamp(200px, 15vw, 260px);
+    flex: 1 1 0;
+    min-width: 0;
     position: relative;
 
     &:hover {
@@ -116,16 +117,15 @@ const { t } = useI18n();
 @media (max-width: 768px) {
   .orchestration-diagram {
     flex-direction: column;
-    align-items: center;
     gap: 2rem;
 
     &__box {
-      width: 100%;
-      max-width: 300px;
+      flex: none;
     }
   }
 
   .diagram-connector {
+    align-self: center;
     transform: rotate(90deg);
     height: 40px;
     min-width: auto;

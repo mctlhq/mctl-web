@@ -5,17 +5,17 @@ const { t } = useI18n()
 <template>
   <section class="hero-block">
     <div class="hero-block__glow"></div>
-    <BaseContainer size="md">
-      <div class="hero-block__intro">
+    <BaseContainer class="mctl-site-hero">
+      <div class="mctl-site-hero__text hero-block__intro">
         <span class="hero-block__badge">
           <span class="hero-block__badge-dot"></span>
           {{ t('hero.badge') }}
         </span>
-        <h1>
+        <h1 class="mctl-site-hero__title">
           {{ t('hero.title') }}
         </h1>
-        <p class="hero-block__description" v-html="t('hero.subtitle')" />
-        <div class="hero-block__actions">
+        <p class="mctl-site-hero__lede" v-html="t('hero.subtitle')" />
+        <div class="mctl-site-hero__actions hero-block__actions">
           <BaseButton
             size="lg"
             @click="$router.push({ hash: '#request-access' })"
@@ -29,32 +29,34 @@ const { t } = useI18n()
         </div>
       </div>
 
-      <div class="hero-terminal" aria-hidden="true">
-        <div class="hero-terminal__bar">
-          <span class="hero-terminal__dot hero-terminal__dot--red"></span>
-          <span class="hero-terminal__dot hero-terminal__dot--amber"></span>
-          <span class="hero-terminal__dot hero-terminal__dot--green"></span>
-          <span class="hero-terminal__title">mctl &mdash; deploy</span>
-        </div>
-        <div class="hero-terminal__body">
-          <p class="hero-terminal__line">
-            <span class="hero-terminal__prompt">$</span> git push origin main
-          </p>
-          <p class="hero-terminal__line hero-terminal__line--muted">
-            &rarr; building image &middot; running tests &middot; generating manifests
-          </p>
-          <p class="hero-terminal__line hero-terminal__line--ok">
-            &check; deployed to <span class="hero-terminal__accent">my-team</span> namespace
-          </p>
-          <p class="hero-terminal__line">
-            <span class="hero-terminal__prompt">&rsaquo;</span> <span class="hero-terminal__str">"roll my-app back to the previous release"</span>
-          </p>
-          <p class="hero-terminal__line hero-terminal__line--muted">
-            &rarr; MCP tool mctl_rollback_service &middot; team my-team
-          </p>
-          <p class="hero-terminal__line hero-terminal__line--ok">
-            &check; rollback synced in <span class="hero-terminal__accent">my-team</span> namespace<span class="hero-terminal__cursor"></span>
-          </p>
+      <div class="mctl-site-hero__visual">
+        <div class="hero-terminal" aria-hidden="true">
+          <div class="hero-terminal__bar">
+            <span class="hero-terminal__dot hero-terminal__dot--red"></span>
+            <span class="hero-terminal__dot hero-terminal__dot--amber"></span>
+            <span class="hero-terminal__dot hero-terminal__dot--green"></span>
+            <span class="hero-terminal__title">mctl &mdash; deploy</span>
+          </div>
+          <div class="hero-terminal__body">
+            <p class="hero-terminal__line">
+              <span class="hero-terminal__prompt">$</span> git push origin main
+            </p>
+            <p class="hero-terminal__line hero-terminal__line--muted">
+              &rarr; building image &middot; running tests &middot; generating manifests
+            </p>
+            <p class="hero-terminal__line hero-terminal__line--ok">
+              &check; deployed to <span class="hero-terminal__accent">my-team</span> namespace
+            </p>
+            <p class="hero-terminal__line">
+              <span class="hero-terminal__prompt">&rsaquo;</span> <span class="hero-terminal__str">"roll my-app back to the previous release"</span>
+            </p>
+            <p class="hero-terminal__line hero-terminal__line--muted">
+              &rarr; MCP tool mctl_rollback_service &middot; team my-team
+            </p>
+            <p class="hero-terminal__line hero-terminal__line--ok">
+              &check; rollback synced in <span class="hero-terminal__accent">my-team</span> namespace<span class="hero-terminal__cursor"></span>
+            </p>
+          </div>
         </div>
       </div>
     </BaseContainer>
@@ -62,20 +64,13 @@ const { t } = useI18n()
 </template>
 
 <style lang="scss" scoped>
+// Layout, title and lede come from site.css (.mctl-site-hero / __text /
+// __title / __lede / __actions / __visual): text left, the terminal on the
+// right, one column below 960px. Only the badge, the glow and the secondary
+// link are mctl.ai's own.
 .hero-block {
   position: relative;
-  padding: 60px 0;
-  min-height: calc(100vh - var(--header-height));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-
-  text-align: center;
-
-  h1 {
-    font-size: var(--text-hero-size, clamp(35.2px, 4.5vw, 68px));
-  }
+  overflow: clip;
 
   &__intro {
     position: relative;
@@ -86,7 +81,6 @@ const { t } = useI18n()
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 1.75rem;
     padding: 0.4rem 0.9rem;
 
     font-size: var(--text-micro-size, 12px);
@@ -108,24 +102,7 @@ const { t } = useI18n()
     animation: heroPulse 2s ease-in-out infinite;
   }
 
-  &__description {
-    max-width: 900px;
-    margin: 0 auto 40px;
-    text-align: center;
-    font-size: var(--mctl-typography-font-size-lg, 18px);
-    color: var(--color-text-muted);
-    line-height: 1.6;
-
-    @media (min-width: 768px) {
-      font-size: var(--text-title-size, 24px);
-    }
-  }
-
   &__actions {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
     gap: 1.25rem;
   }
 
@@ -151,10 +128,13 @@ const { t } = useI18n()
     }
   }
 
+  // Sits behind the terminal now that it is on the right, so the wash marks
+  // the visual rather than the middle of the page. Clipped by the section,
+  // or 70vw of glow would widen the page on a phone.
   &__glow {
     position: absolute;
-    top: 18%;
-    left: 50%;
+    top: 50%;
+    left: 70%;
     transform: translate(-50%, -50%);
     width: 70vw;
     height: 70vw;
@@ -172,8 +152,8 @@ const { t } = useI18n()
 .hero-terminal {
   position: relative;
   z-index: 1;
+  width: 100%;
   max-width: 640px;
-  margin: 4rem auto 0;
 
   text-align: left;
   background: var(--color-terminal);

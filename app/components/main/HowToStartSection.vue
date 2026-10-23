@@ -14,9 +14,8 @@ const steps = [
     class="how-to-start"
     :tag="t('how.tag')"
     :title="t('how.title')"
-    container-size="md"
   >
-    <ul class="how-to-start__list">
+    <ul class="how-to-start__list mctl-site-grid">
       <li
         v-for="step in steps"
         :key="step.num"
@@ -35,20 +34,6 @@ const steps = [
 
 <style lang="scss" scoped>
 .how-to-start {
-  &__list {
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-
-    @media (min-width: 768px) {
-      flex-direction: row;
-    }
-  }
-
-  &__list-item {
-    flex: 1;
-  }
-
   &__card {
     height: 100%;
     text-align: center;

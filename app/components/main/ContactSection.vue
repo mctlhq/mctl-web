@@ -6,29 +6,19 @@ const { t } = useI18n()
   <BaseSection
     id="contact"
     class="contact-section"
+    band
     :tag="t('contact.tag')"
     :title="t('contact.title')"
   >
-    <p class="contact-section__intro">{{ t('contact.intro') }}</p>
+    <p class="contact-section__intro mctl-site-section__lede">{{ t('contact.intro') }}</p>
     <ContactForm class="contact-section__form" />
   </BaseSection>
 </template>
 
 <style lang="scss" scoped>
 .contact-section {
-  background-color: var(--color-bg-secondary);
-
   &__intro {
     margin-bottom: 48px;
-
-    color: var(--color-text-muted);
-    font-size: var(--mctl-typography-font-size-lg, 18px);
-    line-height: 1.7;
-    text-align: center;
-  }
-
-  &__form {
-    margin: 0 auto;
   }
 }
 </style>
