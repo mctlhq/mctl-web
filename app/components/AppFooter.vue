@@ -9,53 +9,23 @@ const footerLinks = computed(() => [
 </script>
 
 <template>
-  <footer class="app-footer">
-    <BaseContainer>
-      <LogoDefault class="app-footer__logo" />
-      <ul class="app-footer__links">
+  <!-- Full-bleed, centred footer from site.css (.mctl-site-footer / __inner /
+       __links / __copy), the same one docs.mctl.ai and tg.mctl.ai render. -->
+  <footer class="mctl-site-footer">
+    <BaseContainer class="mctl-site-footer__inner">
+      <LogoDefault />
+      <ul class="mctl-site-footer__links">
         <li
           v-for="(link, index) in footerLinks"
           :key="index"
-          class="app-footer__links-item"
         >
-          <a :href="link.target" class="app-footer__link">{{ link.label }}</a>
+          <a :href="link.target">{{ link.label }}</a>
         </li>
         <li>
-          <NuxtLink to="/privacy" class="app-footer__link">{{ t('footer.privacy') }}</NuxtLink>
+          <NuxtLink to="/privacy">{{ t('footer.privacy') }}</NuxtLink>
         </li>
       </ul>
-      <p class="app-footer__copy" v-html="t('footer.copyright')" />
+      <p class="mctl-site-footer__copy" v-html="t('footer.copyright')" />
     </BaseContainer>
   </footer>
 </template>
-
-<style lang="scss" scoped>
-.app-footer {
-  padding: 48px 0;
-  text-align: center;
-  background: var(--color-terminal);
-  border-top: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
-
-  &__links {
-    display: flex;
-    justify-content: center;
-    gap: 32px;
-    flex-wrap: wrap;
-    margin: 24px 0;
-  }
-
-  &__link {
-    color: var(--color-accent);
-    transition: all 0.3s ease;
-
-    &:hover {
-      color: var(--color-text);
-    }
-  }
-
-  &__copy {
-    color: var(--color-text-muted);
-    font-size: var(--text-caption-size, 13px);
-  }
-}
-</style>

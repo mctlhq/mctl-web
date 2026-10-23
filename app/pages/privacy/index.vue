@@ -10,17 +10,21 @@ useHead({
 </script>
 
 <template>
+  <!-- Long-form page: the shared container keeps the left edge the header
+       brand uses, and .mctl-site-prose caps the reading column at 720px. -->
   <section class="privacy-hero">
-    <div class="container">
-      <p class="section-tag">Legal</p>
-      <h1>Privacy Policy</h1>
-      <p class="subtitle">Effective date: October 19, 2026</p>
-    </div>
+    <BaseContainer>
+      <div class="mctl-site-prose">
+        <p class="section-tag">Legal</p>
+        <h1>Privacy Policy</h1>
+        <p class="subtitle">Effective date: October 19, 2026</p>
+      </div>
+    </BaseContainer>
   </section>
 
   <section class="privacy-section">
-    <div class="container">
-      <div class="privacy-content">
+    <BaseContainer>
+      <div class="privacy-content mctl-site-prose">
 
         <h2>1. Overview</h2>
         <p>
@@ -200,14 +204,13 @@ useHead({
         </p>
 
       </div>
-    </div>
+    </BaseContainer>
   </section>
 </template>
 
 <style scoped>
 .privacy-hero {
   padding: 6rem 0 2.5rem;
-  text-align: center;
   background: var(--color-bg);
   position: relative;
 }
@@ -232,8 +235,6 @@ useHead({
 }
 
 .privacy-content {
-  max-width: 720px;
-  margin: 0 auto;
   color: var(--color-text-muted);
   font-size: var(--text-prose-size, 16px);
   line-height: var(--text-prose-leading, 1.75);

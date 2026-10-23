@@ -42,12 +42,8 @@ const plans = [
     class="pricing-section"
     :tag="t('pricing.tag')"
     :title="t('pricing.title')"
-    container-size="md"
   >
-    <ul
-      class="pricing-section__plans"
-      :class="{ 'pricing-section__plans--single': plans.length === 1 }"
-    >
+    <ul class="pricing-section__plans mctl-site-grid">
       <li
         v-for="plan in plans"
         :key="plan.titleKey"
@@ -78,39 +74,12 @@ const plans = [
 
 <style lang="scss" scoped>
 .pricing-section {
-  &__plans {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 28px;
-
-    @media (min-width: 768px) {
-      flex-direction: row;
-      justify-content: center;
-    }
-  }
-
-  &__plans--single {
-    max-width: 440px;
-    margin: 0 auto;
-  }
-
-  &__plans-item {
-    flex: 1;
-    max-width: 400px;
-  }
-
-  &__plans--single &__plans-item {
-    max-width: 440px;
-  }
-
   &__card {
     height: 100%;
   }
 
   &__custom {
     margin-top: 2.5rem;
-    text-align: center;
     color: var(--color-text-muted);
     font-size: var(--text-label-size, 15.2px);
   }

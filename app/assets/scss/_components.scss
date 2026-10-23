@@ -9,7 +9,6 @@
   color: var(--color-text);
   margin-bottom: clamp(2rem, 3vw, 4rem);
   letter-spacing: -0.02em;
-  text-align: center;
 }
 
 .section-tag {
@@ -18,10 +17,7 @@
   font-size: var(--text-caption-size, 13px);
   letter-spacing: 2px;
   margin-bottom: 1rem;
-  text-align: center;
 }
-
-.section-tag-left { text-align: left; }
 
 .section-subtitle {
   color: var(--color-text-muted);
@@ -30,14 +26,11 @@
 }
 
 .subtitle {
-  text-align: center;
   font-size: var(--text-subtitle-size, clamp(18px, 1.7vw, 24px));
   color: var(--color-text-muted);
   margin-bottom: 3rem;
   line-height: 1.6;
   max-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 // Buttons

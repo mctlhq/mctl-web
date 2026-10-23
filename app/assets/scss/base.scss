@@ -31,8 +31,6 @@
   // Elevation is shadow-light; hover lifts on a hairline + a quiet drop, no glow.
   --shadow-card-hover: var(--shadow-overlay, 0 16px 48px rgba(0, 0, 0, 0.48));
 
-  --container-width: var(--site-content-width, 1400px);
-  --container-width-md: 1200px;
   --section-py: clamp(5rem, 6vw, 8rem);
   --header-height: var(--site-header-height, 80px);
 }
@@ -43,9 +41,15 @@
   box-sizing: border-box;
 }
 
+// `clip`, not `hidden`: hidden on both html and body turns body into a scroll
+// container that never scrolls, and the sticky site header (.mctl-site-header)
+// would then stick to it instead of to the viewport. html alone may say
+// `hidden` first for Safari < 16, which drops `clip`: on html it propagates
+// to the viewport and leaves sticky working.
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -55,7 +59,7 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   line-height: 1.6;
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
@@ -104,7 +108,6 @@ h1 {
   font-weight: var(--text-hero-weight, 800);
   line-height: var(--text-hero-leading, 1.1);
   letter-spacing: var(--text-hero-tracking, -0.02em);
-  text-align: center;
   color: var(--color-text);
   margin-bottom: 1.5rem;
 }

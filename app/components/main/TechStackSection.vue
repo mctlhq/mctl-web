@@ -18,10 +18,11 @@ const logos = [
   <BaseSection
     id="tech-stack"
     class="tech-stack-section"
+    band
     :tag="t('tech.tag')"
     :title="t('tech.title')"
   >
-    <p class="tech-stack-section__subtitle">{{ t('tech.subtitle') }}</p>
+    <p class="tech-stack-section__subtitle mctl-site-section__lede">{{ t('tech.subtitle') }}</p>
     <ul class="tech-stack-section__list">
       <li
         v-for="item in logos"
@@ -40,12 +41,8 @@ const logos = [
 
 <style lang="scss" scoped>
 .tech-stack-section {
-  background-color: var(--color-bg-secondary);
-
   &__subtitle {
-    text-align: center;
     margin-bottom: 40px;
-    color: var(--color-text-muted);
   }
 
   &__list {

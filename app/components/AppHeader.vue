@@ -25,15 +25,13 @@ function closeMenu() {
 
 <template>
   <header
-    class="app-header"
+    class="app-header mctl-site-header"
     :class="{ 'app-header--menu-open': menuOpen }"
   >
-    <BaseContainer size="lg" class="app-header__container">
-      <div class="app-header__left">
-        <NuxtLink to="/" class="app-header__logo">
-          <LogoDefault />
-        </NuxtLink>
-      </div>
+    <BaseContainer class="mctl-site-header__inner">
+      <NuxtLink to="/" class="mctl-site-brand">
+        <span class="mctl-site-brand__accent">M</span>CTL
+      </NuxtLink>
       <div ref="target" class="app-header__right">
         <AppHeaderNav :open="menuOpen" @close="closeMenu" />
         <BaseButton
@@ -53,27 +51,13 @@ function closeMenu() {
 </template>
 
 <style lang="scss" scoped>
+// Bar, height, blur, border and the brand come from site.css
+// (.mctl-site-header / __inner / .mctl-site-brand). What stays here is the
+// mobile drawer, which the shared shell does not have.
 .app-header {
-  position: fixed;
+  // Above the drawer's own overlay; site.css's 50 would let section content
+  // with a z-index slide over the bar.
   z-index: 100;
-  width: 100%;
-  height: var(--header-height);
-
-  background: var(--site-header-bg, rgba(10, 11, 13, 0.8));
-  backdrop-filter: blur(var(--site-header-blur, 12px));
-  border-bottom: 1px solid var(--site-header-border, var(--color-line));
-
-  &__container {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  &__logo {
-    display: flex;
-    align-items: center;
-  }
 
   &__right {
     display: flex;
@@ -105,17 +89,6 @@ function closeMenu() {
       height: auto;
       background: transparent;
       border: none;
-    }
-  }
-
-  &__github {
-    display: flex;
-    align-items: center;
-    color: var(--color-text-muted);
-    transition: color 0.2s;
-
-    &:hover {
-      color: var(--color-text);
     }
   }
 

@@ -14,6 +14,7 @@ const cards = [
   <BaseSection
     id="why-section"
     class="why-section"
+    band
     :tag="t('why.tag')"
     :title="t('why.title')"
   >
@@ -34,8 +35,6 @@ const cards = [
 
 <style lang="scss" scoped>
 .why-section {
-  background-color: var(--color-bg-secondary);
-
   &__cards {
     display: flex;
     flex-direction: column;

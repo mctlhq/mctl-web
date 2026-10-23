@@ -230,8 +230,6 @@
   border: 1px solid var(--color-glass-border);
 }
 
-.request-access { padding: var(--section-py) 0; background: var(--color-bg-secondary); }
-
 // Responsive
 @media (max-width: 1100px) {
   .subtitle { font-size: var(--mctl-typography-font-size-xl, 20px); }
@@ -275,7 +273,6 @@
   .pricing-card-featured { transform: none; }
   .pricing-card-featured:hover { transform: translateY(-6px); }
 
-  .request-access { padding: 4rem 0; }
   .contact { padding: 4rem 0; }
   .contact-form-wrapper { padding: 2rem 1.5rem; }
 }

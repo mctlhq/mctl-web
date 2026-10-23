@@ -123,6 +123,7 @@ onMounted(() => {
   <BaseSection
     id="request-access"
     class="request-access"
+    band
     :title="t('form.title')"
   >
     <BaseCard class="request-access__card">
@@ -164,13 +165,12 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .request-access {
-  padding: 60px 0;
-  background-color: var(--color-bg-secondary);
-  text-align: center;
-
+  // The card starts on the section's left edge under the title; its own
+  // content stays centred, as the sign-in and form flows were laid out.
   &__card {
     width: 100%;
-    margin: 32px auto 0;
+    margin-top: 32px;
+    text-align: center;
 
     @media (min-width: 768px) {
       width: 600px;
