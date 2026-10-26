@@ -1,5 +1,13 @@
 # Changelog
 
+## [7.15.1](https://github.com/mctlhq/mctl-web/compare/7.15.0...7.15.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **deps:** bump nuxt's undici to 8.12.3 for CVE-2026-109869 ([13cf8c1](https://github.com/mctlhq/mctl-web/commit/13cf8c1d5dec8d79a15d235ffc37b19112e1ff92))
+* **deps:** bump nuxt's undici to 8.12.3 for CVE-2026-109869 ([f7fea44](https://github.com/mctlhq/mctl-web/commit/f7fea446615bc13f15dec3218656801ed732af65))
+
 ## [7.15.0](https://github.com/mctlhq/mctl-web/compare/7.14.1...7.15.0) (2026-10-26)
 
 
