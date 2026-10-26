@@ -1,5 +1,15 @@
 # Changelog
 
+## [7.14.1](https://github.com/mctlhq/mctl-web/compare/7.14.0...7.14.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* centre the access form, single plan and contact form ([76f8fa4](https://github.com/mctlhq/mctl-web/commit/76f8fa44d671681ca8e3a2b2a865627e1ffb3053))
+* centre the access form, single plan and contact form ([cfd9d00](https://github.com/mctlhq/mctl-web/commit/cfd9d009ffdca704052982352bca927970512d2b))
+* **worker:** approval email sends invitees to sign-in, not the contact form ([50819e5](https://github.com/mctlhq/mctl-web/commit/50819e518a709e8790be8357af4b0a93f4230e83))
+* **worker:** approval email sends invitees to sign-in, not the contact form ([885e8ee](https://github.com/mctlhq/mctl-web/commit/885e8eea002c377096eabecc222dccd4ae641bb4))
+
 ## [7.14.0](https://github.com/mctlhq/mctl-web/compare/7.13.0...7.14.0) (2026-10-23)
 
 
