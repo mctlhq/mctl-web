@@ -166,6 +166,14 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .request-access {
+  // The hero above sits on the page's grid; an opaque band starting right
+  // under it reads as a hard cut, so the band's fill fades in over its first
+  // 160px instead.
+  &.base-section--band.mctl-site-section {
+    background-color: transparent;
+    background-image: linear-gradient(to bottom, transparent, var(--color-bg-secondary) 160px);
+  }
+
   // The card is centred under the title by site.css's __narrow (600px at
   // most); its own content stays centred, as the sign-in and form flows were
   // laid out.

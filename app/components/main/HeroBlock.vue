@@ -5,7 +5,7 @@ const { t } = useI18n()
 <template>
   <section class="hero-block">
     <div class="hero-block__glow"></div>
-    <BaseContainer class="mctl-site-hero">
+    <BaseContainer class="mctl-site-hero mctl-site-hero--stacked">
       <div class="mctl-site-hero__text hero-block__intro">
         <span class="hero-block__badge">
           <span class="hero-block__badge-dot"></span>
@@ -64,10 +64,10 @@ const { t } = useI18n()
 </template>
 
 <style lang="scss" scoped>
-// Layout, title and lede come from site.css (.mctl-site-hero / __text /
-// __title / __lede / __actions / __visual): text left, the terminal on the
-// right, one column below 960px. Only the badge, the glow and the secondary
-// link are mctl.ai's own.
+// Layout, title and lede come from site.css (.mctl-site-hero--stacked /
+// __text / __title / __lede / __actions / __visual): one centred column, the
+// terminal under the text at every width. Only the badge, the glow and the
+// secondary link are mctl.ai's own.
 .hero-block {
   position: relative;
   // Plain `hidden`: nothing inside the hero is sticky, and the minifier
@@ -130,13 +130,13 @@ const { t } = useI18n()
     }
   }
 
-  // Sits behind the terminal now that it is on the right, so the wash marks
-  // the visual rather than the middle of the page. Clipped by the section,
-  // or 70vw of glow would widen the page on a phone.
+  // Sits behind the terminal, which is centred under the text, so the wash
+  // marks the visual. Clipped by the section, or 70vw of glow would widen
+  // the page on a phone.
   &__glow {
     position: absolute;
-    top: 50%;
-    left: 70%;
+    top: 70%;
+    left: 50%;
     transform: translate(-50%, -50%);
     width: 70vw;
     height: 70vw;
