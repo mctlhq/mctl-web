@@ -1,5 +1,13 @@
 # Changelog
 
+## [7.15.0](https://github.com/mctlhq/mctl-web/compare/7.14.1...7.15.0) (2026-10-26)
+
+
+### Features
+
+* centre the hero above the terminal, soften the band edge ([9e8ad5e](https://github.com/mctlhq/mctl-web/commit/9e8ad5ec2b8dd2e15a011eeb72df7fcbd7b2602c))
+* centre the hero above the terminal, soften the band edge ([50c771b](https://github.com/mctlhq/mctl-web/commit/50c771b8df7eca9a22ee2982eee8464848fd3977))
+
 ## [7.14.1](https://github.com/mctlhq/mctl-web/compare/7.14.0...7.14.1) (2026-10-26)
 
 
