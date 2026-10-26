@@ -124,9 +124,10 @@ onMounted(() => {
     id="request-access"
     class="request-access"
     band
+    center
     :title="t('form.title')"
   >
-    <BaseCard class="request-access__card">
+    <BaseCard class="request-access__card mctl-site-section__narrow">
       <p class="request-access__subtitle">
         {{ t(workspaceForm ? 'form.subtitle' : 'invitation.subtitle') }}
       </p>
@@ -165,16 +166,12 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .request-access {
-  // The card starts on the section's left edge under the title; its own
-  // content stays centred, as the sign-in and form flows were laid out.
+  // The card is centred under the title by site.css's __narrow (600px at
+  // most); its own content stays centred, as the sign-in and form flows were
+  // laid out.
   &__card {
-    width: 100%;
     margin-top: 32px;
     text-align: center;
-
-    @media (min-width: 768px) {
-      width: 600px;
-    }
   }
 
   &__switch { margin-top: 24px; }

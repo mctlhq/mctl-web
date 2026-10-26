@@ -4,6 +4,9 @@ interface Props {
   title?: string
   // A full-bleed section on the secondary background.
   band?: boolean
+  // A section holding one narrow block (a form, a single plan): tag, title
+  // and the block are centred instead of hanging off the left edge.
+  center?: boolean
 }
 
 defineProps<Props>();
@@ -13,7 +16,10 @@ defineProps<Props>();
   <!-- Box, vertical rhythm and title type come from site.css
        (.mctl-site-section / __title); only the eyebrow tag and the accent
        rule under the title are mctl.ai's own. -->
-  <section class="base-section mctl-site-section" :class="{ 'base-section--band': band }">
+  <section
+    class="base-section mctl-site-section"
+    :class="{ 'base-section--band': band, 'base-section--center mctl-site-section--center': center }"
+  >
     <BaseContainer>
       <strong v-if="tag" class="base-section__tag">{{ tag }}</strong>
       <h2 v-if="title" class="base-section__title mctl-site-section__title">
@@ -58,6 +64,16 @@ defineProps<Props>();
       border-radius: 3px;
       background: linear-gradient(90deg, var(--color-accent), transparent);
     }
+  }
+
+  &--center &__tag {
+    text-align: center;
+  }
+
+  &--center &__title::after {
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
   }
 }
 // site.css collapses the top padding between adjacent sections. That only

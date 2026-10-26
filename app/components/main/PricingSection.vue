@@ -40,10 +40,16 @@ const plans = [
   <BaseSection
     id="pricing"
     class="pricing-section"
+    :center="plans.length === 1"
     :tag="t('pricing.tag')"
     :title="t('pricing.title')"
   >
-    <ul class="pricing-section__plans mctl-site-grid">
+    <!-- One plan is a narrow centred card, not the first cell of an
+         otherwise empty three-column row. -->
+    <ul
+      class="pricing-section__plans"
+      :class="plans.length === 1 ? 'pricing-section__plans--single mctl-site-section__narrow' : 'mctl-site-grid'"
+    >
       <li
         v-for="plan in plans"
         :key="plan.titleKey"
@@ -74,6 +80,14 @@ const plans = [
 
 <style lang="scss" scoped>
 .pricing-section {
+  &__plans--single {
+    --mctl-site-narrow-width: 440px;
+  }
+
+  &__plans--single + &__custom {
+    text-align: center;
+  }
+
   &__card {
     height: 100%;
   }
