@@ -163,12 +163,6 @@ const onSubmit = handleSubmit(async (formData) => {
 
 <style lang="scss" scoped>
 .contact-form {
-  width: 100%;
-
-  @media (min-width: 768px) {
-    width: 600px;
-  }
-
   &__turnstile {
     margin-top: 16px;
   }
