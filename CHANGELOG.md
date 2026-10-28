@@ -1,5 +1,15 @@
 # Changelog
 
+## [7.15.2](https://github.com/mctlhq/mctl-web/compare/7.15.1...7.15.2) (2026-10-28)
+
+
+### Dependencies
+
+* bump nginxinc/nginx-unprivileged from `378d0c3` to `b5047b9` ([ce1d93e](https://github.com/mctlhq/mctl-web/commit/ce1d93e52e80d45a797bd9c22977748eee3a332d))
+* bump sass from 1.103.1 to 1.106.1 ([b659193](https://github.com/mctlhq/mctl-web/commit/b6591935867abb70924554caf5faffda7a11c8e0))
+* bump vue from 3.5.42 to 3.5.44 ([64c6d57](https://github.com/mctlhq/mctl-web/commit/64c6d574f1b1ce1d183f4ab441af02052484b974))
+* bump wrangler from 4.127.1 to 4.152.0 ([3ce4d4d](https://github.com/mctlhq/mctl-web/commit/3ce4d4d96d7d6e0ffad73af15b121a4bae3cae4f))
+
 ## [7.15.1](https://github.com/mctlhq/mctl-web/compare/7.15.0...7.15.1) (2026-10-26)
 
 
