@@ -84,6 +84,10 @@ const { t } = useI18n()
     align-items: center;
     gap: 0.5rem;
     padding: 0.4rem 0.9rem;
+    // site.css 0.19.0 dropped the uniform 24px hero gap and spaces only the
+    // eyebrow/title/lede/actions/meta sequence, so a badge above the title
+    // carries its own gap (the eyebrow gap, as it sits where an eyebrow would).
+    margin-bottom: var(--mctl-layout-hero-eyebrow-gap, 20px);
 
     font-size: var(--text-micro-size, 12px);
     letter-spacing: 1px;
