@@ -27,5 +27,5 @@
   "overrides": {
     "serialize-javascript": ">=7.0.4"
   },
-  "version": "7.16.0"
+  "version": "7.17.0"
 }
