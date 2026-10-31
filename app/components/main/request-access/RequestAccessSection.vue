@@ -124,7 +124,6 @@ onMounted(() => {
     id="request-access"
     class="request-access"
     band
-    center
     :title="t('form.title')"
   >
     <BaseCard class="request-access__card mctl-site-section__narrow">

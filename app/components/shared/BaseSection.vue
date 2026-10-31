@@ -4,9 +4,9 @@ interface Props {
   title?: string
   // A full-bleed section on the secondary background.
   band?: boolean
-  // A section holding one narrow block (a form, a single plan): tag, title
-  // and the block are centred instead of hanging off the left edge.
-  center?: boolean
+  // Tag, title and lede are centred by default (site.css 0.18.0); start
+  // puts a section back on the content box's left edge.
+  start?: boolean
 }
 
 defineProps<Props>();
@@ -18,7 +18,7 @@ defineProps<Props>();
        rule under the title are mctl.ai's own. -->
   <section
     class="base-section mctl-site-section"
-    :class="{ 'base-section--band': band, 'base-section--center mctl-site-section--center': center }"
+    :class="{ 'base-section--band': band, 'base-section--start mctl-site-section--start': start }"
   >
     <BaseContainer>
       <strong v-if="tag" class="base-section__tag">{{ tag }}</strong>
@@ -42,6 +42,7 @@ defineProps<Props>();
   &__tag {
     display: block;
     margin-bottom: 16px;
+    text-align: center;
 
     font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'Courier New', monospace);
     font-size: var(--text-caption-size, 13px);
@@ -58,22 +59,23 @@ defineProps<Props>();
       content: '';
       position: absolute;
       bottom: 0;
-      left: 0;
+      left: 50%;
+      transform: translateX(-50%);
       width: 56px;
       height: 3px;
       border-radius: 3px;
-      background: linear-gradient(90deg, var(--color-accent), transparent);
+      background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
     }
   }
 
-  &--center &__tag {
-    text-align: center;
+  &--start &__tag {
+    text-align: start;
   }
 
-  &--center &__title::after {
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+  &--start &__title::after {
+    left: 0;
+    transform: none;
+    background: linear-gradient(90deg, var(--color-accent), transparent);
   }
 }
 // site.css collapses the top padding between adjacent sections. That only

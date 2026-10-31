@@ -40,7 +40,6 @@ const plans = [
   <BaseSection
     id="pricing"
     class="pricing-section"
-    :center="plans.length === 1"
     :tag="t('pricing.tag')"
     :title="t('pricing.title')"
   >
