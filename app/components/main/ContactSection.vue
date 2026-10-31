@@ -7,7 +7,6 @@ const { t } = useI18n()
     id="contact"
     class="contact-section"
     band
-    center
     :tag="t('contact.tag')"
     :title="t('contact.title')"
   >
