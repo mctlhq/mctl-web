@@ -1,5 +1,18 @@
 # Changelog
 
+## [7.16.0](https://github.com/mctlhq/mctl-web/compare/7.15.2...7.16.0) (2026-10-31)
+
+
+### Features
+
+* centre every section heading on mctl.ai ([b55d650](https://github.com/mctlhq/mctl-web/commit/b55d65004a46cd558a1aa50652dbe9b003b7f927))
+* centre every section heading on mctl.ai ([992dd90](https://github.com/mctlhq/mctl-web/commit/992dd901e65604576bc7290a376c68fb6f96acdb))
+
+
+### Bug Fixes
+
+* **deps:** bump node-forge to 1.4.1 for new HIGH advisories ([73f3035](https://github.com/mctlhq/mctl-web/commit/73f3035daaa4d96adba63ecd13137f546b542a5d))
+
 ## [7.15.2](https://github.com/mctlhq/mctl-web/compare/7.15.1...7.15.2) (2026-10-28)
 
 
