@@ -1,5 +1,15 @@
 # Changelog
 
+## [7.18.0](https://github.com/mctlhq/mctl-web/compare/7.17.0...7.18.0) (2026-10-31)
+
+
+### Features
+
+* **seo:** add discover meta directive and documentation breadcrumbs ([6e71289](https://github.com/mctlhq/mctl-web/commit/6e71289e8c4e01112dcac68edd4bff0901da055b))
+* **seo:** add discover meta directive and documentation breadcrumbs ([23fbe96](https://github.com/mctlhq/mctl-web/commit/23fbe96b9c28b02377f4dfdd21d0bc5d1b160862))
+* **seo:** link ecosystem services and add organization schema graph ([98d0e8b](https://github.com/mctlhq/mctl-web/commit/98d0e8b86dca39c625a0979e1a0608803826d0d6))
+* **seo:** link ecosystem services and add organization schema graph ([aab7b29](https://github.com/mctlhq/mctl-web/commit/aab7b2900677bd13978640eb772723d7db6985d8))
+
 ## [7.17.0](https://github.com/mctlhq/mctl-web/compare/7.16.0...7.17.0) (2026-10-31)
 
 
