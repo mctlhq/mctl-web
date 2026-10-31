@@ -13,6 +13,8 @@ const sectionLinks = computed(() => [
 
 const pageLinks = computed(() => [
   { label: 'Docs', href: 'https://docs.mctl.ai' },
+  { label: 'Alice MCP', href: 'https://alice.mctl.ai' },
+  { label: 'Telegram MCP', href: 'https://tg.mctl.ai' },
 ])
 </script>
 

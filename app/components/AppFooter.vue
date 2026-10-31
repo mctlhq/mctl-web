@@ -2,9 +2,12 @@
 const { t } = useI18n();
 
 const footerLinks = computed(() => [
-  { label: t('footer.platform'), target: '/#features' },
-  { label: t('footer.pricing'), target: '/#pricing' },
-  { label: t('footer.contact'), target: '/#contact' },
+  { label: t('footer.platform'), target: '/#features', external: false },
+  { label: t('footer.pricing'), target: '/#pricing', external: false },
+  { label: t('footer.contact'), target: '/#contact', external: false },
+  { label: 'Docs', target: 'https://docs.mctl.ai', external: true },
+  { label: 'Alice MCP', target: 'https://alice.mctl.ai', external: true },
+  { label: 'Telegram MCP', target: 'https://tg.mctl.ai', external: true },
 ]);
 </script>
 
@@ -19,7 +22,11 @@ const footerLinks = computed(() => [
           v-for="(link, index) in footerLinks"
           :key="index"
         >
-          <a :href="link.target">{{ link.label }}</a>
+          <a
+            :href="link.target"
+            :target="link.external ? '_blank' : undefined"
+            :rel="link.external ? 'noopener noreferrer' : undefined"
+          >{{ link.label }}</a>
         </li>
         <li>
           <NuxtLink to="/privacy">{{ t('footer.privacy') }}</NuxtLink>
