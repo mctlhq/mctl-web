@@ -48,6 +48,35 @@ export default defineNuxtConfig({
         { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.19.0/site.css' },
       ],
       script: [
+        // Schema.org / JSON-LD ecosystem graph
+        {
+          type: 'application/ld+json',
+          innerHTML: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              {
+                '@type': 'Organization',
+                '@id': 'https://mctl.ai/#organization',
+                name: 'MCTL',
+                url: 'https://mctl.ai',
+                logo: 'https://ui.mctl.ai/brand/favicon-web.svg',
+                sameAs: [
+                  'https://github.com/mctlhq',
+                  'https://alice.mctl.ai',
+                  'https://tg.mctl.ai',
+                  'https://docs.mctl.ai',
+                ],
+              },
+              {
+                '@type': 'WebSite',
+                '@id': 'https://mctl.ai/#website',
+                url: 'https://mctl.ai',
+                name: 'MCTL',
+                publisher: { '@id': 'https://mctl.ai/#organization' },
+              },
+            ],
+          }),
+        },
         // Self-hosted Umami (stats.mctl.ai). data-domains keeps previews and
         // local builds out of the numbers; the website ID is public by design.
         {
