@@ -1,10 +1,10 @@
 <script setup lang="ts">
 useHead({
-  title: 'MCTL Docs — Platform Documentation',
+  title: 'MCTL Docs — Self-Service Kubernetes & MCP Platform Documentation',
   meta: [
-    { name: 'description', content: 'Everything you need to understand, evaluate, and start using mctl. Self-service Kubernetes platform with GitOps, Vault, RBAC, and MCP tools.' },
-    { property: 'og:title', content: 'MCTL Docs — Platform Documentation' },
-    { property: 'og:description', content: 'Everything you need to understand, evaluate, and start using mctl. Self-service Kubernetes platform with GitOps, Vault, RBAC, and MCP tools.' },
+    { name: 'description', content: 'Guides and architecture for MCTL: GitOps delivery, Kubernetes clusters, MCP server integration, Vault secrets, and team isolation.' },
+    { property: 'og:title', content: 'MCTL Docs — Self-Service Kubernetes & MCP Platform Documentation' },
+    { property: 'og:description', content: 'Guides and architecture for MCTL: GitOps delivery, Kubernetes clusters, MCP server integration, Vault secrets, and team isolation.' },
     { property: 'og:url', content: 'https://mctl.ai/docs/' },
   ],
 })

@@ -13,18 +13,18 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   app: {
     head: {
-      title: 'MCTL — Kubernetes Platform for Growing Product Teams',
+      title: 'MCTL — Self-Service Kubernetes Platform for Teams & AI Agents',
       htmlAttrs: { lang: 'en' },
       meta: [
-        { name: 'description', content: 'Self-service Kubernetes for product teams. GitOps, secrets, team isolation — production-ready from day one. No platform team required.' },
+        { name: 'description', content: 'Deploy to Kubernetes without a platform team. GitOps delivery, automated secrets, team isolation, and built-in MCP agent support. Production-ready from day one.' },
         { property: 'og:type', content: 'website' },
-        { property: 'og:title', content: 'MCTL — Kubernetes Platform for Growing Product Teams' },
-        { property: 'og:description', content: 'Self-service Kubernetes for product teams. GitOps, secrets, team isolation — production-ready from day one. No platform team required.' },
+        { property: 'og:title', content: 'MCTL — Self-Service Kubernetes Platform for Teams & AI Agents' },
+        { property: 'og:description', content: 'Deploy to Kubernetes without a platform team. GitOps delivery, automated secrets, team isolation, and built-in MCP agent support. Production-ready from day one.' },
         { property: 'og:url', content: 'https://mctl.ai/' },
         { property: 'og:image', content: 'https://mctl.ai/img/og-image.svg' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:title', content: 'MCTL — Kubernetes Platform for Growing Product Teams' },
-        { name: 'twitter:description', content: 'Self-service Kubernetes for product teams. No platform team required. Production-ready from day one.' },
+        { name: 'twitter:title', content: 'MCTL — Self-Service Kubernetes Platform for Teams & AI Agents' },
+        { name: 'twitter:description', content: 'Deploy to Kubernetes without a platform team. GitOps delivery, automated secrets, and built-in MCP agent support.' },
         { name: 'twitter:image', content: 'https://mctl.ai/img/og-image.svg' },
       ],
       link: [
