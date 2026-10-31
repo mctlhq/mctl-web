@@ -1,5 +1,13 @@
 # Changelog
 
+## [7.17.0](https://github.com/mctlhq/mctl-web/compare/7.16.0...7.17.0) (2026-10-31)
+
+
+### Features
+
+* **seo:** optimize meta tags and prevent privacy cannibalization ([60862af](https://github.com/mctlhq/mctl-web/commit/60862afc4de9909184a3e5da9ab79d3bc1b4ff0b))
+* **seo:** optimize meta tags and prevent privacy cannibalization ([cc53e4b](https://github.com/mctlhq/mctl-web/commit/cc53e4bbca913f9f3e5c94b97f83ef5e1605ca74))
+
 ## [7.16.0](https://github.com/mctlhq/mctl-web/compare/7.15.2...7.16.0) (2026-10-31)
 
 
