@@ -2,6 +2,7 @@
 useHead({
   title: 'Privacy Policy — MCTL',
   meta: [
+    { name: 'robots', content: 'noindex, follow' },
     { name: 'description', content: 'Privacy Policy for the MCTL platform. Learn what data we collect, how we use it, and how to request deletion.' },
     { property: 'og:title', content: 'Privacy Policy — MCTL' },
     { property: 'og:url', content: 'https://mctl.ai/privacy/' },
