@@ -16,6 +16,7 @@ export default defineNuxtConfig({
       title: 'MCTL — Self-Service Kubernetes Platform for Teams & AI Agents',
       htmlAttrs: { lang: 'en' },
       meta: [
+        { name: 'robots', content: 'max-image-preview:large, max-snippet:-1, max-video-preview:-1' },
         { name: 'description', content: 'Deploy to Kubernetes without a platform team. GitOps delivery, automated secrets, team isolation, and built-in MCP agent support. Production-ready from day one.' },
         { property: 'og:type', content: 'website' },
         { property: 'og:title', content: 'MCTL — Self-Service Kubernetes Platform for Teams & AI Agents' },
