@@ -116,12 +116,16 @@ small discovery improvement, not proof that the whole site is unindexable.
 
 - Brief 1: [mctl-alice#152](https://github.com/mctlhq/mctl-alice/pull/152)
   implements the explicit setup framing, prerequisites and first read-only check.
-  Target release: 2.10.0. Merge/deployment evidence is recorded below when observed.
+  Merged and released as **2.10.0**. [Deployment run](https://github.com/mctlhq/mctl-gitops/actions/runs/42127450917)
+  completed successfully on 2026-11-05 UTC. ArgoCD reports Synced / Healthy.
+  Production `/setup` was checked: explicit Alice/Yandex Station title, the
+  prerequisites and first-check sections, and `site.js?v=2.10.0` are present.
 - Brief 5: [portfolio#195](https://github.com/mctlhq/portfolio/issues/195)
   produced the [proposal](https://github.com/mctlhq/mctl-gitops/tree/main/platform-gitops/agents-state/portfolio/proposals/issue-195-improve-home-search-snippet-and-bilingua).
-  [mctl-gitops#2408](https://github.com/mctlhq/mctl-gitops/pull/2408) clarifies
-  its deployment boundary and avoids promised search outcomes. Human approval
-  remains required; implementation has not started.
+  [mctl-gitops#2408](https://github.com/mctlhq/mctl-gitops/pull/2408) merged
+  after green CI and a clean review. It clarifies the deployment boundary and
+  avoids promised search outcomes. [Reviewed proposal revision](https://github.com/mctlhq/mctl-gitops/tree/07f8f1fa5833f52405ed6e279e14974fdb013db8/platform-gitops/agents-state/portfolio/proposals/issue-195-improve-home-search-snippet-and-bilingua).
+  Human approval remains required; implementation has not started.
 
 ## Ordered page briefs
 
