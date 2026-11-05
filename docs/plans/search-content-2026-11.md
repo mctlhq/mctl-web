@@ -112,6 +112,17 @@ and robots declaration before treating sitemap coverage as complete. Do not
 weaken authentication on `/api`, `/mcp`, account or OAuth routes. This is a
 small discovery improvement, not proof that the whole site is unindexable.
 
+## Execution record
+
+- Brief 1: [mctl-alice#152](https://github.com/mctlhq/mctl-alice/pull/152)
+  implements the explicit setup framing, prerequisites and first read-only check.
+  Target release: 2.10.0. Merge/deployment evidence is recorded below when observed.
+- Brief 5: [portfolio#195](https://github.com/mctlhq/portfolio/issues/195)
+  produced the [proposal](https://github.com/mctlhq/mctl-gitops/tree/main/platform-gitops/agents-state/portfolio/proposals/issue-195-improve-home-search-snippet-and-bilingua).
+  [mctl-gitops#2408](https://github.com/mctlhq/mctl-gitops/pull/2408) clarifies
+  its deployment boundary and avoids promised search outcomes. Human approval
+  remains required; implementation has not started.
+
 ## Ordered page briefs
 
 ### 1. Alice: improve the existing setup entry point
