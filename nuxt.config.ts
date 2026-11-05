@@ -13,19 +13,19 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   app: {
     head: {
-      title: 'MCTL — Self-Service Kubernetes Platform for Teams & AI Agents',
+      title: 'MCTL — GitOps Kubernetes & AI Agent Platform | Deploy in Minutes',
       htmlAttrs: { lang: 'en' },
       meta: [
         { name: 'robots', content: 'max-image-preview:large, max-snippet:-1, max-video-preview:-1' },
-        { name: 'description', content: 'Deploy to Kubernetes without a platform team. GitOps delivery, automated secrets, team isolation, and built-in MCP agent support. Production-ready from day one.' },
+        { name: 'description', content: 'Deploy apps and connect AI agents to production Kubernetes without a platform team. Automated GitOps delivery, built-in Vault secrets, team isolation, and MCP server hub.' },
         { property: 'og:type', content: 'website' },
-        { property: 'og:title', content: 'MCTL — Self-Service Kubernetes Platform for Teams & AI Agents' },
-        { property: 'og:description', content: 'Deploy to Kubernetes without a platform team. GitOps delivery, automated secrets, team isolation, and built-in MCP agent support. Production-ready from day one.' },
+        { property: 'og:title', content: 'MCTL — GitOps Kubernetes & AI Agent Platform | Deploy in Minutes' },
+        { property: 'og:description', content: 'Deploy apps and connect AI agents to production Kubernetes without a platform team. Automated GitOps delivery, built-in Vault secrets, team isolation, and MCP server hub.' },
         { property: 'og:url', content: 'https://mctl.ai/' },
         { property: 'og:image', content: 'https://mctl.ai/img/og-image.svg' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:title', content: 'MCTL — Self-Service Kubernetes Platform for Teams & AI Agents' },
-        { name: 'twitter:description', content: 'Deploy to Kubernetes without a platform team. GitOps delivery, automated secrets, and built-in MCP agent support.' },
+        { name: 'twitter:title', content: 'MCTL — GitOps Kubernetes & AI Agent Platform' },
+        { name: 'twitter:description', content: 'Deploy to Kubernetes without a platform team. Automated GitOps delivery, built-in Vault secrets, team isolation, and MCP server hub.' },
         { name: 'twitter:image', content: 'https://mctl.ai/img/og-image.svg' },
       ],
       link: [
@@ -59,6 +59,7 @@ export default defineNuxtConfig({
                 '@type': 'Organization',
                 '@id': 'https://mctl.ai/#organization',
                 name: 'MCTL',
+                alternateName: ['mctl', 'MCTL Platform'],
                 url: 'https://mctl.ai',
                 logo: 'https://ui.mctl.ai/brand/favicon-web.svg',
                 sameAs: [
@@ -66,6 +67,8 @@ export default defineNuxtConfig({
                   'https://alice.mctl.ai',
                   'https://tg.mctl.ai',
                   'https://docs.mctl.ai',
+                  'https://academy.mctl.ai',
+                  'https://seerrsense.mctl.ai',
                 ],
               },
               {
@@ -73,6 +76,7 @@ export default defineNuxtConfig({
                 '@id': 'https://mctl.ai/#website',
                 url: 'https://mctl.ai',
                 name: 'MCTL',
+                alternateName: ['mctl', 'MCTL Platform'],
                 publisher: { '@id': 'https://mctl.ai/#organization' },
               },
             ],
