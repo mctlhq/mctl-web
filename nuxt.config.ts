@@ -29,8 +29,9 @@ export default defineNuxtConfig({
         { name: 'twitter:image', content: 'https://mctl.ai/img/og-image.svg' },
       ],
       link: [
-        { rel: 'icon', type: 'image/svg+xml', href: 'https://ui.mctl.ai/brand/favicon-web.svg?v=9dc770313d10' },
-        { rel: 'apple-touch-icon', href: '/img/apple-touch-icon.svg?v=3' },
+        { rel: 'icon', type: 'image/svg+xml', href: 'https://ui.mctl.ai/brand/favicon.svg?v=2' },
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico?v=2' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png?v=2' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         { rel: 'preconnect', href: 'https://ui.mctl.ai' },
@@ -61,7 +62,7 @@ export default defineNuxtConfig({
                 name: 'MCTL',
                 alternateName: ['mctl', 'MCTL Platform'],
                 url: 'https://mctl.ai',
-                logo: 'https://ui.mctl.ai/brand/favicon-web.svg',
+                logo: 'https://ui.mctl.ai/brand/favicon.svg',
                 sameAs: [
                   'https://github.com/mctlhq',
                   'https://alice.mctl.ai',
