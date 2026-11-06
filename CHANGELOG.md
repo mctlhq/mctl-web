@@ -1,5 +1,25 @@
 # Changelog
 
+## [7.18.1](https://github.com/mctlhq/mctl-web/compare/7.18.0...7.18.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **seo:** drop the Deploy in Minutes title claim ([e6ac089](https://github.com/mctlhq/mctl-web/commit/e6ac089dea7f63183dbe124ee9df4244558086d6))
+* **seo:** drop the Deploy in Minutes title claim ([a4e67d7](https://github.com/mctlhq/mctl-web/commit/a4e67d771911134bf5b1b9df97f8985e5a860aa4))
+
+
+### Documentation
+
+* add SEO session report and Claude handoff ([dfe2e1a](https://github.com/mctlhq/mctl-web/commit/dfe2e1afda5390b94000cd830bbca3b10802a7c3))
+* add SEO session report and Claude handoff ([e55b167](https://github.com/mctlhq/mctl-web/commit/e55b16776c64d569f3d1a91971ac7d0c12f37c7c))
+* link the first content change and portfolio proposal ([c8abad5](https://github.com/mctlhq/mctl-web/commit/c8abad5edc77cec33eeffddde66d8b6ec4f5a401))
+* **plans:** record briefs 2 and 5 as shipped ([fbdfdc6](https://github.com/mctlhq/mctl-web/commit/fbdfdc639263a7f37b4558770dd65afad6495c1a))
+* **plans:** record briefs 2 and 5 as shipped ([c2bfbd2](https://github.com/mctlhq/mctl-web/commit/c2bfbd289c42ea667eef56bb4c7dde976b7b113e))
+* record Alice production verification and proposal review ([f406455](https://github.com/mctlhq/mctl-web/commit/f4064552a4cc2da46235a4b6a570db3baa061947))
+* record search research and prioritized content briefs ([185524b](https://github.com/mctlhq/mctl-web/commit/185524bf304d58c3bb81d79045dd616fb5e4c1ef))
+* record search research and prioritized content briefs ([97611ac](https://github.com/mctlhq/mctl-web/commit/97611acbe0fc70791b1be0cad2b8b26004857dcd))
+
 ## [7.18.0](https://github.com/mctlhq/mctl-web/compare/7.17.0...7.18.0) (2026-11-05)
 
 
