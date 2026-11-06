@@ -6,8 +6,10 @@ const footerLinks = computed(() => [
   { label: t('footer.pricing'), target: '/#pricing', external: false },
   { label: t('footer.contact'), target: '/#contact', external: false },
   { label: 'Docs', target: 'https://docs.mctl.ai', external: true },
-  { label: 'Alice MCP', target: 'https://alice.mctl.ai', external: true },
+  { label: 'Academy', target: 'https://academy.mctl.ai', external: true },
   { label: 'Telegram MCP', target: 'https://tg.mctl.ai', external: true },
+  { label: 'Alice MCP', target: 'https://alice.mctl.ai', external: true },
+  { label: 'SeerrSense', target: 'https://seerrsense.mctl.ai', external: true },
 ]);
 </script>
 
