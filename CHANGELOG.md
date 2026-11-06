@@ -1,5 +1,17 @@
 # Changelog
 
+## [7.18.2](https://github.com/mctlhq/mctl-web/compare/7.18.1...7.18.2) (2026-11-06)
+
+
+### Bug Fixes
+
+* **branding:** align static 404 and docs favicons with canonical core ([0749250](https://github.com/mctlhq/mctl-web/commit/074925023b4f6a2a01e08e6de5c78b6d37dcc587))
+* **branding:** remove duplicate apple-touch-icon in static docs ([162a195](https://github.com/mctlhq/mctl-web/commit/162a195bec44fbb19ea4447fdb611f01a71adfb7))
+* **branding:** replace web favicon badge with canonical platform core ([7a8accf](https://github.com/mctlhq/mctl-web/commit/7a8accf456729ba0dc4058bd02a2dfb436f8815f))
+* **branding:** replace web favicon badge with canonical platform core ([33c3e0f](https://github.com/mctlhq/mctl-web/commit/33c3e0f98680a02e7011f36528c56e2402a79383))
+* **seo:** update OpenGraph image to 1200x630 terracotta card ([3719880](https://github.com/mctlhq/mctl-web/commit/3719880fc40e07a640101bd51f945e4be231faa1))
+* **seo:** update OpenGraph image to 1200x630 terracotta card ([dd9608e](https://github.com/mctlhq/mctl-web/commit/dd9608e751029e6a71a602b627f0a19bb189e630))
+
 ## [7.18.1](https://github.com/mctlhq/mctl-web/compare/7.18.0...7.18.1) (2026-11-06)
 
 
