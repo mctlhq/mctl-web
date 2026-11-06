@@ -1,5 +1,13 @@
 # Changelog
 
+## [7.19.0](https://github.com/mctlhq/mctl-web/compare/7.18.2...7.19.0) (2026-11-06)
+
+
+### Features
+
+* **seo:** link key docs sections from the landing page ([fa740d4](https://github.com/mctlhq/mctl-web/commit/fa740d4b1f91e47c9298e56fdaa8fb096e43d247))
+* **seo:** link key docs sections from the landing page ([fa85d1a](https://github.com/mctlhq/mctl-web/commit/fa85d1a9062fcb54e16d2ce4778a3d3a21f56c87))
+
 ## [7.18.2](https://github.com/mctlhq/mctl-web/compare/7.18.1...7.18.2) (2026-11-06)
 
 
