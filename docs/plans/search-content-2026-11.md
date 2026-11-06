@@ -120,12 +120,23 @@ small discovery improvement, not proof that the whole site is unindexable.
   completed successfully on 2026-11-05 UTC. ArgoCD reports Synced / Healthy.
   Production `/setup` was checked: explicit Alice/Yandex Station title, the
   prerequisites and first-check sections, and `site.js?v=2.10.0` are present.
+- Brief 2: [seerrsense#105](https://github.com/mctlhq/seerrsense/pull/105) adds
+  the public setup guide and sitemap. Released as **1.13.0** and deployed on
+  2026-11-06 UTC. Production `/setup`, `/sitemap.xml`, `/robots.txt` and `/` return
+  200, the canonical is correct, and the sitemap has 5 locations. The claude.ai and
+  ChatGPT click-through and the live `request_media` and `get_media` tools were not
+  checked.
 - Brief 5: [portfolio#195](https://github.com/mctlhq/portfolio/issues/195)
   produced the [proposal](https://github.com/mctlhq/mctl-gitops/tree/main/platform-gitops/agents-state/portfolio/proposals/issue-195-improve-home-search-snippet-and-bilingua).
   [mctl-gitops#2408](https://github.com/mctlhq/mctl-gitops/pull/2408) merged
   after green CI and a clean review. It clarifies the deployment boundary and
   avoids promised search outcomes. [Reviewed proposal revision](https://github.com/mctlhq/mctl-gitops/tree/07f8f1fa5833f52405ed6e279e14974fdb013db8/platform-gitops/agents-state/portfolio/proposals/issue-195-improve-home-search-snippet-and-bilingua).
-  Human approval remains required; implementation has not started.
+  The owner approved it as written on 2026-11-06.
+  [portfolio#196](https://github.com/mctlhq/portfolio/pull/196) implements it.
+  Released as **0.1.54** on 2026-11-06 UTC. ArgoCD reports Synced / Healthy, and
+  production serves the new title and description. The journal entry was closed by
+  [portfolio#198](https://github.com/mctlhq/portfolio/pull/198). Search-result
+  change is not yet measured.
 
 ## Ordered page briefs
 
