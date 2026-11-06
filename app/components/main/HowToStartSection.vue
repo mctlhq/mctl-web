@@ -6,6 +6,16 @@ const steps = [
   { num: 2, titleKey: 'how.step2.title', descKey: 'how.step2.desc', codeKey: 'how.step2.code' },
   { num: 3, titleKey: 'how.step3.title', descKey: 'how.step3.desc', codeKey: 'how.step3.code' },
 ]
+
+// Plain links in the prerendered page, so crawlers can reach these docs sections
+// from mctl.ai instead of only through the docs sitemap.
+const docsLinks = [
+  { labelKey: 'how.docs.getting_started', href: 'https://docs.mctl.ai/getting-started/' },
+  { labelKey: 'how.docs.first_app', href: 'https://docs.mctl.ai/guides/deploy-first-app' },
+  { labelKey: 'how.docs.connect', href: 'https://docs.mctl.ai/mcp/connecting' },
+  { labelKey: 'how.docs.tools', href: 'https://docs.mctl.ai/mcp/tools-reference' },
+  { labelKey: 'how.docs.platform', href: 'https://docs.mctl.ai/platform/overview' },
+]
 </script>
 
 <template>
@@ -29,6 +39,14 @@ const steps = [
         </BaseCard>
       </li>
     </ul>
+    <nav class="how-to-start__docs" :aria-label="t('how.docs.title')">
+      <p class="how-to-start__docs-title">{{ t('how.docs.title') }}</p>
+      <ul class="how-to-start__docs-list">
+        <li v-for="link in docsLinks" :key="link.href">
+          <a :href="link.href">{{ t(link.labelKey) }}</a>
+        </li>
+      </ul>
+    </nav>
   </BaseSection>
 </template>
 
@@ -74,6 +92,30 @@ const steps = [
     color: var(--color-accent);
     line-height: 1.6;
     white-space: pre-wrap;
+  }
+
+  &__docs {
+    margin-top: 32px;
+    text-align: center;
+  }
+
+  &__docs-title {
+    color: var(--color-text-muted);
+    margin-bottom: 12px;
+  }
+
+  &__docs-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 24px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    a {
+      color: var(--color-accent);
+    }
   }
 }
 </style>

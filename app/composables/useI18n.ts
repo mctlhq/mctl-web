@@ -152,6 +152,12 @@ const translations: Record<string, Record<string, string>> = {
     'how.step3.title': 'Push, Ask AI, or Both',
     'how.step3.desc': 'Push your code and GitOps deploys automatically. Or ask your AI to deploy, rollback, or preview \u2014 via MCP tools.',
     'how.step3.code': 'git push \u2192 Build \u2192 Deploy \u2192 Live \u2713\n"deploy my-app to staging" \u2192 AI \u2192 Live \u2713',
+    'how.docs.title': 'Read more in the docs',
+    'how.docs.getting_started': 'Getting started',
+    'how.docs.first_app': 'Deploy your first app',
+    'how.docs.connect': 'Connect your AI client',
+    'how.docs.tools': 'MCP tools reference',
+    'how.docs.platform': 'Platform overview',
 
     // Pricing
     'pricing.tag': 'Pricing',
@@ -393,6 +399,12 @@ const translations: Record<string, Record<string, string>> = {
     'how.step3.title': '\u041f\u0443\u0448\u0438\u0442\u0435 \u0438 \u0434\u0435\u043f\u043b\u043e\u0439\u0442\u0435',
     'how.step3.desc': '\u0417\u0430\u043f\u0443\u0448\u044c\u0442\u0435 \u043a\u043e\u0434 \u2014 \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 \u0441\u0430\u043c\u0430 \u0441\u043e\u0431\u0435\u0440\u0451\u0442, \u043f\u0440\u043e\u0442\u0435\u0441\u0442\u0438\u0440\u0443\u0435\u0442 \u0438 \u0437\u0430\u0434\u0435\u043f\u043b\u043e\u0438\u0442 \u0432 Kubernetes \u0447\u0435\u0440\u0435\u0437 GitOps.',
     'how.step3.code': 'git push \u2192 \u0421\u0431\u043e\u0440\u043a\u0430 \u2192 \u0414\u0435\u043f\u043b\u043e\u0439 \u2192 \u0413\u043e\u0442\u043e\u0432\u043e \u2713',
+    'how.docs.title': '\u041f\u043e\u0434\u0440\u043e\u0431\u043d\u0435\u0435 \u0432 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430\u0446\u0438\u0438',
+    'how.docs.getting_started': '\u041d\u0430\u0447\u0430\u043b\u043e \u0440\u0430\u0431\u043e\u0442\u044b',
+    'how.docs.first_app': '\u041f\u0435\u0440\u0432\u044b\u0439 \u0434\u0435\u043f\u043b\u043e\u0439',
+    'how.docs.connect': '\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435 AI-\u043a\u043b\u0438\u0435\u043d\u0442\u0430',
+    'how.docs.tools': '\u0421\u043f\u0440\u0430\u0432\u043e\u0447\u043d\u0438\u043a \u0438\u043d\u0441\u0442\u0440\u0443\u043c\u0435\u043d\u0442\u043e\u0432 MCP',
+    'how.docs.platform': '\u041e\u0431\u0437\u043e\u0440 \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u044b',
 
     // Pricing
     'pricing.tag': '\u0426\u0435\u043d\u044b',
