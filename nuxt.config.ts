@@ -13,13 +13,13 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   app: {
     head: {
-      title: 'MCTL — GitOps Kubernetes & AI Agent Platform | Deploy in Minutes',
+      title: 'MCTL — GitOps Kubernetes & AI Agent Platform | By Invitation',
       htmlAttrs: { lang: 'en' },
       meta: [
         { name: 'robots', content: 'max-image-preview:large, max-snippet:-1, max-video-preview:-1' },
         { name: 'description', content: 'Deploy apps and connect AI agents to production Kubernetes without a platform team. Automated GitOps delivery, built-in Vault secrets, team isolation, and MCP server hub.' },
         { property: 'og:type', content: 'website' },
-        { property: 'og:title', content: 'MCTL — GitOps Kubernetes & AI Agent Platform | Deploy in Minutes' },
+        { property: 'og:title', content: 'MCTL — GitOps Kubernetes & AI Agent Platform | By Invitation' },
         { property: 'og:description', content: 'Deploy apps and connect AI agents to production Kubernetes without a platform team. Automated GitOps delivery, built-in Vault secrets, team isolation, and MCP server hub.' },
         { property: 'og:url', content: 'https://mctl.ai/' },
         { property: 'og:image', content: 'https://mctl.ai/img/og-image.svg' },
