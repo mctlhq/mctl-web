@@ -1,5 +1,13 @@
 # Changelog
 
+## [7.20.0](https://github.com/mctlhq/mctl-web/compare/7.19.0...7.20.0) (2026-11-06)
+
+
+### Features
+
+* **branding:** add Academy and SeerrSense to footer navigation ([694b56f](https://github.com/mctlhq/mctl-web/commit/694b56faee78dbde76cf2ac67eda03efac40805d))
+* **branding:** add Academy and SeerrSense to footer navigation ([83ea7bc](https://github.com/mctlhq/mctl-web/commit/83ea7bcbc823a8494bedd23db6d5165903f02991))
+
 ## [7.19.0](https://github.com/mctlhq/mctl-web/compare/7.18.2...7.19.0) (2026-11-06)
 
 
