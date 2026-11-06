@@ -30,9 +30,9 @@ const translations: Record<string, Record<string, string>> = {
     "invitation.privacy": "We use these details to review your request and contact you. The saved request expires after 90 days. A copy is sent to our private Telegram review channel.",
 
     // Meta
-    'meta.title': 'MCTL \u2014 GitOps Kubernetes & AI Agent Platform | Deploy in Minutes',
+    'meta.title': 'MCTL \u2014 GitOps Kubernetes & AI Agent Platform | By Invitation',
     'meta.description': 'Deploy apps and connect AI agents to production Kubernetes without a platform team. Automated GitOps delivery, built-in Vault secrets, team isolation, and MCP server hub.',
-    'meta.og_title': 'MCTL \u2014 GitOps Kubernetes & AI Agent Platform | Deploy in Minutes',
+    'meta.og_title': 'MCTL \u2014 GitOps Kubernetes & AI Agent Platform | By Invitation',
     'meta.og_description': 'Deploy apps and connect AI agents to production Kubernetes without a platform team. Automated GitOps delivery, built-in Vault secrets, team isolation, and MCP server hub.',
     'meta.tw_title': 'MCTL \u2014 GitOps Kubernetes & AI Agent Platform',
     'meta.tw_description': 'Deploy to Kubernetes without a platform team. Automated GitOps delivery, built-in Vault secrets, team isolation, and MCP server hub.',
