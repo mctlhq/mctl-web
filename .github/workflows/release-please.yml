@@ -15,6 +15,9 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       # release-please has to open the release PR as somebody. The default
       # GITHUB_TOKEN cannot: "Allow GitHub Actions to create and approve pull
@@ -46,14 +49,39 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # Note: `gh workflow run` is fire-and-forget — this step goes green once
+  # Split from release-please so the dispatch key is only visible to this job
+  # (mctlhq/mctl-gitops#1033). Runs on push to main only, which the main-only
+  # `app-dispatch` environment requires. !cancelled() so a late failure in the
+  # release step cannot skip the dispatch of a tag that was already created;
+  # the outputs of the release step survive that failure.
+  dispatch-release-deploy:
+    needs: release-please
+    if: ${{ !cancelled() && needs.release-please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    # Main-only; holds DISPATCH_APP_PRIVATE_KEY (#1033).
+    environment: app-dispatch
+    permissions: {}
+    steps:
+      # mctl-gitops-dispatch can only dispatch workflows (actions:write +
+      # metadata:read) and is installed on mctl-gitops alone. It replaces the
+      # personal access token used before.
+      - name: Generate dispatch token
+        id: dispatch-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.DISPATCH_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DISPATCH_APP_PRIVATE_KEY }}
+          owner: mctlhq
+          repositories: mctl-gitops
+          permission-actions: write
+
+      # Note: `gh workflow run` is fire-and-forget: this step goes green once
       # the dispatch is accepted, not when release-deploy actually succeeds.
       # Watch the run in mctl-gitops Actions to confirm the build/bump landed.
       - name: Dispatch centralized release-deploy
-        if: ${{ steps.release.outputs.release_created == 'true' }}
         env:
-          GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
-          TAG: ${{ steps.release.outputs.tag_name }}
+          GH_TOKEN: ${{ steps.dispatch-token.outputs.token }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
         run: |
           gh workflow run release-deploy.yaml \
             --repo mctlhq/mctl-gitops \
