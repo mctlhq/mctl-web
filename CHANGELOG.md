@@ -1,5 +1,13 @@
 # Changelog
 
+## [7.21.1](https://github.com/mctlhq/mctl-web/compare/7.21.0...7.21.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* ship mctl-design 0.20.2 header spacing ([696d388](https://github.com/mctlhq/mctl-web/commit/696d388f1865864286fba5ce7d214828225aa1de))
+* ship mctl-design 0.20.2 header spacing ([1337a84](https://github.com/mctlhq/mctl-web/commit/1337a84722af72b54f3ce468ba5873584beb5168))
+
 ## [7.21.0](https://github.com/mctlhq/mctl-web/compare/7.20.0...7.21.0) (2026-11-08)
 
 
