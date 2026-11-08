@@ -1,49 +1,112 @@
 <script lang="ts" setup>
 import { useTemplateRef } from 'vue';
-import { onClickOutside } from '@vueuse/core';
-
-import BaseBurger from './shared/BaseBurger.vue';
+import { onClickOutside, onKeyStroke, useMediaQuery } from '@vueuse/core';
 
 const { t } = useI18n();
+const route = useRoute();
 
-const target = useTemplateRef('target');
+const nav = useTemplateRef<HTMLElement>('nav');
+const burger = useTemplateRef<HTMLElement>('burger');
 
 const menuOpen = ref(false);
 
-onClickOutside(target, () => {
-  menuOpen.value = false;
-});
+const sectionLinks = computed(() => [
+  { label: t('nav.how_it_works'), section: '/#orchestration' },
+  { label: t('nav.platform'), section: '/#features' },
+  { label: t('nav.pricing'), section: '/#pricing' },
+  { label: t('nav.contact'), section: '/#contact' },
+]);
+
+const pageLinks = computed(() => [
+  { label: 'Docs', href: 'https://docs.mctl.ai' },
+  { label: 'Alice MCP', href: 'https://alice.mctl.ai' },
+  { label: 'Telegram MCP', href: 'https://tg.mctl.ai' },
+]);
 
 function toggleMenu() {
   menuOpen.value = !menuOpen.value;
 }
 
-function closeMenu() {
+function closeMenu(returnFocus = false) {
+  if (!menuOpen.value) return;
   menuOpen.value = false;
+  if (returnFocus) burger.value?.focus();
 }
+
+function requestAccess() {
+  closeMenu();
+  navigateTo('/#request-access');
+}
+
+// site.css owns the look (data-nav-open on the header opens the drawer up to
+// 980px: seven links, the GitHub mark and the button need that much room); the behaviour is here: outside click (the scrim is the header's
+// ::after, so it counts as outside the nav), Escape with focus returned to the
+// burger, route change, and the viewport growing past the breakpoint.
+onClickOutside(nav, () => closeMenu(), { ignore: [burger] });
+onKeyStroke('Escape', () => closeMenu(true));
+watch(() => route.fullPath, () => closeMenu());
+const isWide = useMediaQuery('(min-width: 981px)');
+watch(isWide, (wide) => {
+  if (wide) closeMenu();
+});
 </script>
 
 <template>
   <header
-    class="app-header mctl-site-header"
-    :class="{ 'app-header--menu-open': menuOpen }"
+    class="app-header mctl-site-header mctl-site-header--drawer-wide"
+    :data-nav-open="menuOpen ? '' : null"
   >
     <BaseContainer class="mctl-site-header__inner">
       <NuxtLink to="/" class="mctl-site-brand">
         <span class="mctl-site-brand__accent">M</span>CTL
       </NuxtLink>
-      <div ref="target" class="app-header__right">
-        <AppHeaderNav :open="menuOpen" @close="closeMenu" />
-        <BaseButton
-          variant="secondary"
-          @click="$router.push('/#request-access')"
+      <nav
+        id="site-nav"
+        ref="nav"
+        class="mctl-site-nav"
+        :aria-label="t('nav.main_label')"
+      >
+        <a
+          v-for="item in sectionLinks"
+          :key="item.section"
+          :href="item.section"
+          @click="closeMenu()"
         >
+          {{ item.label }}
+        </a>
+        <a
+          v-for="item in pageLinks"
+          :key="item.href"
+          :href="item.href"
+          target="_blank"
+          rel="noopener noreferrer"
+          @click="closeMenu()"
+        >
+          {{ item.label }}
+        </a>
+        <a
+          href="https://github.com/mctlhq"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="nav-github"
+          aria-label="GitHub"
+          @click="closeMenu()"
+        >
+          <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+        </a>
+        <BaseButton variant="secondary" @click="requestAccess">
           {{ t('nav.request_access') }}
         </BaseButton>
-      </div>
-      <BaseBurger
-        :active="menuOpen"
-        class="app-header__burger"
+      </nav>
+      <button
+        ref="burger"
+        class="mctl-site-burger"
+        type="button"
+        :aria-label="t('nav.burger_label')"
+        aria-controls="site-nav"
+        :aria-expanded="menuOpen"
         @click="toggleMenu"
       />
     </BaseContainer>
@@ -51,79 +114,18 @@ function closeMenu() {
 </template>
 
 <style lang="scss" scoped>
-// Bar, height, blur, border and the brand come from site.css
-// (.mctl-site-header / __inner / .mctl-site-brand). What stays here is the
-// mobile drawer, which the shared shell does not have.
+// Bar, height, blur, border, brand, nav and the burger drawer all come from
+// site.css (.mctl-site-header, __inner, .mctl-site-brand, .mctl-site-nav,
+// .mctl-site-burger). The local rules keep the bar above section content and
+// the links on one line.
 .app-header {
-  // Above the drawer's own overlay; site.css's 50 would let section content
-  // with a z-index slide over the bar.
+  // site.css's z-index would let section content with a z-index slide over the bar.
   z-index: 100;
+}
 
-  &__right {
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-    padding: 5rem 2rem 2rem;
-
-    position: fixed;
-    top: 0;
-    right: -100%;
-    width: 70%;
-    max-width: 300px;
-    height: 100vh;
-
-    background: var(--color-bg-secondary);
-    border-left: 1px solid var(--color-glass-border);
-    transition: right 0.3s ease;
-    z-index: 999;
-
-    @media (min-width: 768px) {
-      flex-direction: row;
-      align-items: center;
-      gap: 60px;
-      padding: 0;
-
-      position: static;
-      width: auto;
-      max-width: none;
-      height: auto;
-      background: transparent;
-      border: none;
-    }
-  }
-
-  &__burger {
-    z-index: 1001;
-
-    @media (min-width: 768px) {
-      display: none;
-    }
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    background: var(--site-header-bg, rgba(10, 11, 13, 0.8));
-    backdrop-filter: blur(var(--site-header-blur, 12px));
-    border-bottom: 1px solid var(--site-header-border, var(--color-line));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  &--menu-open {
-    .app-header__right {
-      right: 0;
-    }
-
-    &::before {
-      opacity: 1;
-    }
-  }
+// Seven links and a button: a link wraps onto two lines before the drawer
+// takes over unless it is told not to.
+.app-header :deep(.mctl-site-nav a) {
+  white-space: nowrap;
 }
 </style>

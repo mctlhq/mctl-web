@@ -44,6 +44,7 @@ const translations: Record<string, Record<string, string>> = {
     'nav.contact': 'Contact',
     'nav.request_access': 'Request Access',
     'nav.burger_label': 'Toggle menu',
+    'nav.main_label': 'Main navigation',
 
     // Hero
     'hero.badge': 'Self-service Kubernetes platform',
@@ -291,6 +292,7 @@ const translations: Record<string, Record<string, string>> = {
     'nav.contact': '\u041a\u043e\u043d\u0442\u0430\u043a\u0442\u044b',
     'nav.request_access': '\u041f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0434\u043e\u0441\u0442\u0443\u043f',
     'nav.burger_label': '\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043c\u0435\u043d\u044e',
+    'nav.main_label': '\u041e\u0441\u043d\u043e\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e',
 
     // Hero
     'hero.badge': 'Self-service \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 Kubernetes',
