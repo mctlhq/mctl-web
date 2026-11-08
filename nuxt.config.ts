@@ -48,9 +48,9 @@ export default defineNuxtConfig({
         // mctl.css defines, so mixing versions is pinned in name only.
         // site.css is the shared public-site shell (.mctl-site-*) that
         // mctl.ai, docs.mctl.ai and tg.mctl.ai lay out with.
-        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.20.1/mctl.css' },
-        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.20.1/global.css' },
-        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.20.1/site.css' },
+        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.20.2/mctl.css' },
+        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.20.2/global.css' },
+        { rel: 'stylesheet', href: 'https://ui.mctl.ai/0.20.2/site.css' },
       ],
       script: [
         // Schema.org / JSON-LD ecosystem graph
