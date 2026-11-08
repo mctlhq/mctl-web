@@ -1,5 +1,13 @@
 # Changelog
 
+## [7.21.0](https://github.com/mctlhq/mctl-web/compare/7.20.0...7.21.0) (2026-11-08)
+
+
+### Features
+
+* **web:** move the header drawer to the shared mctl-site-header ([74c6e4b](https://github.com/mctlhq/mctl-web/commit/74c6e4bc63cb60d23c5031334671bebee506454d))
+* **web:** move the header drawer to the shared mctl-site-header ([9b9f9bf](https://github.com/mctlhq/mctl-web/commit/9b9f9bf620ea7bf5e3e834c311939f1444b95cf9))
+
 ## [7.20.0](https://github.com/mctlhq/mctl-web/compare/7.19.0...7.20.0) (2026-11-06)
 
 
