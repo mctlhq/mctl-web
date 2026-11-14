@@ -755,8 +755,7 @@ export async function handleCheckTeam(request, env, origin) {
     return jsonResponse({ error: 'Missing team name' }, 400, {}, origin);
   }
 
-  const teamNameRegex = /^[a-z0-9][a-z0-9-]{0,62}$/;
-  if (!teamNameRegex.test(name)) {
+  if (!TEAM_NAME_RE.test(name)) {
     return jsonResponse({ available: false, error: 'Invalid team name format' }, 400, {}, origin);
   }
 
@@ -845,8 +844,7 @@ export async function handleFormSubmit(request, env, origin) {
       return jsonResponse({ success: false, message: 'Missing team name' }, 400, {}, origin);
     }
 
-    const teamNameRegex = /^[a-z0-9][a-z0-9-]{0,62}$/;
-    if (!teamNameRegex.test(team)) {
+    if (!TEAM_NAME_RE.test(team)) {
       return jsonResponse({ success: false, message: 'Invalid team name format' }, 400, {}, origin);
     }
 
@@ -994,7 +992,12 @@ async function finishSubmit(env, origin, {
 // session it stored and re-present its ID token to the portal on every
 // request that acts, so mctl-api decides again each time.
 
-const TEAM_NAME_RE = /^[a-z0-9][a-z0-9-]{0,62}$/;
+// A NEW team (tenant) name: 2-31 characters. Deploy operations and Vault
+// secrets on the platform cap names at 31, so a longer team could be created
+// but never deploy. Every use in this Worker checks a name being requested or
+// checked for creation, never an existing team; mctl-api, mctl-portal and
+// mctl-gitops enforce the same bound.
+const TEAM_NAME_RE = /^[a-z0-9][a-z0-9-]{1,30}$/;
 
 // Back to the site with the new sign-in UI selected. Errors ride in the
 // fragment, like the legacy flow's, so they never reach a server log.

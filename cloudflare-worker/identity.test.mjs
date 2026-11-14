@@ -239,6 +239,46 @@ test('check-team: a fresh v2 identity is accepted', async () => {
   assert.equal(calls.backstageGet, 1);
 });
 
+// A new team name is 2-31 characters: the platform caps deploy operations and
+// Vault secrets at 31, so a 32-character team could be created but never deploy.
+const NAME_31 = 'a'.repeat(30) + 'b';
+const NAME_32 = 'a'.repeat(31) + 'b';
+
+test('check-team: a 31-character name is checked, a 32-character one is refused unasked', async () => {
+  const github_auth = await nowIdentity();
+  let { fetchStub, calls } = stubFetch();
+  let res = await withFetch(fetchStub, () => handleCheckTeam(
+    post('/api/github/check-team', { name: NAME_31, github_auth }), env(), 'https://mctl.ai'));
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { available: true });
+  assert.equal(calls.backstageGet, 1);
+
+  ({ fetchStub, calls } = stubFetch());
+  res = await withFetch(fetchStub, () => handleCheckTeam(
+    post('/api/github/check-team', { name: NAME_32, github_auth }), env(), 'https://mctl.ai'));
+  assert.equal(res.status, 400);
+  assert.deepEqual(await res.json(), { available: false, error: 'Invalid team name format' });
+  assert.equal(calls.backstageGet, 0);
+});
+
+test('submit: a 31-character team is requested, a 32-character one is refused before anything is sent', async () => {
+  const github_auth = await nowIdentity();
+  let { fetchStub, calls } = stubFetch();
+  let res = await withFetch(fetchStub, () => handleFormSubmit(
+    post('/api/submit', { github_auth, team: NAME_31, usecase: 'u', turnstile_token: 't' }),
+    env(), 'https://mctl.ai'));
+  assert.equal(res.status, 200);
+  assert.equal(calls.backstagePost[0].tenantName, NAME_31);
+
+  ({ fetchStub, calls } = stubFetch());
+  res = await withFetch(fetchStub, () => handleFormSubmit(
+    post('/api/submit', { github_auth, team: NAME_32, usecase: 'u', turnstile_token: 't' }),
+    env(), 'https://mctl.ai'));
+  assert.equal(res.status, 400);
+  assert.equal((await res.json()).message, 'Invalid team name format');
+  assert.equal(calls.resend.length + calls.backstagePost.length + calls.backstageGet + calls.telegram.length, 0);
+});
+
 // ── Callback ────────────────────────────────────────────────────────────────
 
 async function callback(user, emails) {
