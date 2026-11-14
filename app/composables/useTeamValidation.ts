@@ -1,8 +1,7 @@
 import { ref } from 'vue'
 import { isAuthResetCode } from '~/lib/authBlob'
 import { SESSION_REQUEST_HEADERS, interpretTeamCheck } from '~/lib/zitadelSession'
-
-const TEAM_REGEX = /^[a-z0-9][a-z0-9-]{0,62}$/
+import { isValidTeamName } from '~/lib/teamName'
 
 // The ZITADEL sign-in (C1b). When `active()` is true the check goes to
 // /api/team/check with the Worker's session cookie instead of the legacy
@@ -49,8 +48,8 @@ export function useTeamValidation(
 
   function validate(value: string): string | null {
     if (!value) return null
-    if (!TEAM_REGEX.test(value)) {
-      return 'Team name must be lowercase alphanumeric with hyphens (max 63 chars)'
+    if (!isValidTeamName(value)) {
+      return 'Team name must be lowercase alphanumeric with hyphens (2-31 chars)'
     }
     return null
   }

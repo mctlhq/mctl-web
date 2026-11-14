@@ -671,6 +671,24 @@ test('team/check: a portal outage keeps the session', async () => {
   assert.equal(env.SESSIONS.store.size, 1);
 });
 
+test('team/check: a 31-character name reaches the portal, a 32-character one does not', async () => {
+  const env = baseEnv();
+  const { sessionId } = await signIn(env);
+  const check = (name) => request('/api/team/check', {
+    method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: SITE, body: { name } });
+
+  let network = createNetwork();
+  let res = await withNetwork(network, () => worker.fetch(check('a'.repeat(30) + 'b'), env));
+  assert.equal(res.status, 200);
+  assert.equal(network.calls.availability.length, 1);
+
+  network = createNetwork();
+  res = await withNetwork(network, () => worker.fetch(check('a'.repeat(31) + 'b'), env));
+  assert.equal(res.status, 400);
+  assert.deepEqual(await res.json(), { error: 'Invalid team name format' });
+  assert.equal(network.calls.availability.length, 0);
+});
+
 // ─── /api/submit, cookie branch ──────────────────────────────────────────────
 
 test('submit (session): creates the workspace for the signed-in customer only', async () => {
@@ -704,6 +722,27 @@ test('submit (session): creates the workspace for the signed-in customer only', 
   assert.equal(network.calls.resend, 1);
   assert.match(network.calls.email.text, /when your workspace access has been verified/);
   assert.doesNotMatch(network.calls.email.text, /not available yet|is ready/);
+});
+
+test('submit (session): a 31-character team is created, a 32-character one is refused', async () => {
+  const env = baseEnv();
+  const { sessionId } = await signIn(env);
+  const submit = (team) => request('/api/submit', {
+    method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: SITE,
+    body: { team, usecase: 'demo', turnstile_token: 'ok' } });
+
+  let network = createNetwork();
+  let res = await withNetwork(network, () => worker.fetch(submit('a'.repeat(30) + 'b'), env));
+  assert.equal(res.status, 200);
+  assert.equal(network.calls.create.length, 1);
+  assert.equal(network.calls.create[0].body.tenantName, 'a'.repeat(30) + 'b');
+
+  network = createNetwork();
+  res = await withNetwork(network, () => worker.fetch(submit('a'.repeat(31) + 'b'), env));
+  assert.equal(res.status, 400);
+  assert.equal((await res.json()).message, 'Invalid team name format');
+  assert.equal(network.calls.create.length, 0);
+  assert.equal(network.calls.telegram, 0);
 });
 
 test('submit (session): the portal 409 code reaches the site', async () => {

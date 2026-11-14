@@ -19,7 +19,7 @@ const { t, locale } = useI18n();
 const runtimeConfig = useRuntimeConfig();
 
 const schema = yup.object({
-  team: yup.string().required(t('validation.required')).max(50),
+  team: yup.string().required(t('validation.required')).max(31),
   usecase: yup.string().required(t('validation.required')).max(500),
 });
 
