@@ -1,0 +1,20 @@
+name: skill-test
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.claude/skills/turnstile-spin/**', '.github/workflows/skill-test.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Run turnstile-spin script tests (needs jq, preinstalled on ubuntu-latest)
+        run: node --test .claude/skills/turnstile-spin/tests/*.test.mjs
