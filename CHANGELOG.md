@@ -1,5 +1,21 @@
 # Changelog
 
+## [7.22.0](https://github.com/mctlhq/mctl-web/compare/7.21.1...7.22.0) (2026-11-14)
+
+
+### Features
+
+* **seo:** optimize meta title and snippet for CTR ([6c6697d](https://github.com/mctlhq/mctl-web/commit/6c6697d8b99384bb1efce5f63834f48ac09c91d2))
+* **seo:** optimize meta title and snippet for CTR ([d94b1ad](https://github.com/mctlhq/mctl-web/commit/d94b1adb89eaf3dc941d7d0bb2123f6c63a17d14))
+
+
+### Bug Fixes
+
+* accept empty 2xx tenant body, make turnstile validate.sh pass ([dd277e8](https://github.com/mctlhq/mctl-web/commit/dd277e80ac202617dd4a1b3f839163dea29c1325))
+* accept empty 2xx tenant body, make turnstile validate.sh pass ([71773ac](https://github.com/mctlhq/mctl-web/commit/71773acfbd8f4cc9bc4dbe9ce710d6a6beecc01d))
+* **signup:** cap new team names at 31 characters ([af0727c](https://github.com/mctlhq/mctl-web/commit/af0727c86b8f3074e820a6ef0863214942a7668e))
+* **signup:** cap new team names at 31 characters ([ef343ba](https://github.com/mctlhq/mctl-web/commit/ef343bac3a3021d991735c7b2eda077896c5c347))
+
 ## [7.21.1](https://github.com/mctlhq/mctl-web/compare/7.21.0...7.21.1) (2026-11-08)
 
 
