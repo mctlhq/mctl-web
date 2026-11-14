@@ -903,7 +903,10 @@ export async function handleFormSubmit(request, env, origin) {
         },
       );
       if (tenantRes.status === 202 || tenantRes.status === 200) {
-        const tenantData = await tenantRes.json();
+        // The status is the acceptance; the body only names the workflow.
+        // A proxy that strips the body must not turn an accepted request
+        // into a 500 that invites a duplicate submit.
+        const tenantData = await tenantRes.json().catch(() => ({}));
         workflowSubmitted = true;
         workflowName = tenantData.workflowName || null;
       } else {

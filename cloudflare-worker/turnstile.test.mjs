@@ -34,6 +34,7 @@ function createFetchStub({
   telegramOk = true,
   backstageExistsStatus = 404,
   backstageCreateStatus = 202,
+  backstageCreateEmptyBody = false,
 } = {}) {
   const calls = { turnstile: 0, telegram: 0, backstageGet: 0, backstagePost: 0 };
 
@@ -62,6 +63,11 @@ function createFetchStub({
       const method = options.method || 'GET';
       if (method === 'POST') {
         calls.backstagePost += 1;
+        if (backstageCreateEmptyBody) {
+          // A real Response, so json() rejects exactly as it would in the
+          // Worker when a proxy strips the body.
+          return new Response(null, { status: backstageCreateStatus });
+        }
         return {
           ok: backstageCreateStatus < 300,
           status: backstageCreateStatus,
@@ -281,6 +287,27 @@ async function authFor(login) {
 test('handleFormSubmit: valid github_auth + valid team + valid token -> proceeds to Backstage', async () => {
   const github_auth = await authFor('octocat');
   const { fetchStub, calls } = createFetchStub({ turnstileResult: { success: true } });
+  const res = await withGlobalFetch(fetchStub, () =>
+    handleFormSubmit(
+      jsonRequest('https://mctl.ai/api/submit', {
+        github_auth,
+        team: 'my-team',
+        usecase: 'testing',
+        turnstile_token: 'good-token',
+      }),
+      baseEnv(),
+      'https://mctl.ai',
+    ),
+  );
+  assert.equal(res.status, 200);
+  const body = await readJson(res);
+  assert.equal(body.success, true);
+  assert.equal(calls.backstagePost, 1);
+});
+
+test('handleFormSubmit: Backstage 202 with an empty body -> 200 success, not 500', async () => {
+  const github_auth = await authFor('octocat');
+  const { fetchStub, calls } = createFetchStub({ backstageCreateEmptyBody: true });
   const res = await withGlobalFetch(fetchStub, () =>
     handleFormSubmit(
       jsonRequest('https://mctl.ai/api/submit', {
