@@ -13,22 +13,22 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   app: {
     head: {
-      title: 'MCTL — GitOps Kubernetes & AI Agent Platform | By Invitation',
+      title: 'MCTL — Autonomous AI Agents & GitOps Cloud Platform',
       htmlAttrs: { lang: 'en' },
       meta: [
         { name: 'robots', content: 'max-image-preview:large, max-snippet:-1, max-video-preview:-1' },
-        { name: 'description', content: 'Deploy apps and connect AI agents to production Kubernetes without a platform team. Automated GitOps delivery, built-in Vault secrets, team isolation, and MCP server hub.' },
+        { name: 'description', content: 'Connect AI agents and MCP servers to production Kubernetes without DevOps overhead. Automated GitOps delivery, built-in Vault secrets, and team isolation.' },
         { property: 'og:type', content: 'website' },
-        { property: 'og:title', content: 'MCTL — GitOps Kubernetes & AI Agent Platform | By Invitation' },
-        { property: 'og:description', content: 'Deploy apps and connect AI agents to production Kubernetes without a platform team. Automated GitOps delivery, built-in Vault secrets, team isolation, and MCP server hub.' },
+        { property: 'og:title', content: 'MCTL — Autonomous AI Agents & GitOps Cloud Platform' },
+        { property: 'og:description', content: 'Connect AI agents and MCP servers to production Kubernetes without DevOps overhead. Automated GitOps delivery, built-in Vault secrets, and team isolation.' },
         { property: 'og:url', content: 'https://mctl.ai/' },
         { property: 'og:image', content: 'https://mctl.ai/img/og-image.png?v=2' },
         { property: 'og:image:width', content: '1200' },
         { property: 'og:image:height', content: '630' },
         { property: 'og:image:type', content: 'image/png' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:title', content: 'MCTL — GitOps Kubernetes & AI Agent Platform' },
-        { name: 'twitter:description', content: 'Deploy to Kubernetes without a platform team. Automated GitOps delivery, built-in Vault secrets, team isolation, and MCP server hub.' },
+        { name: 'twitter:title', content: 'MCTL — Autonomous AI Agents & GitOps Cloud Platform' },
+        { name: 'twitter:description', content: 'Connect AI agents and MCP servers to production Kubernetes without DevOps overhead. Automated GitOps delivery, built-in Vault secrets, and team isolation.' },
         { name: 'twitter:image', content: 'https://mctl.ai/img/og-image.png?v=2' },
       ],
       link: [
