@@ -1,5 +1,14 @@
 # Changelog
 
+## [7.22.1](https://github.com/mctlhq/mctl-web/compare/7.22.0...7.22.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **seo:** 301 redirect /docs to docs.mctl.ai and clean sitemap ([931980a](https://github.com/mctlhq/mctl-web/commit/931980a6a3fba086b512b3e825c08468c70edea1))
+* **seo:** 301 redirect /docs to docs.mctl.ai and clean sitemap ([88ec464](https://github.com/mctlhq/mctl-web/commit/88ec464973fa34c883e1155be433d785aab3534c))
+* **seo:** address review feedback on docs redirect ([0c6df1d](https://github.com/mctlhq/mctl-web/commit/0c6df1d105125a2b3d142976f8261be482eedcf2))
+
 ## [7.22.0](https://github.com/mctlhq/mctl-web/compare/7.21.1...7.22.0) (2026-11-14)
 
 
