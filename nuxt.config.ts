@@ -111,7 +111,7 @@ export default defineNuxtConfig({
   routeRules: {
     '/api/**': { prerender: false },
     '/docs': { redirect: { to: 'https://docs.mctl.ai/', statusCode: 301 } },
-    '/docs/**': { redirect: { to: 'https://docs.mctl.ai/**', statusCode: 301 } },
+    '/docs/**': { redirect: { to: 'https://docs.mctl.ai/', statusCode: 301 } },
   },
   vite: {
     plugins: [svgLoader()],
