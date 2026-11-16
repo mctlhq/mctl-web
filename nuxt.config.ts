@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   nitro: {
     prerender: {
       crawlLinks: true,
-      routes: ['/', '/privacy', '/docs'],
+      routes: ['/', '/privacy'],
     },
   },
   compatibilityDate: '2025-07-15',
@@ -110,6 +110,8 @@ export default defineNuxtConfig({
   },
   routeRules: {
     '/api/**': { prerender: false },
+    '/docs': { redirect: { to: 'https://docs.mctl.ai/', statusCode: 301 } },
+    '/docs/**': { redirect: { to: 'https://docs.mctl.ai/**', statusCode: 301 } },
   },
   vite: {
     plugins: [svgLoader()],
