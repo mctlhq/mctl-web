@@ -5,13 +5,17 @@ import GithubIcon from '@/assets/icons/github.svg';
 import type { GitHubUser } from '@/types';
 
 interface Props {
-  user?: GitHubUser | null
+  user?: Omit<GitHubUser, 'sig'> | null
   authError?: string | null
+  // Offer "Continue with Google" next to GitHub (mctl-api#1079); the Worker
+  // says whether Google is configured.
+  google?: boolean
 }
 defineProps<Props>();
 
 defineEmits<{
   clickLogin: []
+  clickGoogleLogin: []
   clickLogout: []
 }>();
 
@@ -29,16 +33,26 @@ const { t } = useI18n();
         <GithubIcon />
         <span>{{ t('form.github_login') }}</span>
       </BaseButton>
+      <BaseButton
+        v-if="google"
+        variant="secondary"
+        size="lg"
+        class="github-auth-block__google"
+        @click="$emit('clickGoogleLogin')"
+      >
+        <span>{{ t('form.google_login') }}</span>
+      </BaseButton>
       <p class="github-auth-block__disclaimer">
         Requests read-only access: your username, avatar, and verified email.<br>
         No access to your code or repositories.
       </p>
     </template>
     <div v-else class="github-auth-block__user-profile">
-      <img :src="user.avatar_url" class="github-auth-block__avatar" alt="GitHub avatar">
+      <img v-if="user.avatar_url" :src="user.avatar_url" class="github-auth-block__avatar" alt="GitHub avatar">
       <div class="github-auth-block__user-info">
-        <strong>{{ user.name || user.login }}</strong>
-        <a :href="user.html_url" target="_blank" rel="noopener">@{{ user.login }}</a>
+        <strong>{{ user.name || user.login || user.email }}</strong>
+        <a v-if="user.html_url" :href="user.html_url" target="_blank" rel="noopener">@{{ user.login }}</a>
+        <span v-else-if="user.email" class="github-auth-block__email">{{ user.email }}</span>
       </div>
       <button
         type="button"
@@ -71,6 +85,19 @@ const { t } = useI18n();
 
   &__status {
     margin-top: 12px;
+  }
+
+  &__google {
+    margin-top: 12px;
+  }
+
+  &__email {
+    display: block;
+    color: var(--color-text-muted);
+    font-size: var(--text-small-size, 14px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__user-profile {

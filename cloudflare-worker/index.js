@@ -46,6 +46,8 @@ import {
   mayUseCookieFlow,
   readCookie,
   sessionView,
+  sessionWho,
+  signInProviders,
   zitadelConfig,
   zitadelConfigured,
 } from './zitadel.js';
@@ -935,6 +937,10 @@ async function finishSubmit(env, origin, {
   login, name, email, team, usecase, workflowSubmitted, workflowName, workflowError, customer = false,
 }, extraHeaders = {}) {
   const html_url = `https://github.com/${login}`;
+  // A Google customer has no GitHub login to link to.
+  const who = login
+    ? `👤 [@${esc(login)}](${esc(html_url)})${name ? ` \\(${esc(name)}\\)` : ''}`
+    : `👤 ${esc(name || 'Google customer')} \\(Google\\)`;
 
   // ── Build Telegram notification ──────────────────────────────────────────
   const workflowStatus = workflowSubmitted
@@ -944,7 +950,7 @@ async function finishSubmit(env, origin, {
   const msg = [
     `🚀 *mctl\\.ai — New Tenant Request*`,
     ``,
-    `👤 [@${esc(login)}](${esc(html_url)})${name ? ` \\(${esc(name)}\\)` : ''}`,
+    who,
     email ? `📧 ${esc(email)}` : null,
     `🏷 Team: \`${esc(team)}\``,
     ``,
@@ -1039,11 +1045,11 @@ export async function handleSessionInfo(request, env, origin) {
   }
   if (!loaded.ok) {
     const clear = loaded.reason === 'invalid' ? { 'Set-Cookie': clearSessionCookie() } : {};
-    return sessionJson({ signedIn: false }, 200, origin, cfg, clear);
+    return sessionJson({ signedIn: false, providers: signInProviders(cfg) }, 200, origin, cfg, clear);
   }
   try {
     const view = sessionView(cfg, loaded.session);
-    if (!view.canRequestWorkspace) view.canRequestWorkspace = await invitationAllowed(env, loaded.session.github_id);
+    if (!view.canRequestWorkspace) view.canRequestWorkspace = await invitedSession(env, loaded.session);
     return sessionJson(view, 200, origin, cfg);
   } catch { return sessionJson({ error: 'Invitation could not be verified' }, 503, origin, cfg); }
 }
@@ -1070,6 +1076,13 @@ export async function handleLogout(request, env, origin) {
     { signedIn: false, logoutUrl: endSessionUrl(cfg) }, 200, origin, cfg,
     { 'Set-Cookie': clearSessionCookie() },
   );
+}
+
+// Invitations are approved per GitHub id (signupAdmin.js); there are none for
+// a Google customer, whom only AUTH_FLOW_PUBLIC admits.
+async function invitedSession(env, session) {
+  if (session.provider === 'google') return false;
+  return invitationAllowed(env, session.github_id);
 }
 
 /**
@@ -1101,7 +1114,7 @@ async function requireSession(request, env, origin) {
     };
   }
   let admitted = mayUseCookieFlow(cfg, loaded.session);
-  try { if (!admitted) admitted = await invitationAllowed(env, loaded.session.github_id); }
+  try { if (!admitted) admitted = await invitedSession(env, loaded.session); }
   catch { return { response: sessionJson({ error: 'Invitation could not be verified' }, 503, origin, cfg) }; }
   if (!admitted) {
     return {
@@ -1182,7 +1195,7 @@ export async function handleSessionCheckTeam(request, env, origin) {
     if (res.status === 403) {
       const code = await refusalCode(res);
       if (IDENTITY_REFUSALS.has(code)) {
-        console.warn(`team/check: portal refused the session of GitHub id ${ctx.session.github_id}: ${code}`);
+        console.warn(`team/check: portal refused the session of ${sessionWho(ctx.session)}: ${code}`);
         return revokedSession(ctx, origin);
       }
       console.error(`team/check: portal answered 403 without an identity refusal (code "${code}")`);
@@ -1257,7 +1270,7 @@ export async function handleSessionSubmit(request, env, origin) {
     if (tenantRes.status === 403) {
       const code = await refusalCode(tenantRes);
       if (IDENTITY_REFUSALS.has(code)) {
-        console.warn(`submit (session): portal refused the session of GitHub id ${session.github_id}: ${code}`);
+        console.warn(`submit (session): portal refused the session of ${sessionWho(session)}: ${code}`);
         return revokedSession(ctx, origin);
       }
       console.error(`submit (session): portal answered 403 without an identity refusal (code "${code}")`);

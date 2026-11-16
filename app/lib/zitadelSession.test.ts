@@ -6,8 +6,10 @@ import {
   interpretSubmit,
   interpretTeamCheck,
   readSessionView,
+  readSignInProviders,
   resolveAuthFlow,
   sessionFailure,
+  sessionIdentity,
   sessionProfile,
   shouldEndSession,
 } from './zitadelSession.ts'
@@ -73,6 +75,7 @@ test('logout: anything but a 2xx is not a sign-out', () => {
 
 test('a well-formed signed-in answer is read', () => {
   assert.deepEqual(readSessionView(signedIn), {
+    provider: 'github',
     login: 'octo',
     name: 'Octo Cat',
     email: 'octo@example.com',
@@ -103,10 +106,10 @@ test('canRequestWorkspace must be literally true', () => {
   assert.equal(readSessionView({ ...signedIn, canRequestWorkspace: undefined })?.canRequestWorkspace, false)
 })
 
-test('optional fields default rather than reject', () => {
+test('optional fields default rather than reject; no provider means GitHub (an older Worker)', () => {
   const view = readSessionView({ signedIn: true, login: 'octo', githubId: '1' })
   assert.deepEqual(view, {
-    login: 'octo', name: '', email: '', githubId: '1', expiresAt: 0, canRequestWorkspace: false,
+    provider: 'github', login: 'octo', name: '', email: '', githubId: '1', expiresAt: 0, canRequestWorkspace: false,
   })
 })
 
@@ -237,5 +240,64 @@ test('submit: session failures come first, other failures keep the server messag
   assert.deepEqual(interpretSubmit(401, {}), { ok: false, key: 'js.session.sign_in_required', signedOut: true })
   assert.deepEqual(interpretSubmit(502, { message: 'portal down' }), {
     ok: false, message: 'portal down', signedOut: false,
+  })
+})
+
+// ─── Google customers (mctl-api#1079) ────────────────────────────────────────
+
+const googleSignedIn = {
+  signedIn: true,
+  provider: 'google',
+  login: '',
+  name: 'Google Person',
+  email: 'person@gmail.example',
+  githubId: '',
+  googleSub: '109876543210987654321',
+  expiresAt: 1_800_000_000,
+  canRequestWorkspace: false,
+}
+
+test('a Google answer is read without a GitHub login or id', () => {
+  assert.deepEqual(readSessionView(googleSignedIn), {
+    provider: 'google',
+    login: '',
+    name: 'Google Person',
+    email: 'person@gmail.example',
+    githubId: '',
+    googleSub: '109876543210987654321',
+    expiresAt: 1_800_000_000,
+    canRequestWorkspace: false,
+  })
+})
+
+test('a Google answer without a numeric subject, or an unknown provider, is not signed in', () => {
+  assert.equal(readSessionView({ ...googleSignedIn, googleSub: undefined }), null)
+  assert.equal(readSessionView({ ...googleSignedIn, googleSub: 'abc' }), null)
+  assert.equal(readSessionView({ ...googleSignedIn, googleSub: 12 }), null)
+  assert.equal(readSessionView({ ...signedIn, provider: 'gitlab' }), null)
+  // A GitHub answer still needs its login and id, even with a Google subject.
+  assert.equal(readSessionView({ ...signedIn, provider: 'github', githubId: '', googleSub: '1' }), null)
+})
+
+test('the providers list offers Google only when the Worker lists it', () => {
+  assert.deepEqual(readSignInProviders({ signedIn: false, providers: ['github', 'google'] }), ['github', 'google'])
+  assert.deepEqual(readSignInProviders({ signedIn: false, providers: ['github'] }), ['github'])
+  assert.deepEqual(readSignInProviders({ signedIn: false }), ['github'])
+  assert.deepEqual(readSignInProviders(null), ['github'])
+  assert.deepEqual(readSignInProviders({ providers: 'google' }), ['github'])
+})
+
+test('accounts are told apart by provider: a Google subject never equals a GitHub id', () => {
+  const github = readSessionView({ ...signedIn, githubId: '109876543210987654321' })
+  const google = readSessionView(googleSignedIn)
+  assert.equal(sessionIdentity(github), '109876543210987654321')
+  assert.equal(sessionIdentity(google), 'google:109876543210987654321')
+  assert.equal(sessionIdentity(null), 'anonymous')
+})
+
+test('a Google badge shows name and email, with no GitHub avatar or link', () => {
+  const view = readSessionView(googleSignedIn)!
+  assert.deepEqual(sessionProfile(view), {
+    login: '', name: 'Google Person', email: 'person@gmail.example', avatar_url: '', html_url: '',
   })
 })

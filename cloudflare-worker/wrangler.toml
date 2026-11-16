@@ -53,6 +53,9 @@ ZITADEL_ISSUER = "https://auth.mctl.ai"
 ZITADEL_CLIENT_ID = "395272531977766613"
 ZITADEL_ORG_ID = "395272528420931285"
 ZITADEL_GITHUB_IDP_ID = "395272531877168853"
+# ZITADEL_GOOGLE_IDP_ID (mctl-api#1079) stays unset, so Google sign-in is off,
+# until the customers org's Google IdP exists and mctl-api accepts Google
+# customers. Then pin its id here; it is a public identifier.
 ZITADEL_REDIRECT_URI = "https://mctl.ai/api/zitadel/callback"
 ZITADEL_POST_LOGOUT_URI = "https://mctl.ai"
 SESSION_ORIGINS = "https://mctl.ai"

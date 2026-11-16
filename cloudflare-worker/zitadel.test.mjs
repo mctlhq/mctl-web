@@ -453,7 +453,7 @@ test('session: no cookie -> signed out, nothing cleared', async () => {
   const env = baseEnv();
   const res = await worker.fetch(request('/api/zitadel/session'), env);
   assert.equal(res.status, 200);
-  assert.deepEqual(await res.json(), { signedIn: false });
+  assert.deepEqual(await res.json(), { signedIn: false, providers: ['github'] });
   assert.equal(cookieValue(res, SESSION_COOKIE), undefined);
 });
 
@@ -478,7 +478,7 @@ test('session: an unknown or malformed cookie is cleared', async () => {
   const env = baseEnv();
   for (const value of ['short', 'A'.repeat(43)]) {
     const res = await worker.fetch(request('/api/zitadel/session', { cookies: { [SESSION_COOKIE]: value } }), env);
-    assert.deepEqual(await res.json(), { signedIn: false });
+    assert.deepEqual(await res.json(), { signedIn: false, providers: ['github'] });
     assert.equal(cookieValue(res, SESSION_COOKIE), '');
   }
 });
@@ -492,7 +492,7 @@ test('session: an expired record is signed out', async () => {
   // KV has not dropped it yet; the record's own exp still ends it.
   env.SESSIONS.store.set(key, { value: JSON.stringify({ ...record, exp: nowSeconds() - 1 }) });
   const res = await worker.fetch(request('/api/zitadel/session', { cookies: { [SESSION_COOKIE]: sessionId } }), env);
-  assert.deepEqual(await res.json(), { signedIn: false });
+  assert.deepEqual(await res.json(), { signedIn: false, providers: ['github'] });
   assert.equal(cookieValue(res, SESSION_COOKIE), '');
 });
 
@@ -517,7 +517,7 @@ test('logout: needs the CSRF header, then deletes the session and returns the ZI
   assert.equal(logoutUrl.searchParams.get('id_token_hint'), null);
 
   const after = await worker.fetch(request('/api/zitadel/session', { cookies }), env);
-  assert.deepEqual(await after.json(), { signedIn: false });
+  assert.deepEqual(await after.json(), { signedIn: false, providers: ['github'] });
 });
 
 // ─── /api/team/check ─────────────────────────────────────────────────────────
@@ -1053,4 +1053,192 @@ test('internal invitation routes have bounded rate budgets, including per-ID rea
  for(let n=0;n<limit;n++) {const response=await worker.fetch(request(path,{method}),env);assert.notEqual(response.status,429)}
  const limited=await worker.fetch(request(path,{method}),env);assert.equal(limited.status,429,path);
  }
+});
+
+// ─── Google customers (mctl-api#1079) ────────────────────────────────────────
+
+const GOOGLE_IDP_ID = '100000000000000001';
+const GOOGLE_SUB = '109876543210987654321';
+const GOOGLE_CLAIMS = {
+  'mctl:idp': 'google', 'mctl:google_sub': GOOGLE_SUB,
+  'mctl:github_id': undefined, 'mctl:github_login': undefined,
+  email: 'person@gmail.example', name: 'Google Person',
+};
+
+function googleEnv(overrides = {}) {
+  return baseEnv({ ZITADEL_GOOGLE_IDP_ID: GOOGLE_IDP_ID, ...overrides });
+}
+
+async function googleSignIn(env, overrides = {}) {
+  return signIn(env, { ...GOOGLE_CLAIMS, ...overrides });
+}
+
+function sessionRecords(env) {
+  return [...env.SESSIONS.store].filter(([k]) => k.startsWith('sess:')).map(([, e]) => ({ ...JSON.parse(e.value), metadata: e.metadata }));
+}
+
+test('google: login with idp=google preselects the Google IdP only', async () => {
+  const env = googleEnv();
+  const res = await worker.fetch(request('/api/zitadel/login?redirect_to=https://mctl.ai&idp=google'), env);
+  assert.equal(res.status, 302);
+  const scopes = new URL(res.headers.get('Location')).searchParams.get('scope').split(' ');
+  assert.ok(scopes.includes(`urn:zitadel:iam:org:idp:id:${GOOGLE_IDP_ID}`));
+  assert.ok(!scopes.includes(`urn:zitadel:iam:org:idp:id:${IDP_ID}`));
+  assert.ok(scopes.includes(`urn:zitadel:iam:org:id:${ORG_ID}`));
+  // Without idp the GitHub IdP is still the default.
+  const github = await worker.fetch(request('/api/zitadel/login?redirect_to=https://mctl.ai'), env);
+  const githubScopes = new URL(github.headers.get('Location')).searchParams.get('scope').split(' ');
+  assert.ok(githubScopes.includes(`urn:zitadel:iam:org:idp:id:${IDP_ID}`));
+  assert.ok(!githubScopes.includes(`urn:zitadel:iam:org:idp:id:${GOOGLE_IDP_ID}`));
+});
+
+test('google: off, misconfigured or unknown idp sends nobody anywhere', async () => {
+  for (const [name, env, idp] of [
+    ['unset', baseEnv(), 'google'],
+    ['same as GitHub', baseEnv({ ZITADEL_GOOGLE_IDP_ID: IDP_ID }), 'google'],
+    ['not an id', baseEnv({ ZITADEL_GOOGLE_IDP_ID: 'google' }), 'google'],
+    ['unknown idp', googleEnv(), 'gitlab'],
+  ]) {
+    const res = await worker.fetch(request(`/api/zitadel/login?redirect_to=https://mctl.ai&idp=${idp}`), env);
+    assert.equal(res.headers.get('Location'), 'https://mctl.ai/?auth_flow=zitadel#auth_error=NOT_CONFIGURED', name);
+    assert.equal(cookieValue(res, LOGIN_COOKIE), undefined, name);
+    if (idp === 'google') {
+      const session = await worker.fetch(request('/api/zitadel/session'), env);
+      assert.deepEqual(await session.json(), { signedIn: false, providers: ['github'] }, name);
+    }
+  }
+  const on = await worker.fetch(request('/api/zitadel/session'), googleEnv());
+  assert.deepEqual(await on.json(), { signedIn: false, providers: ['github', 'google'] });
+});
+
+test('google: a Google customer gets a session keyed on its Google subject', async () => {
+  const env = googleEnv();
+  const { res, sessionId } = await googleSignIn(env);
+  assert.equal(res.headers.get('Location'), 'https://mctl.ai/?auth_flow=zitadel');
+  const [record] = sessionRecords(env);
+  assert.equal(record.provider, 'google');
+  assert.equal(record.google_sub, GOOGLE_SUB);
+  assert.equal(record.github_id, '');
+  assert.equal(record.login, '');
+  assert.deepEqual(record.metadata, { github_id: '', google_sub: GOOGLE_SUB, sub: '395285255046563541' });
+  const view = await (await worker.fetch(request('/api/zitadel/session', {
+    cookies: { [SESSION_COOKIE]: sessionId }, headers: { Origin: 'https://mctl.ai' } }), env)).json();
+  assert.equal(view.signedIn, true);
+  assert.equal(view.provider, 'google');
+  assert.equal(view.googleSub, GOOGLE_SUB);
+  assert.equal(view.githubId, '');
+  assert.equal(view.email, 'person@gmail.example');
+  assert.deepEqual(view.providers, ['github', 'google']);
+  assert.equal(view.canRequestWorkspace, false, 'not public: no test group or invitation for Google');
+  // A GitHub session names its provider too.
+  const github = await signIn(env, { sub: '395285255046563542' });
+  const githubView = await (await worker.fetch(request('/api/zitadel/session', {
+    cookies: { [SESSION_COOKIE]: github.sessionId } }), env)).json();
+  assert.equal(githubView.provider, 'github');
+  assert.equal(githubView.googleSub, undefined);
+});
+
+test('google: refused while Google is off, mixed, malformed or unverified', async () => {
+  for (const [name, env, claims] of [
+    ['Google off', baseEnv(), GOOGLE_CLAIMS],
+    ['Google claims with a GitHub id', googleEnv(), { ...GOOGLE_CLAIMS, 'mctl:github_id': TEST_GITHUB_ID }],
+    ['Google claims with a GitHub login', googleEnv(), { ...GOOGLE_CLAIMS, 'mctl:github_login': 'mctl-reviewer' }],
+    ['GitHub claims with a Google sub', googleEnv(), { 'mctl:google_sub': GOOGLE_SUB }],
+    ['no Google sub', googleEnv(), { ...GOOGLE_CLAIMS, 'mctl:google_sub': undefined }],
+    ['non-numeric Google sub', googleEnv(), { ...GOOGLE_CLAIMS, 'mctl:google_sub': 'abc' }],
+    ['unverified email', googleEnv(), { ...GOOGLE_CLAIMS, email_verified: false }],
+  ]) {
+    const { res, sessionId } = await signIn(env, claims);
+    assert.equal(sessionId, undefined, name);
+    assert.match(res.headers.get('Location'), /#auth_error=(ACCOUNT_REFUSED|EMAIL_UNVERIFIED)$/, name);
+    assert.equal(sessionRecords(env).length, 0, name);
+  }
+});
+
+test('google: a stored Google record that is not well formed is no session', async () => {
+  const env = googleEnv();
+  const { sessionId } = await googleSignIn(env);
+  const key = await sessionKey(sessionId);
+  const record = JSON.parse(env.SESSIONS.store.get(key).value);
+  for (const bad of [{ github_id: TEST_GITHUB_ID }, { google_sub: 'abc' }, { google_sub: undefined }, { provider: 'gitlab' }]) {
+    env.SESSIONS.store.set(key, { value: JSON.stringify({ ...record, ...bad }) });
+    const res = await worker.fetch(request('/api/zitadel/session', { cookies: { [SESSION_COOKIE]: sessionId } }), env);
+    assert.deepEqual(await res.json(), { signedIn: false, providers: ['github', 'google'] }, JSON.stringify(bad));
+  }
+});
+
+test('google: only AUTH_FLOW_PUBLIC admits a Google customer, never the GitHub test group or an invitation', async () => {
+  // Every invitation read fails: a Google session must not reach it.
+  const unreadable = createKv();
+  unreadable.get = async () => { throw new Error('KV down'); };
+  const env = googleEnv({ AUTH_FLOW_TEST_GITHUB_IDS: TEST_GITHUB_ID, ACCESS_REQUESTS: unreadable });
+  const { sessionId } = await googleSignIn(env);
+  const check = () => worker.fetch(request('/api/team/check', {
+    method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: SITE, body: { name: 'acme' } }), env);
+  const closed = createNetwork();
+  const denied = await withNetwork(closed, check);
+  assert.equal(denied.status, 403);
+  assert.equal((await denied.json()).code, 'not_in_test_group');
+  assert.equal(closed.calls.availability.length, 0);
+  const view = await worker.fetch(request('/api/zitadel/session', { cookies: { [SESSION_COOKIE]: sessionId } }), env);
+  assert.equal(view.status, 200);
+  assert.equal((await view.json()).canRequestWorkspace, false);
+
+  env.AUTH_FLOW_PUBLIC = 'true';
+  const open = createNetwork();
+  const allowed = await withNetwork(open, check);
+  assert.equal(allowed.status, 200);
+  assert.equal(open.calls.availability.length, 1);
+});
+
+test('google: submit creates the workspace from the Google session and names no GitHub account', async () => {
+  const env = googleEnv({ AUTH_FLOW_PUBLIC: 'true', RESEND_API_KEY: 'test-resend-key' });
+  const { sessionId } = await googleSignIn(env);
+  const [record] = sessionRecords(env);
+  const network = createNetwork();
+  const res = await withNetwork(network, () => worker.fetch(request('/api/submit', {
+    method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: SITE,
+    body: { team: 'acme', usecase: 'demo', turnstile_token: 'ok' },
+  }), env));
+  assert.equal(res.status, 200);
+  assert.equal(network.calls.create.length, 1);
+  assert.equal(network.calls.create[0].body.creatorIdToken, record.id_token);
+  assert.equal(network.calls.create[0].body.contactEmail, 'person@gmail.example');
+  assert.ok(network.calls.telegramText.includes('Google Person \\(Google\\)'), network.calls.telegramText);
+  assert.ok(!network.calls.telegramText.includes('github\\.com'), network.calls.telegramText);
+});
+
+test('revocation: a Google customer is revoked by its Google subject only', async () => {
+  const env = revocationEnv();
+  env.ZITADEL_GOOGLE_IDP_ID = GOOGLE_IDP_ID;
+  const googler = await googleSignIn(env);
+  // A GitHub customer whose id has the same digits, under another subject.
+  const github = await signIn(env, { sub: '395285255046563542', 'mctl:github_id': GOOGLE_SUB.slice(0, 19) });
+  const sameSub = await signIn(env, { sub: '395285255046563543' });
+  const now = nowSeconds();
+  const call = async (body, time = now) => withNetwork(createNetwork(), async () => handleSessionRevocation(
+    await revocationRequest({}, signer, body), env, time));
+  for (const bad of [
+    { github_id: undefined, google_sub: 'abc' },
+    { google_sub: GOOGLE_SUB },
+    { github_id: undefined, google_sub: 7 },
+  ]) {
+    const res = await call(bad);
+    assert.equal(res.status, 400, JSON.stringify(bad));
+  }
+  const body = { github_id: undefined, google_sub: GOOGLE_SUB };
+  const first = await call(body);
+  assert.equal(first.status, 202);
+  assert.deepEqual(await first.json(), { google_sub: GOOGLE_SUB, subject: '395285255046563541', complete: false });
+  assert.equal(env.SESSIONS.store.has(await sessionKey(googler.sessionId)), false);
+  assert.equal(env.SESSIONS.store.has(await sessionKey(github.sessionId)), true);
+  assert.equal(env.SESSIONS.store.has(await sessionKey(sameSub.sessionId)), true);
+  assert.equal((await call(body, now + 61)).status, 200);
+  // The GitHub revocation of another subject still scans past Google records.
+  const other = await googleSignIn(env, { sub: '395285255046563544' });
+  const githubRevocation = await withNetwork(createNetwork(), async () => handleSessionRevocation(
+    await revocationRequest({}, signer, { subject: '395285255046563542', github_id: GOOGLE_SUB.slice(0, 19) }), env, now));
+  assert.equal(githubRevocation.status, 202);
+  assert.equal(env.SESSIONS.store.has(await sessionKey(github.sessionId)), false);
+  assert.equal(env.SESSIONS.store.has(await sessionKey(other.sessionId)), true);
 });

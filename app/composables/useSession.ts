@@ -4,11 +4,13 @@ import {
   SESSION_REQUEST_HEADERS,
   interpretLogout,
   readSessionView,
+  readSignInProviders,
   resolveAuthFlow,
   sessionProfile,
   shouldEndSession,
   type AuthFlow,
   type SessionView,
+  type SignInProvider,
 } from '~/lib/zitadelSession'
 
 const FLOW_STORAGE_KEY = 'mctl_auth_flow'
@@ -21,6 +23,8 @@ export function useSession() {
   // `unknown` until the first answer, so the form does not flash "sign in"
   // for someone who is signed in.
   const status = useState<'unknown' | 'ready' | 'unavailable'>('zitadel_session_status', () => 'unknown')
+  // What the Worker offers; GitHub until it says more.
+  const providers = useState<SignInProvider[]>('zitadel_providers', () => ['github'])
   const { baseUrlFront, authFlow } = useRuntimeConfig().public
   // The prerendered page is built in the build default's flow, so the
   // hydrating render starts from the same one.
@@ -98,7 +102,9 @@ export function useSession() {
         status.value = 'unavailable'
         return
       }
-      view.value = readSessionView(await res.json().catch(() => null))
+      const body = await res.json().catch(() => null)
+      view.value = readSessionView(body)
+      providers.value = readSignInProviders(body)
       status.value = 'ready'
     } catch {
       view.value = null
@@ -113,9 +119,12 @@ export function useSession() {
     status.value = 'ready'
   }
 
-  function login() {
-    const redirect = baseUrlFront ? `?redirect_to=${encodeURIComponent(String(baseUrlFront))}` : ''
-    window.location.href = `${loginUrl}${redirect}`
+  function login(provider: SignInProvider = 'github') {
+    const params = new URLSearchParams()
+    if (baseUrlFront) params.set('redirect_to', String(baseUrlFront))
+    if (provider === 'google') params.set('idp', 'google')
+    const query = params.toString()
+    window.location.href = query ? `${loginUrl}?${query}` : loginUrl
   }
 
   // Ends the session in the Worker, then at ZITADEL. Returns an i18n key when
@@ -138,6 +147,7 @@ export function useSession() {
     status,
     signedIn,
     profile,
+    providers,
     canRequestWorkspace,
     resolveFlow,
     leaveSessionFlow,

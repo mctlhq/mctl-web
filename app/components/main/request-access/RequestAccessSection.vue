@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { invitationEntryView, shouldStartInvitedLogin } from '~/lib/invitationRequest';
-import { SIGN_IN_ERROR_KEYS } from '~/lib/zitadelSession';
+import { SIGN_IN_ERROR_KEYS, sessionIdentity } from '~/lib/zitadelSession';
 
 import GithubAuth from './GithubAuth.vue';
 
@@ -43,7 +43,7 @@ let observedIdentity: string | undefined;
 watch(() => {
   if (zitadel.value && session.status.value !== 'ready') return undefined;
   return zitadel.value
-    ? `zitadel:${session.view.value?.githubId || 'anonymous'}`
+    ? `zitadel:${sessionIdentity(session.view.value)}`
     : `legacy:${authData.value?.id || authData.value?.login || 'anonymous'}`;
 }, (identity) => {
   if (identity === undefined) return;
@@ -91,6 +91,13 @@ function handleLogin() {
   window.location.href = githubLoginUrl;
 }
 
+// Google exists only on the ZITADEL flow, and only when the Worker offers it.
+const googleOffered = computed(() => zitadel.value && session.providers.value.includes('google'));
+
+function handleGoogleLogin() {
+  if (googleOffered.value) session.login('google');
+}
+
 async function handleLogout() {
   if (zitadel.value) {
     const key = await session.logout();
@@ -136,7 +143,9 @@ onMounted(() => {
         :auth-error="authError"
         class="request-access__github-auth"
         :class="{ 'request-access__github-auth--pending': badgePending }"
+        :google="googleOffered"
         @clickLogin="handleLogin"
+        @clickGoogleLogin="handleGoogleLogin"
         @clickLogout="handleLogout"
       />
       <p
