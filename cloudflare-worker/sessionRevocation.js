@@ -1,4 +1,4 @@
-import { verifySessionRevoker, revokedSubjectKey, SESSION_MAX_SECONDS } from './zitadel.js';
+import { verifySessionRevoker, revokedSubjectKey, SESSION_MAX_SECONDS, GOOGLE_SUB_RE } from './zitadel.js';
 
 const ID = /^[1-9][0-9]{0,19}$/;
 const PAGE_SIZE = 20;
@@ -35,18 +35,30 @@ export async function handleSessionRevocation(request, env, now = Math.floor(Dat
     for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
     body = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
   } catch { return reply(400, { error: 'Invalid JSON' }); }
-  if (!body || typeof body.github_id !== 'string' || !ID.test(body.github_id) ||
-      typeof body.subject !== 'string' || !ID.test(body.subject)) return reply(400, { error: 'Invalid customer identity' });
+  // The customer is named by exactly one key: its GitHub id, or (mctl-api#1079)
+  // its Google subject.
+  const google = body && Object.hasOwn(body, 'google_sub');
+  if (!body || typeof body.subject !== 'string' || !ID.test(body.subject) ||
+      (google
+        ? (Object.hasOwn(body, 'github_id') || typeof body.google_sub !== 'string' || !GOOGLE_SUB_RE.test(body.google_sub))
+        : (typeof body.github_id !== 'string' || !ID.test(body.github_id)))) {
+    return reply(400, { error: 'Invalid customer identity' });
+  }
+  const field = google ? 'google_sub' : 'github_id';
+  const wanted = body[field];
 
   const kv = env.SESSIONS;
   const markerKey = revokedSubjectKey(body.subject);
   try {
     const raw = await kv.get(markerKey);
+    // A Google revocation's progress carries googleSub instead of githubId,
+    // so neither can resume the other's.
     let state = raw ? JSON.parse(raw) : {
-      v: 1, githubId: body.github_id, subject: body.subject, startedAt: now,
+      v: 1, ...(google ? { googleSub: wanted } : { githubId: wanted }), subject: body.subject, startedAt: now,
       cursor: '', phase: 0, matched: 0, scanned: 0, done: false,
     };
-    if (state.v !== 1 || state.githubId !== body.github_id || state.subject !== body.subject ||
+    if (state.v !== 1 || (google ? state.googleSub !== wanted || state.githubId !== undefined : state.githubId !== wanted || state.googleSub !== undefined) ||
+        state.subject !== body.subject ||
         !Number.isSafeInteger(state.startedAt) || state.startedAt > now ||
         typeof state.cursor !== 'string' || state.cursor.length > 4096 || ![0, 1].includes(state.phase) ||
         !Number.isSafeInteger(state.matched) || state.matched < 0 || !Number.isSafeInteger(state.scanned) || state.scanned < 0 || typeof state.done !== 'boolean') {
@@ -69,7 +81,7 @@ export async function handleSessionRevocation(request, env, now = Math.floor(Dat
           identity = JSON.parse(value);
           if (!identity || typeof identity.github_id !== 'string' || typeof identity.sub !== 'string') throw new Error('Malformed session');
         }
-        if (identity.github_id === body.github_id && identity.sub === body.subject) {
+        if (identity[field] === wanted && identity.sub === body.subject) {
           await kv.delete(key.name);
           state.matched++;
         }
@@ -84,7 +96,7 @@ export async function handleSessionRevocation(request, env, now = Math.floor(Dat
       await save();
     }
     const complete = state.done && now - state.startedAt >= PROPAGATION_SECONDS;
-    return reply(complete ? 200 : 202, { github_id: body.github_id, subject: body.subject, complete });
+    return reply(complete ? 200 : 202, { [field]: wanted, subject: body.subject, complete });
   } catch {
     console.error('customer session revocation: observation or cleanup incomplete');
     return reply(503, { error: 'Session revocation incomplete; retry' });

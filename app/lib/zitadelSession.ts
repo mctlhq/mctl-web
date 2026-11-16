@@ -40,11 +40,17 @@ export function shouldEndSession(query: unknown, remembered: unknown): boolean {
   return asFlow(query) === 'legacy' && asFlow(remembered) === 'zitadel'
 }
 
+export type SignInProvider = 'github' | 'google'
+
 export interface SessionView {
+  provider: SignInProvider
   login: string
   name: string
   email: string
+  // Empty for a Google customer, which has no GitHub account.
   githubId: string
+  // Only for a Google customer (mctl-api#1079).
+  googleSub?: string
   expiresAt: number
   canRequestWorkspace: boolean
 }
@@ -52,26 +58,49 @@ export interface SessionView {
 // Reads the body of GET /api/zitadel/session. Anything that is not a
 // well-formed signed-in answer is "not signed in": the request routes check
 // the session again on the server, so a wrong guess here costs only a button.
+// A GitHub customer needs its login and numeric id; a Google customer its
+// numeric Google subject, and has no login.
 export function readSessionView(body: unknown): SessionView | null {
   if (!body || typeof body !== 'object') return null
   const b = body as Record<string, unknown>
   if (b.signedIn !== true) return null
-  if (typeof b.login !== 'string' || !b.login) return null
-  if (typeof b.githubId !== 'string' || !/^\d+$/.test(b.githubId)) return null
-  return {
-    login: b.login,
+  const common = {
     name: typeof b.name === 'string' ? b.name : '',
     email: typeof b.email === 'string' ? b.email : '',
-    githubId: b.githubId,
     expiresAt: typeof b.expiresAt === 'number' ? b.expiresAt : 0,
     canRequestWorkspace: b.canRequestWorkspace === true,
   }
+  if (b.provider === 'google') {
+    if (typeof b.googleSub !== 'string' || !/^\d+$/.test(b.googleSub)) return null
+    return { provider: 'google', login: '', githubId: '', googleSub: b.googleSub, ...common }
+  }
+  if (b.provider !== undefined && b.provider !== 'github') return null
+  if (typeof b.login !== 'string' || !b.login) return null
+  if (typeof b.githubId !== 'string' || !/^\d+$/.test(b.githubId)) return null
+  return { provider: 'github', login: b.login, githubId: b.githubId, ...common }
+}
+
+// The sign-in providers the Worker offers, from any GET /api/zitadel/session
+// answer. GitHub is always offered; Google only when the Worker lists it.
+export function readSignInProviders(body: unknown): SignInProvider[] {
+  const listed = body && typeof body === 'object' ? (body as Record<string, unknown>).providers : undefined
+  return Array.isArray(listed) && listed.includes('google') ? ['github', 'google'] : ['github']
+}
+
+// Who is signed in, for telling one account from another in the page.
+export function sessionIdentity(view: SessionView | null): string {
+  if (!view) return 'anonymous'
+  return view.provider === 'google' ? `google:${view.googleSub}` : view.githubId
 }
 
 // The badge the existing GithubAuth component renders. The avatar comes from
 // the numeric id, which survives a GitHub rename; the profile link from the
-// login, which is display only.
+// login, which is display only. A Google customer has neither: the badge
+// shows its name and email instead.
 export function sessionProfile(view: SessionView) {
+  if (view.provider === 'google') {
+    return { login: '', name: view.name, email: view.email, avatar_url: '', html_url: '' }
+  }
   return {
     login: view.login,
     name: view.name,

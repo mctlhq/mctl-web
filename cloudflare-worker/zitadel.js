@@ -21,6 +21,11 @@
  *                            scoped to it and the ID token must name it
  * - ZITADEL_GITHUB_IDP_ID:   the org's GitHub IdP, so the login page goes
  *                            straight to GitHub
+ * - ZITADEL_GOOGLE_IDP_ID:   the org's Google IdP (mctl-api#1079). Unset (the
+ *                            default) keeps Google off: no "Continue with
+ *                            Google", and a Google customer's token makes
+ *                            no session. Set, /api/zitadel/login?idp=google
+ *                            goes straight to Google
  * - ZITADEL_REDIRECT_URI:    https://mctl.ai/api/zitadel/callback
  * - ZITADEL_POST_LOGOUT_URI: https://mctl.ai
  * - SESSION_ORIGINS:         comma-separated origins that may use the session
@@ -28,7 +33,9 @@
  * - AUTH_FLOW_PUBLIC:        "true" opens the cookie branch to everyone;
  *                            anything else limits it to the test group
  * - AUTH_FLOW_TEST_GITHUB_IDS (wrangler secret): comma-separated numeric
- *                            GitHub ids of the test group
+ *                            GitHub ids of the test group. A Google customer
+ *                            is never in it: only AUTH_FLOW_PUBLIC opens the
+ *                            cookie branch to one.
  */
 
 export const SESSION_COOKIE = '__Host-mctl_sid';
@@ -43,6 +50,9 @@ const JWKS_REFRESH_MIN_MS = 60 * 1000;
 
 const GITHUB_LOGIN_RE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const GITHUB_ID_RE = /^[1-9][0-9]{0,19}$/;
+// mctl-api's identity hook accepts only numeric Google subjects.
+export const GOOGLE_SUB_RE = /^[0-9]{1,64}$/;
+const ZITADEL_ID_RE = /^[0-9]{6,32}$/;
 // 32 random bytes, base64url without padding.
 const SESSION_ID_RE = /^[A-Za-z0-9_-]{43}$/;
 
@@ -55,6 +65,7 @@ export function zitadelConfig(env) {
     clientId: env.ZITADEL_CLIENT_ID || '',
     orgId: env.ZITADEL_ORG_ID || '',
     idpId: env.ZITADEL_GITHUB_IDP_ID || '',
+    googleIdpId: googleIdpId(env),
     redirectUri: env.ZITADEL_REDIRECT_URI || 'https://mctl.ai/api/zitadel/callback',
     postLogoutUri: env.ZITADEL_POST_LOGOUT_URI || 'https://mctl.ai',
     sessionOrigins: new Set(list(env.SESSION_ORIGINS || 'https://mctl.ai')),
@@ -62,6 +73,24 @@ export function zitadelConfig(env) {
     testGithubIds: new Set(list(env.AUTH_FLOW_TEST_GITHUB_IDS).filter(id => GITHUB_ID_RE.test(id))),
     sessions: env.SESSIONS,
   };
+}
+
+// The Google IdP, or '' (Google off). A value that is not a ZITADEL id, or is
+// the GitHub IdP's, is a misconfiguration and keeps Google off rather than
+// sending people to the wrong IdP.
+function googleIdpId(env) {
+  const id = String(env.ZITADEL_GOOGLE_IDP_ID ?? '').trim();
+  if (!id) return '';
+  if (!ZITADEL_ID_RE.test(id) || id === String(env.ZITADEL_GITHUB_IDP_ID ?? '').trim()) {
+    console.error('zitadel: ZITADEL_GOOGLE_IDP_ID is not a distinct ZITADEL id; Google sign-in stays off');
+    return '';
+  }
+  return id;
+}
+
+// The sign-in providers the site may offer.
+export function signInProviders(cfg) {
+  return cfg.googleIdpId ? ['github', 'google'] : ['github'];
 }
 
 // Everything the sign-in needs before it can start. A partial config fails
@@ -74,7 +103,14 @@ export function zitadelConfigured(cfg) {
 // and /api/submit. Until the public switch only the test group may: a
 // query parameter on the site changes the UI and grants nothing.
 export function mayUseCookieFlow(cfg, session) {
+  if (session.provider === 'google') return cfg.publicFlow;
   return cfg.publicFlow || cfg.testGithubIds.has(session.github_id);
+}
+
+// Who a session belongs to, for logs: the provider and its id, never the
+// email.
+export function sessionWho(session) {
+  return session.provider === 'google' ? `Google subject ${session.google_sub}` : `GitHub id ${session.github_id}`;
 }
 
 // ─── Encoding helpers ────────────────────────────────────────────────────────
@@ -287,9 +323,40 @@ export function revokedSubjectKey(subject) { return `revoked-sub:${subject}`; }
  * claims are written by mctl-api's identity hook from the GitHub id bound to
  * the account; a refusal or a token without them means the hook did not
  * vouch for this person, so there is no session.
+ *
+ * With `acceptGoogle` (ZITADEL_GOOGLE_IDP_ID set), a token with
+ * `mctl:idp=google` is a Google customer, keyed on `mctl:google_sub`; it
+ * must carry no GitHub claim. A GitHub token must carry no Google subject.
+ * A Google session keeps `github_id` and `login` as empty strings, so a
+ * Worker rolled back to GitHub-only code still reads the record without
+ * matching it to any GitHub id.
  */
-export function identityFromClaims(claims) {
+export function identityFromClaims(claims, { acceptGoogle = false } = {}) {
   if (claims['mctl:refused'] !== undefined) return { ok: false, reason: 'refused' };
+  if (claims['mctl:idp'] === 'google') {
+    if (!acceptGoogle) return { ok: false, reason: 'no_github_id' };
+    const sub = claims['mctl:google_sub'];
+    if (typeof sub !== 'string' || !GOOGLE_SUB_RE.test(sub)) return { ok: false, reason: 'no_google_sub' };
+    if (claims['mctl:github_id'] !== undefined || claims['mctl:github_login'] !== undefined) {
+      return { ok: false, reason: 'mixed_identity' };
+    }
+    if (typeof claims.email !== 'string' || !claims.email.includes('@') || claims.email_verified !== true) {
+      return { ok: false, reason: 'email_unverified' };
+    }
+    return {
+      ok: true,
+      identity: {
+        sub: claims.sub,
+        provider: 'google',
+        google_sub: sub,
+        github_id: '',
+        login: '',
+        email: claims.email,
+        name: typeof claims.name === 'string' ? claims.name : '',
+      },
+    };
+  }
+  if (claims['mctl:google_sub'] !== undefined) return { ok: false, reason: 'mixed_identity' };
   const githubId = claims['mctl:github_id'];
   const login = claims['mctl:github_login'];
   if (typeof githubId !== 'string' || !GITHUB_ID_RE.test(githubId)) return { ok: false, reason: 'no_github_id' };
@@ -301,6 +368,7 @@ export function identityFromClaims(claims) {
     ok: true,
     identity: {
       sub: claims.sub,
+      provider: 'github',
       github_id: githubId,
       login,
       email: claims.email,
@@ -321,7 +389,9 @@ export async function createSession(kv, { identity, idToken, idTokenExp }, nowSe
   // session ends, whatever the cookie says.
   if (await kv.get(revokedSubjectKey(identity.sub))) throw new Error('Customer subject is revoked');
   await kv.put(await sessionKey(sessionId), JSON.stringify(record), {
-    expiration: exp, metadata: { github_id: identity.github_id, sub: identity.sub },
+    expiration: exp, metadata: identity.provider === 'google'
+      ? { github_id: '', google_sub: identity.google_sub, sub: identity.sub }
+      : { github_id: identity.github_id, sub: identity.sub },
   });
   return { sessionId, exp };
 }
@@ -330,8 +400,12 @@ export async function createSession(kv, { identity, idToken, idTokenExp }, nowSe
  * The session named by the request's cookie, or `{ ok: false, reason }`:
  * `none` without a cookie, `invalid` for a malformed id or a missing,
  * unreadable or expired record. The caller clears the cookie on `invalid`.
+ *
+ * A Google session is `invalid` unless `acceptGoogle` (Google is
+ * configured): unsetting ZITADEL_GOOGLE_IDP_ID ends every Google session at
+ * its next request, not only new sign-ins.
  */
-export async function loadSession(request, kv, nowSeconds) {
+export async function loadSession(request, kv, nowSeconds, { acceptGoogle = false } = {}) {
   const sessionId = readCookie(request, SESSION_COOKIE);
   if (!sessionId) return { ok: false, reason: 'none' };
   if (!SESSION_ID_RE.test(sessionId)) return { ok: false, reason: 'invalid' };
@@ -352,6 +426,12 @@ export async function loadSession(request, kv, nowSeconds) {
   ) {
     return { ok: false, reason: 'invalid' };
   }
+  // A record without a provider is a GitHub session from before Google.
+  if (record.provider === 'google'
+    ? (!acceptGoogle || typeof record.google_sub !== 'string' || !GOOGLE_SUB_RE.test(record.google_sub) || record.github_id !== '')
+    : (record.provider !== undefined && record.provider !== 'github')) {
+    return { ok: false, reason: 'invalid' };
+  }
   if (typeof record.sub !== 'string' || !record.sub || await kv.get(revokedSubjectKey(record.sub))) {
     return { ok: false, reason: 'invalid' };
   }
@@ -361,10 +441,11 @@ export async function loadSession(request, kv, nowSeconds) {
 // ─── Sign-in: start ──────────────────────────────────────────────────────────
 
 /**
- * GET /api/zitadel/login?redirect_to=<origin>
+ * GET /api/zitadel/login?redirect_to=<origin>[&idp=google]
  *
  * Sends the browser to ZITADEL's authorize endpoint for the `customers` org
- * with its GitHub IdP preselected. state, nonce and the PKCE verifier ride
+ * with its GitHub IdP preselected, or its Google IdP for `idp=google` when
+ * Google is configured (otherwise NOT_CONFIGURED, never GitHub instead). state, nonce and the PKCE verifier ride
  * in a short-lived `__Host-` cookie. It is not signed, on purpose: only
  * mctl.ai itself over HTTPS can set a `__Host-` cookie, so whoever could
  * forge it could already run script on the site. A code injected from
@@ -379,6 +460,11 @@ export async function handleZitadelLogin(url, env, errorRedirect) {
     console.error('zitadel login: sign-in is not configured');
     return errorRedirect('NOT_CONFIGURED', returnTo);
   }
+  const wanted = url.searchParams.get('idp') || 'github';
+  let idpId;
+  if (wanted === 'github') idpId = cfg.idpId;
+  else if (wanted === 'google' && cfg.googleIdpId) idpId = cfg.googleIdpId;
+  else return errorRedirect('NOT_CONFIGURED', returnTo);
 
   const state = randomToken(16);
   const nonce = randomToken(16);
@@ -391,7 +477,7 @@ export async function handleZitadelLogin(url, env, errorRedirect) {
     'openid', 'profile', 'email',
     'urn:zitadel:iam:user:resourceowner',
     `urn:zitadel:iam:org:id:${cfg.orgId}`,
-    `urn:zitadel:iam:org:idp:id:${cfg.idpId}`,
+    `urn:zitadel:iam:org:idp:id:${idpId}`,
   ].join(' '));
   authorize.searchParams.set('state', state);
   authorize.searchParams.set('nonce', nonce);
@@ -464,7 +550,7 @@ export async function handleZitadelCallback(url, request, env, errorRedirect, su
     console.error(`zitadel callback: ID token refused (${verified.reason})`);
     return fail(verified.reason === 'jwks_unavailable' ? 'TOKEN_EXCHANGE' : 'TOKEN_INVALID');
   }
-  const person = identityFromClaims(verified.claims);
+  const person = identityFromClaims(verified.claims, { acceptGoogle: Boolean(cfg.googleIdpId) });
   if (!person.ok) {
     console.warn(`zitadel callback: no session for sub ${verified.claims.sub} (${person.reason})`);
     return fail(person.reason === 'email_unverified' ? 'EMAIL_UNVERIFIED' : 'ACCOUNT_REFUSED');
@@ -491,14 +577,18 @@ export async function handleZitadelCallback(url, request, env, errorRedirect, su
 
 /** The public part of a session: what the site may show. Never the token. */
 export function sessionView(cfg, session) {
+  const google = session.provider === 'google';
   return {
     signedIn: true,
+    provider: google ? 'google' : 'github',
     login: session.login,
     name: session.name,
     email: session.email,
     githubId: session.github_id,
+    ...(google ? { googleSub: session.google_sub } : {}),
     expiresAt: session.exp,
     canRequestWorkspace: mayUseCookieFlow(cfg, session),
+    providers: signInProviders(cfg),
   };
 }
 
