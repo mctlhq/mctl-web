@@ -1038,7 +1038,7 @@ export async function handleSessionInfo(request, env, origin) {
   }
   let loaded;
   try {
-    loaded = await loadSession(request, cfg.sessions, Math.floor(Date.now() / 1000));
+    loaded = await loadSession(request, cfg.sessions, Math.floor(Date.now() / 1000), { acceptGoogle: Boolean(cfg.googleIdpId) });
   } catch (e) {
     console.error('session: KV read failed:', e?.message ?? e);
     return sessionJson({ error: 'Sign-in is not available' }, 503, origin, cfg);
@@ -1065,7 +1065,9 @@ export async function handleLogout(request, env, origin) {
     return sessionJson({ error: 'Sign-in is not available' }, 503, origin, cfg);
   }
   try {
-    const loaded = await loadSession(request, cfg.sessions, Math.floor(Date.now() / 1000));
+    // Signing out always deletes the record, a Google one too while Google
+    // is off.
+    const loaded = await loadSession(request, cfg.sessions, Math.floor(Date.now() / 1000), { acceptGoogle: true });
     if (loaded.ok) await cfg.sessions.delete(loaded.key);
   } catch (e) {
     // The cookie is cleared regardless; a record left behind expires by
@@ -1100,7 +1102,7 @@ async function requireSession(request, env, origin) {
   }
   let loaded;
   try {
-    loaded = await loadSession(request, cfg.sessions, Math.floor(Date.now() / 1000));
+    loaded = await loadSession(request, cfg.sessions, Math.floor(Date.now() / 1000), { acceptGoogle: Boolean(cfg.googleIdpId) });
   } catch (e) {
     console.error('session: KV read failed:', e?.message ?? e);
     return { response: sessionJson({ error: 'Sign-in is not available' }, 503, origin, cfg) };

@@ -1242,3 +1242,27 @@ test('revocation: a Google customer is revoked by its Google subject only', asyn
   assert.equal(env.SESSIONS.store.has(await sessionKey(github.sessionId)), false);
   assert.equal(env.SESSIONS.store.has(await sessionKey(other.sessionId)), true);
 });
+
+test('google: unsetting ZITADEL_GOOGLE_IDP_ID ends existing Google sessions; logout still deletes them', async () => {
+  const env = googleEnv({ AUTH_FLOW_PUBLIC: 'true' });
+  const { sessionId } = await googleSignIn(env);
+  const github = await signIn(env, { sub: '395285255046563542' });
+  delete env.ZITADEL_GOOGLE_IDP_ID;
+  const view = await worker.fetch(request('/api/zitadel/session', { cookies: { [SESSION_COOKIE]: sessionId } }), env);
+  assert.deepEqual(await view.json(), { signedIn: false, providers: ['github'] });
+  assert.match(view.headers.get('Set-Cookie') ?? '', new RegExp(`^${SESSION_COOKIE}=;`));
+  const network = createNetwork();
+  const check = await withNetwork(network, () => worker.fetch(request('/api/team/check', {
+    method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: SITE, body: { name: 'acme' } }), env));
+  assert.equal(check.status, 401);
+  assert.equal(network.calls.availability.length, 0);
+  // GitHub sessions are unaffected.
+  const githubView = await worker.fetch(request('/api/zitadel/session', { cookies: { [SESSION_COOKIE]: github.sessionId } }), env);
+  assert.equal((await githubView.json()).signedIn, true);
+  const key = await sessionKey(sessionId);
+  assert.equal(env.SESSIONS.store.has(key), true);
+  const out = await worker.fetch(request('/api/zitadel/logout', {
+    method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: SITE }), env);
+  assert.equal(out.status, 200);
+  assert.equal(env.SESSIONS.store.has(key), false);
+});

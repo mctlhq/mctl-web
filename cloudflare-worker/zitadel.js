@@ -400,8 +400,12 @@ export async function createSession(kv, { identity, idToken, idTokenExp }, nowSe
  * The session named by the request's cookie, or `{ ok: false, reason }`:
  * `none` without a cookie, `invalid` for a malformed id or a missing,
  * unreadable or expired record. The caller clears the cookie on `invalid`.
+ *
+ * A Google session is `invalid` unless `acceptGoogle` (Google is
+ * configured): unsetting ZITADEL_GOOGLE_IDP_ID ends every Google session at
+ * its next request, not only new sign-ins.
  */
-export async function loadSession(request, kv, nowSeconds) {
+export async function loadSession(request, kv, nowSeconds, { acceptGoogle = false } = {}) {
   const sessionId = readCookie(request, SESSION_COOKIE);
   if (!sessionId) return { ok: false, reason: 'none' };
   if (!SESSION_ID_RE.test(sessionId)) return { ok: false, reason: 'invalid' };
@@ -424,7 +428,7 @@ export async function loadSession(request, kv, nowSeconds) {
   }
   // A record without a provider is a GitHub session from before Google.
   if (record.provider === 'google'
-    ? (typeof record.google_sub !== 'string' || !GOOGLE_SUB_RE.test(record.google_sub) || record.github_id !== '')
+    ? (!acceptGoogle || typeof record.google_sub !== 'string' || !GOOGLE_SUB_RE.test(record.google_sub) || record.github_id !== '')
     : (record.provider !== undefined && record.provider !== 'github')) {
     return { ok: false, reason: 'invalid' };
   }

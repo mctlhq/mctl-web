@@ -43,8 +43,7 @@ const { t } = useI18n();
         <span>{{ t('form.google_login') }}</span>
       </BaseButton>
       <p class="github-auth-block__disclaimer">
-        Requests read-only access: your username, avatar, and verified email.<br>
-        No access to your code or repositories.
+        {{ t(google ? 'form.signin_disclaimer' : 'form.github_disclaimer') }}
       </p>
     </template>
     <div v-else class="github-auth-block__user-profile">
@@ -52,7 +51,7 @@ const { t } = useI18n();
       <div class="github-auth-block__user-info">
         <strong>{{ user.name || user.login || user.email }}</strong>
         <a v-if="user.html_url" :href="user.html_url" target="_blank" rel="noopener">@{{ user.login }}</a>
-        <span v-else-if="user.email" class="github-auth-block__email">{{ user.email }}</span>
+        <span v-else-if="user.name && user.email" class="github-auth-block__email">{{ user.email }}</span>
       </div>
       <button
         type="button"
