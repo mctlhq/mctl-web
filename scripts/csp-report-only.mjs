@@ -35,13 +35,13 @@ const UNSUPPORTED_TYPES = new Set(['speculationrules'])
 // Start/end tags follow the HTML tokenizer: "<script" and "</script" end at
 // whitespace, "/" or ">", and an end tag may carry junk attributes
 // ("</script\t\n bar>" still closes the element).
-const SCRIPT_OPEN_RE = /<script(?=[\s/>])/gi
+const SCRIPT_OPEN_RE = /^<script(?=[\s/>])/i
+const STYLE_OPEN_RE = /^<style(?=[\s/>])/i
 const SCRIPT_CLOSE_RE = /<\/script(?=[\s/>])[^>]*>/gi
-const STYLE_RE = /<style(?=[\s/>])[^>]*>[\s\S]*?<\/style(?=[\s/>])[^>]*>/gi
-const COMMENT_RE = /<!--[\s\S]*?-->/g
+const STYLE_CLOSE_RE = /<\/style(?=[\s/>])[^>]*>/gi
+const TAG_OPEN_RE = /^<([a-zA-Z][^\s/>]*)/
 // The rest of a start tag, up to the ">" that is not inside a quoted value.
 const TAG_REST_RE = /(?:[^>"']|"[^"]*"|'[^']*')*>/y
-const TAG_RE = /<([a-zA-Z][^\s/>]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g
 const ATTR_RE = /([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g
 
 /** Attribute map (lowercased name -> value). Quoted values are consumed whole,
@@ -56,30 +56,42 @@ function parseAttrs(str) {
   return out
 }
 
-/** Splits a document into its <script> elements and the markup around them. */
-function scanScripts(html, where) {
+/** Walks a document once, by position. Comments and <script>/<style> bodies
+ *  are skipped, never stripped, so nothing can be hidden or faked by nesting
+ *  ("<sty<style>le>"). Returns every start tag seen outside those bodies and
+ *  every <script> element with its body. Anything unreadable throws: a
+ *  failure to observe is never "no tags". */
+function scanDocument(html, where) {
+  const tags = []
   const scripts = []
-  const markup = []
   let pos = 0
   for (;;) {
-    SCRIPT_OPEN_RE.lastIndex = pos
-    const open = SCRIPT_OPEN_RE.exec(html)
-    if (!open) break
-    TAG_REST_RE.lastIndex = open.index + open[0].length
+    const i = html.indexOf('<', pos)
+    if (i === -1) break
+    if (html.startsWith('<!--', i)) {
+      const end = html.indexOf('-->', i + 4)
+      if (end === -1) throw new Error(`${where}: unclosed comment; refusing to guess`)
+      pos = end + 3
+      continue
+    }
+    const name = TAG_OPEN_RE.exec(html.slice(i, i + 64))
+    if (!name) { pos = i + 1; continue }
+    TAG_REST_RE.lastIndex = i + name[0].length
     const rest = TAG_REST_RE.exec(html)
-    // A "<script" we cannot read to the end is a document we could not read in
-    // full. That is a failure to observe, never "no inline scripts".
-    if (!rest) throw new Error(`${where}: unterminated <script> start tag; refusing to guess`)
-    const bodyStart = TAG_REST_RE.lastIndex
-    SCRIPT_CLOSE_RE.lastIndex = bodyStart
-    const close = SCRIPT_CLOSE_RE.exec(html)
-    if (!close) throw new Error(`${where}: unclosed <script> (no end tag); refusing to guess`)
-    markup.push(html.slice(pos, bodyStart))
-    scripts.push({ attrs: parseAttrs(rest[0].slice(0, -1)), body: html.slice(bodyStart, close.index) })
+    if (!rest) throw new Error(`${where}: unterminated <${name[1]}> start tag; refusing to guess`)
+    const attrs = parseAttrs(rest[0].slice(0, -1))
+    tags.push({ name: name[1].toLowerCase(), attrs })
+    pos = TAG_REST_RE.lastIndex
+    const isScript = SCRIPT_OPEN_RE.test(html.slice(i, i + 16))
+    if (!isScript && !STYLE_OPEN_RE.test(html.slice(i, i + 15))) continue
+    const closeRe = isScript ? SCRIPT_CLOSE_RE : STYLE_CLOSE_RE
+    closeRe.lastIndex = pos
+    const close = closeRe.exec(html)
+    if (!close) throw new Error(`${where}: unclosed <${isScript ? 'script' : 'style'}> (no end tag); refusing to guess`)
+    if (isScript) scripts.push({ attrs, body: html.slice(pos, close.index) })
     pos = close.index + close[0].length
   }
-  markup.push(html.slice(pos))
-  return { scripts, markup: markup.join('') }
+  return { tags, scripts }
 }
 
 export function hashOf(body) {
@@ -89,7 +101,7 @@ export function hashOf(body) {
 /** Inline executable scripts of one HTML document: [{ hash, type, body }]. */
 export function inlineExecutableScripts(html, where = '<html>') {
   const found = []
-  for (const { attrs, body } of scanScripts(html, where).scripts) {
+  for (const { attrs, body } of scanDocument(html, where).scripts) {
     if (attrs.has('src')) continue // external: covered by 'self'/hosts
     const type = (attrs.get('type') ?? '').trim().toLowerCase()
     if (UNSUPPORTED_TYPES.has(type)) {
@@ -111,15 +123,13 @@ const URL_ATTRS = new Set([
 /** Inline event handlers and javascript: URLs, looked for inside tags only
  *  (script/style bodies, comments and text are never inspected). */
 export function inlineHandlers(html, where = '<html>') {
-  const markup = scanScripts(html, where).markup
-    .replace(COMMENT_RE, '').replace(STYLE_RE, '')
   const found = []
-  for (const [, tag, attrStr] of markup.matchAll(TAG_RE)) {
-    for (const [name, value] of parseAttrs(attrStr)) {
+  for (const { name: tag, attrs } of scanDocument(html, where).tags) {
+    for (const [name, value] of attrs) {
       if (/^on[a-z]+$/.test(name)) {
-        found.push(`${where}: <${tag.toLowerCase()}> has inline event handler ${name}=`)
-      } else if (URL_ATTRS.has(name) && /^javascript:/i.test(value.replace(/[\u0000- ]/g, ''))) {
-        found.push(`${where}: <${tag.toLowerCase()}> has a javascript: URL in ${name}=`)
+        found.push(`${where}: <${tag}> has inline event handler ${name}=`)
+      } else if (URL_ATTRS.has(name) && /^javascript:/i.test(value.replace(/[\u0000-\u0020]/g, ''))) {
+        found.push(`${where}: <${tag}> has a javascript: URL in ${name}=`)
       }
     }
   }

@@ -158,3 +158,18 @@ test('verify FAILS on an inline handler or javascript: URL in built HTML', () =>
   assert.ok(r.problems.some((p) => /bad\.html.*onclick/.test(p)))
   assert.ok(r.problems.some((p) => /bad\.html.*javascript: URL/.test(p)))
 })
+
+test('nested/overlapping constructs cannot hide or fake a handler', () => {
+  // Faked: handler text that only looks like a tag after naive stripping.
+  assert.deepEqual(inlineHandlers('<!<!-- -->-- onclick=x>'), [])
+  assert.deepEqual(inlineHandlers('<sty<style>le>a{}</style>'), [])
+  // Hidden: a real handler next to constructs that chained replaces would eat.
+  assert.equal(inlineHandlers('<!-- a --><p onclick=x>t</p>').length, 1)
+  assert.equal(inlineHandlers('<sty<style>le><b onclick=x>t</b>').length, 1)
+  assert.equal(inlineHandlers('<style>a{}</style><b onclick=x>').length, 1)
+  assert.equal(inlineHandlers('<script>"<style>"</script><b onclick=x>').length, 1)
+  // Skipped: tags inside a real comment/style/script body are not tags.
+  assert.deepEqual(inlineHandlers('<style><b onclick=x></style><!-- <b onclick=x> --><script>"<b onclick=x>"</script>'), [])
+  assert.throws(() => inlineHandlers('<p><!-- never closed <b onclick=x>'), /unclosed comment/)
+  assert.throws(() => inlineHandlers('<style>a{}'), /unclosed <style>/)
+})
