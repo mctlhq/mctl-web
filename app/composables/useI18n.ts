@@ -30,12 +30,12 @@ const translations: Record<string, Record<string, string>> = {
     "invitation.privacy": "We use these details to review your request and contact you. The saved request expires after 90 days. A copy is sent to our private Telegram review channel.",
 
     // Meta
-    'meta.title': 'MCTL \u2014 Autonomous AI Agents & GitOps Cloud Platform',
-    'meta.description': 'Connect AI agents and MCP servers to production Kubernetes without DevOps overhead. Automated GitOps delivery, built-in Vault secrets, and team isolation.',
-    'meta.og_title': 'MCTL \u2014 Autonomous AI Agents & GitOps Cloud Platform',
-    'meta.og_description': 'Connect AI agents and MCP servers to production Kubernetes without DevOps overhead. Automated GitOps delivery, built-in Vault secrets, and team isolation.',
-    'meta.tw_title': 'MCTL \u2014 Autonomous AI Agents & GitOps Cloud Platform',
-    'meta.tw_description': 'Connect AI agents and MCP servers to production Kubernetes without DevOps overhead. Automated GitOps delivery, built-in Vault secrets, and team isolation.',
+    'meta.title': 'MCTL \u2014 AI-native Kubernetes platform for product teams',
+    'meta.description': 'MCTL is a self-service Kubernetes platform for product teams: GitOps delivery (ArgoCD), Vault secrets and team isolation, operable from AI assistants via MCP.',
+    'meta.og_title': 'MCTL \u2014 AI-native Kubernetes platform for product teams',
+    'meta.og_description': 'MCTL is a self-service Kubernetes platform for product teams: GitOps delivery (ArgoCD), Vault secrets and team isolation, operable from AI assistants via MCP.',
+    'meta.tw_title': 'MCTL \u2014 AI-native Kubernetes platform for product teams',
+    'meta.tw_description': 'MCTL is a self-service Kubernetes platform for product teams: GitOps delivery (ArgoCD), Vault secrets and team isolation, operable from AI assistants via MCP.',
 
     // Nav
     'nav.platform': 'Platform',
@@ -47,9 +47,9 @@ const translations: Record<string, Record<string, string>> = {
     'nav.main_label': 'Main navigation',
 
     // Hero
-    'hero.badge': 'Self-service Kubernetes platform',
+    'hero.badge': 'AI-native Kubernetes platform',
     'hero.title': 'Kubernetes without building a platform team',
-    'hero.subtitle': '<span class="logo-m">M</span><span class="highlight-ctl">CTL</span> gives growing product teams self-service Kubernetes with GitOps, secrets, and team isolation built in.<br>No tickets. No waiting. Production-ready from day one.',
+    'hero.subtitle': '<span class="logo-m">M</span><span class="highlight-ctl">CTL</span> is a self-service Kubernetes platform for product teams, with GitOps, secrets, and team isolation built in. Operate it from a portal, an API, or your AI assistant over MCP.<br>No tickets. No waiting. Production-ready from day one.',
     'hero.cta': 'Request Access',
     'hero.cta_secondary': 'Read the docs',
 
@@ -281,12 +281,12 @@ const translations: Record<string, Record<string, string>> = {
     "invitation.privacy": "Эти данные нужны для рассмотрения заявки и связи с вами. Сохранённая заявка удаляется через 90 дней. Копия поступает в наш закрытый канал Telegram.",
 
     // Meta
-    'meta.title': 'MCTL \u2014 \u041f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 \u0434\u043b\u044f AI-\u0430\u0433\u0435\u043d\u0442\u043e\u0432, MCP-\u0441\u0435\u0440\u0432\u0435\u0440\u043e\u0432 \u0438 GitOps Cloud',
-    'meta.description': '\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0430\u0439\u0442\u0435 AI-\u0430\u0433\u0435\u043d\u0442\u043e\u0432 \u0438 MCP-\u0441\u0435\u0440\u0432\u0435\u0440\u044b \u043a \u043f\u0440\u043e\u0434\u0430\u043a\u0448\u0435\u043d Kubernetes \u0431\u0435\u0437 DevOps-\u0440\u0443\u0442\u0438\u043d\u044b. \u0410\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0439 GitOps, \u0441\u0435\u043a\u0440\u0435\u0442\u044b Vault, \u0438\u0437\u043e\u043b\u044f\u0446\u0438\u044f \u043a\u043e\u043c\u0430\u043d\u0434 \u0438 \u0445\u0430\u0431 MCP.',
-    'meta.og_title': 'MCTL \u2014 \u041f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 \u0434\u043b\u044f AI-\u0430\u0433\u0435\u043d\u0442\u043e\u0432, MCP-\u0441\u0435\u0440\u0432\u0435\u0440\u043e\u0432 \u0438 GitOps Cloud',
-    'meta.og_description': '\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0430\u0439\u0442\u0435 AI-\u0430\u0433\u0435\u043d\u0442\u043e\u0432 \u0438 MCP-\u0441\u0435\u0440\u0432\u0435\u0440\u044b \u043a \u043f\u0440\u043e\u0434\u0430\u043a\u0448\u0435\u043d Kubernetes \u0431\u0435\u0437 DevOps-\u0440\u0443\u0442\u0438\u043d\u044b. \u0410\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0439 GitOps, \u0441\u0435\u043a\u0440\u0435\u0442\u044b Vault, \u0438\u0437\u043e\u043b\u044f\u0446\u0438\u044f \u043a\u043e\u043c\u0430\u043d\u0434 \u0438 \u0445\u0430\u0431 MCP.',
-    'meta.tw_title': 'MCTL \u2014 \u041f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 \u0434\u043b\u044f AI-\u0430\u0433\u0435\u043d\u0442\u043e\u0432, MCP-\u0441\u0435\u0440\u0432\u0435\u0440\u043e\u0432 \u0438 GitOps Cloud',
-    'meta.tw_description': '\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0430\u0439\u0442\u0435 AI-\u0430\u0433\u0435\u043d\u0442\u043e\u0432 \u0438 MCP-\u0441\u0435\u0440\u0432\u0435\u0440\u044b \u043a \u043f\u0440\u043e\u0434\u0430\u043a\u0448\u0435\u043d Kubernetes \u0431\u0435\u0437 DevOps-\u0440\u0443\u0442\u0438\u043d\u044b. \u0410\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0439 GitOps, \u0441\u0435\u043a\u0440\u0435\u0442\u044b Vault, \u0438\u0437\u043e\u043b\u044f\u0446\u0438\u044f \u043a\u043e\u043c\u0430\u043d\u0434 \u0438 \u0445\u0430\u0431 MCP.',
+    'meta.title': 'MCTL \u2014 AI-native \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 Kubernetes \u0434\u043b\u044f \u043f\u0440\u043e\u0434\u0443\u043a\u0442\u043e\u0432\u044b\u0445 \u043a\u043e\u043c\u0430\u043d\u0434',
+    'meta.description': 'MCTL \u2014 self-service \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 Kubernetes \u0434\u043b\u044f \u043f\u0440\u043e\u0434\u0443\u043a\u0442\u043e\u0432\u044b\u0445 \u043a\u043e\u043c\u0430\u043d\u0434: GitOps (ArgoCD), \u0441\u0435\u043a\u0440\u0435\u0442\u044b Vault \u0438 \u0438\u0437\u043e\u043b\u044f\u0446\u0438\u044f \u043a\u043e\u043c\u0430\u043d\u0434, \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u0438\u0437 AI-\u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043d\u0442\u043e\u0432 \u0447\u0435\u0440\u0435\u0437 MCP.',
+    'meta.og_title': 'MCTL \u2014 AI-native \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 Kubernetes \u0434\u043b\u044f \u043f\u0440\u043e\u0434\u0443\u043a\u0442\u043e\u0432\u044b\u0445 \u043a\u043e\u043c\u0430\u043d\u0434',
+    'meta.og_description': 'MCTL \u2014 self-service \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 Kubernetes \u0434\u043b\u044f \u043f\u0440\u043e\u0434\u0443\u043a\u0442\u043e\u0432\u044b\u0445 \u043a\u043e\u043c\u0430\u043d\u0434: GitOps (ArgoCD), \u0441\u0435\u043a\u0440\u0435\u0442\u044b Vault \u0438 \u0438\u0437\u043e\u043b\u044f\u0446\u0438\u044f \u043a\u043e\u043c\u0430\u043d\u0434, \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u0438\u0437 AI-\u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043d\u0442\u043e\u0432 \u0447\u0435\u0440\u0435\u0437 MCP.',
+    'meta.tw_title': 'MCTL \u2014 AI-native \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 Kubernetes \u0434\u043b\u044f \u043f\u0440\u043e\u0434\u0443\u043a\u0442\u043e\u0432\u044b\u0445 \u043a\u043e\u043c\u0430\u043d\u0434',
+    'meta.tw_description': 'MCTL \u2014 self-service \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 Kubernetes \u0434\u043b\u044f \u043f\u0440\u043e\u0434\u0443\u043a\u0442\u043e\u0432\u044b\u0445 \u043a\u043e\u043c\u0430\u043d\u0434: GitOps (ArgoCD), \u0441\u0435\u043a\u0440\u0435\u0442\u044b Vault \u0438 \u0438\u0437\u043e\u043b\u044f\u0446\u0438\u044f \u043a\u043e\u043c\u0430\u043d\u0434, \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u0438\u0437 AI-\u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043d\u0442\u043e\u0432 \u0447\u0435\u0440\u0435\u0437 MCP.',
 
     // Nav
     'nav.platform': '\u041f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430',
@@ -298,7 +298,7 @@ const translations: Record<string, Record<string, string>> = {
     'nav.main_label': '\u041e\u0441\u043d\u043e\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e',
 
     // Hero
-    'hero.badge': 'Self-service \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 Kubernetes',
+    'hero.badge': 'AI-native \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 Kubernetes',
     'hero.title': 'Kubernetes \u0431\u0435\u0437 DevOps-\u0438\u043d\u0436\u0435\u043d\u0435\u0440\u043e\u0432 \u0432 \u0448\u0442\u0430\u0442\u0435',
     'hero.subtitle': '<span class="logo-m">M</span><span class="highlight-ctl">CTL</span> \u0434\u0430\u0451\u0442 \u043f\u0440\u043e\u0434\u0443\u043a\u0442\u043e\u0432\u044b\u043c \u043a\u043e\u043c\u0430\u043d\u0434\u0430\u043c Kubernetes \u0441 GitOps, \u0441\u0435\u043a\u0440\u0435\u0442\u0430\u043c\u0438 \u0438 \u0438\u0437\u043e\u043b\u044f\u0446\u0438\u0435\u0439 \u2014 \u043f\u0440\u044f\u043c\u043e \u0438\u0437 \u043a\u043e\u0440\u043e\u0431\u043a\u0438.<br>\u0411\u0435\u0437 \u0442\u0438\u043a\u0435\u0442\u043e\u0432. \u0411\u0435\u0437 \u043e\u0436\u0438\u0434\u0430\u043d\u0438\u0439. \u0413\u043e\u0442\u043e\u0432\u043e \u043a \u043f\u0440\u043e\u0434\u0430\u043a\u0448\u0435\u043d\u0443 \u0441 \u043f\u0435\u0440\u0432\u043e\u0433\u043e \u0434\u043d\u044f.',
     'hero.cta': '\u041f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0434\u043e\u0441\u0442\u0443\u043f',

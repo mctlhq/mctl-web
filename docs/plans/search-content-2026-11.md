@@ -227,6 +227,31 @@ small discovery improvement, not proof that the whole site is unindexable.
   zero-third-party checks pass, journal lifecycle is recorded, and the eventual
   deployment is performed only with mctl MCP tools.
 
+### 6. mctl.ai home: one product description
+
+- Confidence: observed navigational queries, very small sample. The name
+  "mctl" is also used by unrelated tools (a MicroPython CLI, a server-firmware
+  CLI), so this removes our own inconsistency; it does not remove the collision.
+- URL/repository: `https://mctl.ai/`, `mctl-web`.
+- Scope: title, og/twitter title and description, hero badge and lead (EN), RU
+  meta and badge, the `public/llms.txt` intro, and a `SoftwareApplication` node
+  in the existing JSON-LD graph. "Autonomous AI Agents" leaves the title:
+  agents are an add-on, the platform is the product. This revises the title
+  that shipped on 2026-11-05/06.
+- Not in this change: the docs.mctl.ai title, the GitHub organization
+  description and the organization profile README (other repositories), the RU
+  hero lead, and the personal site.
+- Baseline, GSC `sc-domain:mctl.ai`, Web, 2026-08-20 to 2026-11-17 (mostly the
+  earlier copy; the current title was live for about 12 of those days): the
+  home page 301 impressions, 2 clicks, CTR 0.66%, average position 4.6; the
+  query `mctl` 140 impressions, 1 click, position 4.6. About 81% of the
+  domain's clicks go to `alice.mctl.ai`, not the home page.
+- Honest limit: at this volume one click is the difference between 0.7% and
+  3%. Only a clearly new pattern counts as a result, for example a non-brand
+  query reaching the home page.
+- Done: record the release and deploy date here, confirm the recrawl with URL
+  Inspection, then compare equal windows as described below.
+
 ## Measurement and next decisions
 
 1. Record each brief's merge/release/deploy date here when implemented; do not

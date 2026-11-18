@@ -1,6 +1,6 @@
-# MCTL — AI-Native Infrastructure Management Platform
+# MCTL — AI-native Kubernetes platform for product teams
 
-> MCTL is the Kubernetes management platform built for the AI era. Deploy microservices, run ArgoCD GitOps pipelines, manage multi-tenant environments, and automate incident response using natural language and Model Context Protocol (MCP).
+> MCTL (mctl.ai) is a self-service Kubernetes platform: ArgoCD GitOps delivery, HashiCorp Vault secrets and tenant isolation in one control plane, operable from a portal, REST API or AI assistants over the Model Context Protocol (MCP).
 
 ## Core Capabilities
 
