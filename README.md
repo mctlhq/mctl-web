@@ -196,7 +196,7 @@ GitHub OAuth App settings — Homepage: `https://mctl.ai`, Callback: `https://mc
 
 - No SPA fallback: every route is prerendered, unknown paths get `404` and `404.html`, and `/200.html` itself returns `404`
 - `/_nuxt/` assets: immutable 1-year cache
-- Security headers: HSTS (1 year), strict CSP, X-Frame-Options
+- Security headers: HSTS (1 year), an enforcing CSP that still allows `'unsafe-inline'` scripts (see [Content Security Policy](#content-security-policy)), X-Frame-Options
 - Health endpoints: `/healthz`, `/readyz`
 
 ## Pages
@@ -247,9 +247,62 @@ The `for=docs`, `for=mcp` and `for=tg-mcp` flows, which handed a GitHub token to
 | Identity         | GitHub login signed with HMAC — landing `#auth=` fragment cannot be forged |
 | Token exposure   | GitHub `access_token` never leaves the Worker; the browser receives signed identity only |
 | CORS             | Landing API restricted to `https://mctl.ai`                          |
-| CSP              | Strict Content-Security-Policy headers via nginx                     |
+| CSP              | Enforcing CSP via nginx (allows inline scripts today) plus a stricter Report-Only policy being rolled out; see below |
 | HSTS             | Enabled, max-age 1 year                                             |
 | Rate limiting    | 5 requests / 5 minutes on `/api/submit`                             |
+
+## Content Security Policy
+
+The enforcing `Content-Security-Policy` is not strict: `script-src` still
+carries `'unsafe-inline'` (the Nuxt bootstrap and import map are inline), and
+it sets no `object-src`, `base-uri`, `form-action` or `frame-ancestors`. A
+stricter policy is being introduced in report-only mode first.
+
+Two headers are sent on every response:
+
+| Header | Role |
+| ------ | ---- |
+| `Content-Security-Policy` | Enforcing, unchanged. Defined once in `nginx/security-headers.conf`. |
+| `Content-Security-Policy-Report-Only` | Candidate policy, never blocks. Generated at image build time. |
+
+The candidate policy is the enforcing one with: `script-src 'self'` plus a
+`sha256-` hash of every inline executable script in the built HTML and the
+existing third-party hosts, **no** `'unsafe-inline'`; `style-src-elem` keeping
+`'unsafe-inline'`; `style-src-attr 'none'`; `object-src 'none'`;
+`base-uri 'self'`; `form-action 'self'`; `frame-ancestors 'self'` (equal to the
+existing `X-Frame-Options: SAMEORIGIN`).
+
+How it is built:
+
+- `scripts/csp-report-only.mjs generate` runs in the Dockerfile builder stage
+  after `npm run generate`. It scans `.output/public/**/*.html`, hashes inline
+  scripts (`<script>` without `src` whose type is absent, `module`, `importmap`
+  or a JavaScript MIME type; `application/json` and `application/ld+json` are
+  data and need no hash) and writes `csp-report-only.conf`, an nginx include.
+  Hashes are never hardcoded.
+- `scripts/csp-report-only.mjs verify` runs right after and fails the image
+  build if any inline executable script is missing from the written header.
+  An unparsable page or a build output with no HTML is an error, not an empty
+  hash set.
+- nginx's `add_header` in a location replaces the parent's, so every location
+  includes the two snippets; `scripts/nginx-includes.test.mjs` fails when one
+  does not.
+- Tests: `node --test scripts/*.test.mjs` (CI: `csp-test`).
+
+There is deliberately no `report-uri` / `report-to` endpoint (public repo, no
+personal data). Violations are visible only in the browser devtools console
+("Content Security Policy of your site blocks ..." / "[Report Only] ...").
+
+Rollout plan:
+
+1. Ship the report-only header (this change).
+2. Observe: open `/`, `/privacy` and the form flows (Turnstile, GitHub sign-in)
+   in a real browser with devtools and look for `[Report Only]` violations;
+   check again after each deploy. Cloudflare Auto Minify and Rocket Loader must
+   stay off (they rewrite inline scripts and invalidate hashes); Email
+   Obfuscation can inject `/cdn-cgi/` scripts into pages.
+3. When a deploy cycle is clean, a follow-up PR moves the candidate policy
+   into the enforcing header (and removes the Report-Only one). Not done here.
 
 ## Testing
 

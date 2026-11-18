@@ -1,0 +1,27 @@
+name: csp-test
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'nginx.conf'
+      - 'nginx/**'
+      - '.github/workflows/csp-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      # Dependency-free: the scripts use only node:* built-ins. The check that
+      # runs against the real built HTML is the `verify` step in the
+      # Dockerfile, exercised by the required `build` job.
+      - name: Run CSP and nginx include tests
+        run: node --test scripts/*.test.mjs
