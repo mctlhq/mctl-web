@@ -32,14 +32,54 @@ const JS_TYPES = new Set([
 // appears we cannot claim coverage, so the build stops instead of guessing.
 const UNSUPPORTED_TYPES = new Set(['speculationrules'])
 
-const SCRIPT_RE =
-  /<script\b((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/script\s*>/gi
+// Start/end tags follow the HTML tokenizer: "<script" and "</script" end at
+// whitespace, "/" or ">", and an end tag may carry junk attributes
+// ("</script\t\n bar>" still closes the element).
+const SCRIPT_OPEN_RE = /<script(?=[\s/>])/gi
+const SCRIPT_CLOSE_RE = /<\/script(?=[\s/>])[^>]*>/gi
+const STYLE_RE = /<style(?=[\s/>])[^>]*>[\s\S]*?<\/style(?=[\s/>])[^>]*>/gi
+const COMMENT_RE = /<!--[\s\S]*?-->/g
+// The rest of a start tag, up to the ">" that is not inside a quoted value.
+const TAG_REST_RE = /(?:[^>"']|"[^"]*"|'[^']*')*>/y
+const TAG_RE = /<([a-zA-Z][^\s/>]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g
+const ATTR_RE = /([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g
 
-function attr(attrs, name) {
-  const m = new RegExp(
-    `(?:^|\\s)${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'>]+))`, 'i',
-  ).exec(attrs)
-  return m ? (m[1] ?? m[2] ?? m[3] ?? '') : null
+/** Attribute map (lowercased name -> value). Quoted values are consumed whole,
+ *  so text inside a value can never be mistaken for an attribute name. The
+ *  first occurrence of a name wins, as in the HTML parser. */
+function parseAttrs(str) {
+  const out = new Map()
+  for (const m of str.matchAll(ATTR_RE)) {
+    const name = m[1].toLowerCase()
+    if (!out.has(name)) out.set(name, m[2] ?? m[3] ?? m[4] ?? '')
+  }
+  return out
+}
+
+/** Splits a document into its <script> elements and the markup around them. */
+function scanScripts(html, where) {
+  const scripts = []
+  const markup = []
+  let pos = 0
+  for (;;) {
+    SCRIPT_OPEN_RE.lastIndex = pos
+    const open = SCRIPT_OPEN_RE.exec(html)
+    if (!open) break
+    TAG_REST_RE.lastIndex = open.index + open[0].length
+    const rest = TAG_REST_RE.exec(html)
+    // A "<script" we cannot read to the end is a document we could not read in
+    // full. That is a failure to observe, never "no inline scripts".
+    if (!rest) throw new Error(`${where}: unterminated <script> start tag; refusing to guess`)
+    const bodyStart = TAG_REST_RE.lastIndex
+    SCRIPT_CLOSE_RE.lastIndex = bodyStart
+    const close = SCRIPT_CLOSE_RE.exec(html)
+    if (!close) throw new Error(`${where}: unclosed <script> (no end tag); refusing to guess`)
+    markup.push(html.slice(pos, bodyStart))
+    scripts.push({ attrs: parseAttrs(rest[0].slice(0, -1)), body: html.slice(bodyStart, close.index) })
+    pos = close.index + close[0].length
+  }
+  markup.push(html.slice(pos))
+  return { scripts, markup: markup.join('') }
 }
 
 export function hashOf(body) {
@@ -49,24 +89,39 @@ export function hashOf(body) {
 /** Inline executable scripts of one HTML document: [{ hash, type, body }]. */
 export function inlineExecutableScripts(html, where = '<html>') {
   const found = []
-  let matched = 0
-  for (const m of html.matchAll(SCRIPT_RE)) {
-    matched++
-    const attrs = m[1]
-    const body = m[2]
-    if (/(?:^|\s)src\s*=/i.test(attrs)) continue // external: covered by 'self'/hosts
-    const type = (attr(attrs, 'type') ?? '').trim().toLowerCase()
+  for (const { attrs, body } of scanScripts(html, where).scripts) {
+    if (attrs.has('src')) continue // external: covered by 'self'/hosts
+    const type = (attrs.get('type') ?? '').trim().toLowerCase()
     if (UNSUPPORTED_TYPES.has(type)) {
       throw new Error(`${where}: <script type="${type}"> needs its own CSP keyword; not supported`)
     }
     if (type !== '' && !JS_TYPES.has(type)) continue // inert data block
     found.push({ hash: hashOf(body), type: type || 'classic', body })
   }
-  // A "<script" the pattern did not close is a document we could not read in
-  // full. That is a failure to observe, never "no inline scripts".
-  const opened = (html.match(/<script\b/gi) ?? []).length
-  if (opened !== matched) {
-    throw new Error(`${where}: ${opened} <script> tags opened but ${matched} parsed; refusing to guess`)
+  return found
+}
+
+// script-src without 'unsafe-inline' also blocks these, and hashes cannot cover
+// them: an inline event handler or a javascript: URL would silently break.
+const URL_ATTRS = new Set([
+  'href', 'src', 'action', 'formaction', 'xlink:href', 'data', 'poster',
+  'background', 'cite', 'longdesc', 'manifest', 'ping',
+])
+
+/** Inline event handlers and javascript: URLs, looked for inside tags only
+ *  (script/style bodies, comments and text are never inspected). */
+export function inlineHandlers(html, where = '<html>') {
+  const markup = scanScripts(html, where).markup
+    .replace(COMMENT_RE, '').replace(STYLE_RE, '')
+  const found = []
+  for (const [, tag, attrStr] of markup.matchAll(TAG_RE)) {
+    for (const [name, value] of parseAttrs(attrStr)) {
+      if (/^on[a-z]+$/.test(name)) {
+        found.push(`${where}: <${tag.toLowerCase()}> has inline event handler ${name}=`)
+      } else if (URL_ATTRS.has(name) && /^javascript:/i.test(value.replace(/[\u0000- ]/g, ''))) {
+        found.push(`${where}: <${tag.toLowerCase()}> has a javascript: URL in ${name}=`)
+      }
+    }
   }
   return found
 }
@@ -88,14 +143,17 @@ export function collectHashes(publicDir) {
     throw new Error(`no .html files under ${publicDir}; is the build output there?`)
   }
   const byHash = new Map()
+  const handlers = []
   for (const f of files) {
     const rel = relative(publicDir, f)
-    for (const s of inlineExecutableScripts(readFileSync(f, 'utf8'), rel)) {
+    const html = readFileSync(f, 'utf8')
+    handlers.push(...inlineHandlers(html, rel))
+    for (const s of inlineExecutableScripts(html, rel)) {
       if (!byHash.has(s.hash)) byHash.set(s.hash, { type: s.type, files: [] })
       byHash.get(s.hash).files.push(rel)
     }
   }
-  return { files, byHash }
+  return { files, byHash, handlers }
 }
 
 const HEADER_RE = /add_header\s+Content-Security-Policy\s+"([^"]*)"\s+always;/g
@@ -175,7 +233,8 @@ export function verify(publicDir, confText) {
   for (const need of ['object-src', 'base-uri', 'form-action', 'frame-ancestors']) {
     if (!dirs.has(need)) problems.push(`missing ${need}`)
   }
-  const { files, byHash } = collectHashes(publicDir)
+  const { files, byHash, handlers } = collectHashes(publicDir)
+  problems.push(...handlers)
   for (const [hash, info] of byHash) {
     if (!script || !script.includes(hash)) {
       problems.push(`inline ${info.type} script ${hash} (${info.files.join(', ')}) is not in script-src`)
@@ -188,7 +247,10 @@ function main(argv) {
   const [cmd, ...a] = argv
   if (cmd === 'generate' && a.length === 3) {
     const [publicDir, enforcingConf, outConf] = a
-    const { files, byHash } = collectHashes(publicDir)
+    const { files, byHash, handlers } = collectHashes(publicDir)
+    if (handlers.length) {
+      throw new Error(`inline handlers/javascript: URLs are blocked without 'unsafe-inline':\n  ${handlers.join('\n  ')}`)
+    }
     if (byHash.size === 0) {
       // The bootstrap script is always present today. Zero means the scan
       // failed to see it, which must not silently ship a policy with no hashes.

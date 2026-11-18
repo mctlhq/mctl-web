@@ -6,7 +6,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   buildReportOnly, enforcingPolicy, hashOf, inlineExecutableScripts,
-  collectHashes, renderConf, verify,
+  collectHashes, renderConf, verify, inlineHandlers,
 } from './csp-report-only.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -107,4 +107,54 @@ test('unreadable input is an error, never an empty hash set', () => {
 test('a script tag with ">" inside a quoted attribute is still parsed', () => {
   const s = inlineExecutableScripts('<script data-x="a>b">var a=1</script>')
   assert.equal(s[0].hash, hashOf('var a=1'))
+})
+
+test('spec-tolerant end tags close the script ("</script\t\n bar>", "</SCRIPT/>")', () => {
+  for (const end of ['</script\t\n bar>', '</SCRIPT/>', '</script >']) {
+    const s = inlineExecutableScripts(`<script>var a=1</b>${end}<script>var b=2</script>`)
+    assert.deepEqual(s.map((x) => x.hash), [hashOf('var a=1</b>'), hashOf('var b=2')], end)
+  }
+})
+
+test('an unclosed <script still fails, including with a tolerant-looking prefix', () => {
+  assert.throws(() => inlineExecutableScripts('<script>a()</scriptx>'), /unclosed/)
+  assert.throws(() => inlineExecutableScripts('<p>x</p><script>alert(1)'), /unclosed/)
+  assert.throws(() => inlineExecutableScripts('<script src="a.js"'), /unterminated/)
+})
+
+test('attribute names are not matched inside quoted values (src)', () => {
+  const s = inlineExecutableScripts('<script data-x="a src=b">inline()</script>')
+  assert.equal(s.length, 1)
+  assert.equal(s[0].hash, hashOf('inline()'))
+  assert.equal(inlineExecutableScripts("<script data-x='a' SRC = '/x.js'></script>").length, 0)
+})
+
+test('attribute names are not matched inside quoted values (type)', () => {
+  const s = inlineExecutableScripts('<script data-x="b type=application/json">inline()</script>')
+  assert.equal(s.length, 1)
+  assert.equal(s[0].type, 'classic')
+})
+
+test('inlineHandlers finds on* handlers and javascript: URLs inside tags', () => {
+  const h = inlineHandlers('<a href=" JaVa\tScript:alert(1)" onClick="x()">a</a><body onload=f()>', 'p.html')
+  assert.equal(h.length, 3)
+  assert.ok(h.some((m) => /onclick/.test(m)) && h.some((m) => /onload/.test(m)) && h.some((m) => /javascript: URL in href/.test(m)))
+})
+
+test('inlineHandlers has no false positives in text, scripts, styles, comments, JSON or values', () => {
+  const html = `<p>use onclick= and javascript:void(0) here, a < b</p>
+<script>el.setAttribute("onclick","x()");var u="javascript:1"; if(a<b){}</script>
+<script type="application/ld+json">{"onload=":"javascript:x"}</script>
+<style>a[onclick=x]{color:red}</style><!-- <a onclick="x()"> -->
+<a href="/x" data-note="onclick=1 javascript:2" title="onerror=3">ok</a><a href="https://x/?u=javascript:1">ok</a>`
+  assert.deepEqual(inlineHandlers(html), [])
+})
+
+test('verify FAILS on an inline handler or javascript: URL in built HTML', () => {
+  const dir = site({ 'index.html': PAGE })
+  const c = conf(dir)
+  writeFileSync(join(dir, 'bad.html'), '<html><button onclick="x()">b</button><a href="javascript:x()">a</a></html>')
+  const r = verify(dir, c)
+  assert.ok(r.problems.some((p) => /bad\.html.*onclick/.test(p)))
+  assert.ok(r.problems.some((p) => /bad\.html.*javascript: URL/.test(p)))
 })
