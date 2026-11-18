@@ -22,9 +22,19 @@ RUN if [ -z "$NUXT_PUBLIC_TURNSTILE_SITE_KEY" ]; then \
       unset NUXT_PUBLIC_TURNSTILE_SITE_KEY; \
     fi; \
     npm run generate
+# Hash every inline executable script in the built HTML and write the
+# Report-Only CSP include. `verify` then re-reads that file and fails the build
+# if any inline script is not covered, so a template change that adds or
+# edits an inline script cannot ship a stale policy. Unit tests for both live
+# in scripts/*.test.mjs.
+RUN mkdir -p /app/.output/snippets \
+ && node scripts/csp-report-only.mjs generate .output/public nginx/security-headers.conf .output/snippets/csp-report-only.conf \
+ && node scripts/csp-report-only.mjs verify .output/public .output/snippets/csp-report-only.conf
 
 FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:b5047b9b76845eac124358373c6852377c52e4b05834a47647e955dd91cb8f1e
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
+COPY --from=builder /app/.output/snippets/csp-report-only.conf /etc/nginx/snippets/csp-report-only.conf
 COPY --from=builder /app/.output/public/ /usr/share/nginx/html/
 USER 101:101
 # Fail the build on a broken config. The test writes nginx's temp directories
