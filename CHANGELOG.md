@@ -1,5 +1,20 @@
 # Changelog
 
+## [7.23.0](https://github.com/mctlhq/mctl-web/compare/7.22.1...7.23.0) (2026-11-18)
+
+
+### Features
+
+* offer Google sign-in next to GitHub when configured ([a1ac0cd](https://github.com/mctlhq/mctl-web/commit/a1ac0cd9eb699e9e97d60524a2217dce20ec801a))
+* offer Google sign-in next to GitHub when configured ([45066a6](https://github.com/mctlhq/mctl-web/commit/45066a6fe6104d20fa63361dbeb66bda69caa552))
+* **seo:** describe MCTL the same way on the home page ([98c1481](https://github.com/mctlhq/mctl-web/commit/98c14818b1f9f7c13f5cecce5f4ea97b59f42556))
+* **seo:** describe MCTL the same way on the home page ([6e49958](https://github.com/mctlhq/mctl-web/commit/6e4995813051aae2f3a35a55078daf835d4aba34))
+
+
+### Bug Fixes
+
+* end Google sessions when Google sign-in is turned off ([27e3e77](https://github.com/mctlhq/mctl-web/commit/27e3e777a110a1956d86f1bfd3d78580e9e17886))
+
 ## [7.22.1](https://github.com/mctlhq/mctl-web/compare/7.22.0...7.22.1) (2026-11-16)
 
 
