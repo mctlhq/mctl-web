@@ -249,8 +249,13 @@ small discovery improvement, not proof that the whole site is unindexable.
 - Honest limit: at this volume one click is the difference between 0.7% and
   3%. Only a clearly new pattern counts as a result, for example a non-brand
   query reaching the home page.
-- Done: record the release and deploy date here, confirm the recrawl with URL
-  Inspection, then compare equal windows as described below.
+- Shipped: PR #254 merged, released as **7.23.0** (release PR #251) and
+  deployed to production on **2026-11-18** (about 02:06 UTC, release-deploy
+  `admins/mctl-web` 7.23.0 succeeded). Verified live the same day: new title and
+  description, `SoftwareApplication` node in the JSON-LD graph, new
+  `llms.txt` intro. The measurement window starts on 2026-11-18.
+- Still to do: confirm the recrawl with URL Inspection, then compare equal
+  windows as described below (7 days as a sanity check, 28 days for a result).
 
 ## Measurement and next decisions
 
