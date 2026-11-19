@@ -31,7 +31,7 @@ RUN mkdir -p /app/.output/snippets \
  && node scripts/csp-report-only.mjs generate .output/public nginx/security-headers.conf .output/snippets/csp-report-only.conf \
  && node scripts/csp-report-only.mjs verify .output/public .output/snippets/csp-report-only.conf
 
-FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:b5047b9b76845eac124358373c6852377c52e4b05834a47647e955dd91cb8f1e
+FROM nginx/nginx-unprivileged:1.31.9-alpine@sha256:60214a103e6f38e953ff957f34b1f2e97a9db801ab2df3821da955d0fe6cadd6
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=builder /app/.output/snippets/csp-report-only.conf /etc/nginx/snippets/csp-report-only.conf
