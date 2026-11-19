@@ -1,5 +1,27 @@
 # Changelog
 
+## [7.24.0](https://github.com/mctlhq/mctl-web/compare/7.23.0...7.24.0) (2026-11-19)
+
+
+### Features
+
+* **csp:** add stricter Content-Security-Policy-Report-Only header ([1b66546](https://github.com/mctlhq/mctl-web/commit/1b66546eac6a8572a6052c0a3b06b539d00cac01))
+* **csp:** ship a stricter Content-Security-Policy-Report-Only header ([2a41bba](https://github.com/mctlhq/mctl-web/commit/2a41bba611157f5ddb0d64b93b4bdc8876b03870))
+
+
+### Bug Fixes
+
+* **csp:** skip comments and style bodies by position, not by replace ([85a71ff](https://github.com/mctlhq/mctl-web/commit/85a71fffa4e25abc176ab399fac23288f4f275e3))
+* **csp:** tolerant script end tags, real attr parsing, reject inline handlers ([6d2d263](https://github.com/mctlhq/mctl-web/commit/6d2d263d3774266d25d0ec19d364a44d9d4132ca))
+* **docker:** move base to nginx/nginx-unprivileged 1.31.9 ([d70cb55](https://github.com/mctlhq/mctl-web/commit/d70cb557488b055b8d6052a13ebd2adf01d974df))
+* **docker:** move base to nginx/nginx-unprivileged 1.31.9 ([d1ab7c3](https://github.com/mctlhq/mctl-web/commit/d1ab7c362faea7b95c271e3a4774b845293500b3))
+
+
+### Documentation
+
+* **plans:** record the 7.23.0 deploy date for the mctl.ai home copy ([b4c25ae](https://github.com/mctlhq/mctl-web/commit/b4c25ae9d89810a13d718991e8a9fa086fe8a3b4))
+* **plans:** record the 7.23.0 deploy date for the mctl.ai home copy ([e586d53](https://github.com/mctlhq/mctl-web/commit/e586d533d598663840f44a12bf1a2519709fc1c5))
+
 ## [7.23.0](https://github.com/mctlhq/mctl-web/compare/7.22.1...7.23.0) (2026-11-18)
 
 
