@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { rateLimiterNs, resetRateLimiter } from './rateLimiterFake.mjs';
 
 import {
   verifyTurnstileToken,
@@ -17,6 +18,7 @@ const LANDING_TOKEN = 'test-landing-token';
 
 function baseEnv(overrides = {}) {
   return {
+    RATE_LIMITER: rateLimiterNs,
     TURNSTILE_SECRET_KEY: 'test-turnstile-secret',
     TELEGRAM_BOT_TOKEN: 'test-bot-token',
     TELEGRAM_CHAT_ID: 'test-chat-id',
@@ -537,26 +539,8 @@ test('handleCheckTeam: malformed bodies all get 401, byte-identical to the plain
 
 // ─── T5: rate limit for check-team ────────────────────────────────────────────
 
-function createMockCache() {
-  const store = new Map();
-  return {
-    async match(req) {
-      const key = req.url;
-      if (!store.has(key)) return undefined;
-      return new Response(store.get(key));
-    },
-    async put(req, res) {
-      store.set(req.url, await res.clone().text());
-    },
-    async delete(req) {
-      store.delete(req.url);
-    },
-  };
-}
-
 test('rate limit: /api/github/check-team returns 429 with Retry-After once exceeded', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   const { fetchStub } = createFetchStub();
   try {
     await withGlobalFetch(fetchStub, async () => {
@@ -573,13 +557,12 @@ test('rate limit: /api/github/check-team returns 429 with Retry-After once excee
       assert.equal(lastRes.headers.get('Retry-After'), '60');
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
 
 test('rate limit: requests under the limit are not rate limited', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   const { fetchStub } = createFetchStub();
   try {
     await withGlobalFetch(fetchStub, async () => {
@@ -590,15 +573,14 @@ test('rate limit: requests under the limit are not rate limited', async () => {
       assert.notEqual(res.status, 429);
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
 
 // ─── The transitional GET shim is gone ───────────────────────────────────────
 
 test('GET check-team is no longer routed and never answers available', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   let backstageCalled = false;
   const stub = async (url) => {
     if (String(url).includes('tenant')) backstageCalled = true;
@@ -619,13 +601,12 @@ test('GET check-team is no longer routed and never answers available', async () 
       assert.equal(backstageCalled, false);
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
 
 test('GET check-team stays uniform across an existing and a made-up name', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   const stub = async () => new Response('{}', { status: 200 });
   try {
     await withGlobalFetch(stub, async () => {
@@ -641,13 +622,12 @@ test('GET check-team stays uniform across an existing and a made-up name', async
       assert.equal(await a.text(), await b.text());
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
 
 test('an unrouted GET flood does not spend the POST budget (cross-origin img-tag DoS)', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   const stub = async () => new Response('{}', { status: 200 });
   const ip = '198.51.100.9';
   try {
@@ -677,13 +657,12 @@ test('an unrouted GET flood does not spend the POST budget (cross-origin img-tag
       assert.notEqual(real.status, 429);
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
 
 test('a GET flood does not spend the contact form budget either (3 per 5 min)', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   const stub = async () => new Response('{}', { status: 200 });
   const ip = '198.51.100.22';
   try {
@@ -708,13 +687,12 @@ test('a GET flood does not spend the contact form budget either (3 per 5 min)', 
       assert.notEqual(real.status, 429);
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
 
 test('a cross-site form POST flood does not spend the same-origin budget', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   const stub = async () => new Response('{}', { status: 200 });
   const ip = '198.51.100.44';
   try {
@@ -753,13 +731,12 @@ test('a cross-site form POST flood does not spend the same-origin budget', async
       assert.notEqual(real.status, 429);
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
 
 test('a request with no Sec-Fetch-Site shares the same-origin bucket', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   const stub = async () => new Response('{}', { status: 200 });
   const ip = '198.51.100.55';
   try {
@@ -793,13 +770,12 @@ test('a request with no Sec-Fetch-Site shares the same-origin bucket', async () 
       assert.equal((await post({ 'Sec-Fetch-Site': 'same-origin' })).status, 429);
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
 
 test('cross-site traffic is still limited, just in its own bucket', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   const stub = async () => new Response('{}', { status: 200 });
   const ip = '198.51.100.66';
   try {
@@ -824,13 +800,12 @@ test('cross-site traffic is still limited, just in its own bucket', async () => 
       assert.equal(last.status, 429);
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
 
 test('a made-up Sec-Fetch-Site cannot mint a fresh counter per request', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   const stub = async () => new Response('{}', { status: 200 });
   const ip = '198.51.100.77';
   try {
@@ -857,13 +832,12 @@ test('a made-up Sec-Fetch-Site cannot mint a fresh counter per request', async (
       assert.equal(last.status, 429);
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
 
 test('an unrecognised Sec-Fetch-Site shares the cross-site budget, not its own', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   const stub = async () => new Response('{}', { status: 200 });
   const ip = '198.51.100.88';
   try {
@@ -889,13 +863,12 @@ test('an unrecognised Sec-Fetch-Site shares the cross-site budget, not its own',
       assert.equal((await post('nonsense-value')).status, 429);
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
 
 test('same-site keeps its own budget, separate from cross-site', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   const stub = async () => new Response('{}', { status: 200 });
   const ip = '198.51.100.99';
   try {
@@ -920,13 +893,12 @@ test('same-site keeps its own budget, separate from cross-site', async () => {
       assert.notEqual((await post('same-site')).status, 429);
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
 
 test('POST check-team is still rate limited now that the exemption is gone', async () => {
-  const originalCaches = globalThis.caches;
-  globalThis.caches = { default: createMockCache() };
+  resetRateLimiter();
   const stub = async () => new Response('{}', { status: 200 });
   try {
     await withGlobalFetch(stub, async () => {
@@ -947,6 +919,6 @@ test('POST check-team is still rate limited now that the exemption is gone', asy
       assert.equal(last.status, 429);
     });
   } finally {
-    globalThis.caches = originalCaches;
+    resetRateLimiter();
   }
 });
