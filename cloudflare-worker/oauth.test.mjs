@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { rateLimiterNs, resetRateLimiter } from './rateLimiterFake.mjs';
 
 import worker, {
   getUnlimitedUsers,
@@ -81,32 +82,15 @@ test('getUnlimitedUsers parses a comma-separated env var', () => {
 // ── GitHub sign-in hands out no token (mctlhq/mctl-api#525) ─────────────────
 
 const oauthEnv = () => ({
+  RATE_LIMITER: rateLimiterNs,
   GITHUB_CLIENT_ID: 'client-id',
   GITHUB_CLIENT_SECRET: 'client-secret',
   GITHUB_OAUTH_HMAC_KEY: 'test-hmac-key',
 });
 
 async function withMockCache(fn) {
-  const store = new Map();
-  const original = globalThis.caches;
-  globalThis.caches = {
-    default: {
-      async match(req) {
-        return store.has(req.url) ? new Response(store.get(req.url)) : undefined;
-      },
-      async put(req, res) {
-        store.set(req.url, await res.clone().text());
-      },
-      async delete(req) {
-        store.delete(req.url);
-      },
-    },
-  };
-  try {
-    return await fn();
-  } finally {
-    globalThis.caches = original;
-  }
+  resetRateLimiter();
+  return await fn();
 }
 
 test('login: every `for` value takes the landing flow', async () => {

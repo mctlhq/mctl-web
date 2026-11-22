@@ -32,6 +32,10 @@ import { handleSignupAdmin, invitationAllowed } from './signupAdmin.js';
 import { handleInvitationRequest, retryInvitations } from './invitations.js';
 
 import { handleSessionRevocation } from './sessionRevocation.js';
+import { checkRateLimit, RateLimiter } from './rateLimiter.js';
+
+// Durable Object classes must be exported from the Worker entry module.
+export { RateLimiter };
 
 import {
   SESSION_COOKIE,
@@ -161,7 +165,7 @@ export default {
     if (limit) {
       const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
       const limited = await checkRateLimit(
-        clientIP, rateBucket(rateKey, request), limit.max, limit.windowSec);
+        env, clientIP, rateBucket(rateKey, request), limit.max, limit.windowSec);
       if (limited && rateKey === 'GET /api/zitadel/callback') {
         // A top-level navigation: back to the site, like every other callback
         // failure, rather than a JSON body on a bare API URL.
@@ -296,29 +300,6 @@ function rateBucket(rateKey, request) {
   // same-origin allowance.
   const cls = FETCH_SITE_CLASSES.has(site) ? site : 'cross-site';
   return `${rateKey} [${cls}]`;
-}
-
-async function checkRateLimit(ip, bucket, maxRequests, windowSec) {
-  const cache = caches.default;
-  // Both parts are percent-encoded into one path segment each. The bucket now
-  // carries a method and a space ("POST /api/submit"), and interpolating that
-  // raw would leave the segment boundaries up to URL parsing rather than to us.
-  const key = `https://rate-limit.internal/${encodeURIComponent(bucket)}/${encodeURIComponent(ip)}`;
-  const cacheReq = new Request(key);
-
-  const cached = await cache.match(cacheReq);
-  let count = 1;
-  if (cached) {
-    count = parseInt(await cached.text(), 10) + 1;
-  }
-
-  // Store updated count with TTL = window
-  const resp = new Response(String(count), {
-    headers: { 'Cache-Control': `s-maxage=${windowSec}` },
-  });
-  await cache.put(cacheReq, resp);
-
-  return count > maxRequests;
 }
 
 // ─── CORS ────────────────────────────────────────────────────────────────────

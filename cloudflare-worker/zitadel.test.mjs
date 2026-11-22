@@ -2,6 +2,7 @@
 // cookie-branch routes in index.js.
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { rateLimiterNs, resetRateLimiter } from './rateLimiterFake.mjs';
 
 import worker, { signIdentity } from './index.js';
 import { handleSessionRevocation } from './sessionRevocation.js';
@@ -103,6 +104,7 @@ function createKv() {
 
 function baseEnv(overrides = {}) {
   return {
+    RATE_LIMITER: rateLimiterNs,
     ZITADEL_ISSUER: ISSUER,
     ZITADEL_CLIENT_ID: CLIENT_ID,
     ZITADEL_ORG_ID: ORG_ID,
@@ -175,17 +177,10 @@ function createNetwork({
   return { calls, fetchStub };
 }
 
-// The rate limiter keeps its counters in caches.default; a fresh cache per
-// test keeps one test's requests from limiting the next.
+// A fresh limiter namespace per test keeps one test's requests from
+// limiting the next.
 function installCache() {
-  const cache = new Map();
-  globalThis.caches = {
-    default: {
-      async match(req) { return cache.has(req.url) ? new Response(cache.get(req.url)) : undefined; },
-      async put(req, res) { cache.set(req.url, await res.clone().text()); },
-      async delete(req) { return cache.delete(req.url); },
-    },
-  };
+  resetRateLimiter();
 }
 
 async function withNetwork(network, fn) {
