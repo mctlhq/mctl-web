@@ -816,6 +816,34 @@ export async function verifyTurnstileToken(token, secret, remoteip, fetchImpl = 
 
 // ─── Form Submit ─────────────────────────────────────────────────────────────
 
+// ─── Field validation at the request boundary ────────────────────────────────
+
+// Maxima for free-text fields taken from a request body. They keep a
+// notification far below Telegram's 4096-character cap even after
+// MarkdownV2 escaping (worst case: every character escaped, 2x).
+const MAX_LONG_FIELD = 1000;  // usecase, message
+const MAX_SHORT_FIELD = 100;  // name, email
+
+// Checks that each present field is a string within its maximum. A field
+// that is `undefined` (absent) is skipped: required-ness is the caller's
+// business. Anything else that is not a string, including null, an array
+// or an object, is rejected rather than coerced. Returns null when every
+// field passes, otherwise a { code, field, message } describing the first
+// failure. The codes are stable: clients may switch on them.
+function validateStringFields(data, specs) {
+  for (const [field, max] of specs) {
+    const value = data[field];
+    if (value === undefined) continue;
+    if (typeof value !== 'string') {
+      return { code: 'invalid_field_type', field, message: `Field "${field}" must be a string.` };
+    }
+    if (value.length > max) {
+      return { code: 'field_too_long', field, message: `Field "${field}" must be at most ${max} characters.` };
+    }
+  }
+  return null;
+}
+
 export async function handleFormSubmit(request, env, origin) {
   try {
     const data = await request.json();
@@ -841,6 +869,11 @@ export async function handleFormSubmit(request, env, origin) {
     }
 
     const { login, name, email } = auth.identity;
+
+    const invalid = validateStringFields(data, [['team', MAX_SHORT_FIELD], ['usecase', MAX_LONG_FIELD]]);
+    if (invalid) {
+      return jsonResponse({ success: false, ...invalid }, 400, {}, origin);
+    }
 
     if (!team) {
       return jsonResponse({ success: false, message: 'Missing team name' }, 400, {}, origin);
@@ -1232,11 +1265,16 @@ export async function handleSessionSubmit(request, env, origin) {
   const credentials = { ...credentialCorsHeaders(origin, cfg), 'Cache-Control': 'private, no-store' };
 
   try {
-    const { team, usecase, turnstile_token } = await readJsonObject(request);
+    const body = await readJsonObject(request);
+    const { team, usecase, turnstile_token } = body;
     if (typeof team !== 'string' || !TEAM_NAME_RE.test(team)) {
       return sessionJson({ success: false, message: 'Invalid team name format' }, 400, origin, cfg);
     }
-    const description = typeof usecase === 'string' ? usecase : '';
+    const invalid = validateStringFields(body, [['usecase', MAX_LONG_FIELD]]);
+    if (invalid) {
+      return sessionJson({ success: false, ...invalid }, 400, origin, cfg);
+    }
+    const description = usecase ?? '';
 
     if (!env.TURNSTILE_SECRET_KEY || !env.BACKSTAGE_LANDING_TOKEN) {
       console.error('submit (session): TURNSTILE_SECRET_KEY or BACKSTAGE_LANDING_TOKEN is not set');
@@ -1322,6 +1360,13 @@ export async function handleContactForm(request, env, origin) {
     const data = await request.json();
     const { name, email, message, turnstile_token } = data;
 
+    const invalid = validateStringFields(data, [
+      ['name', MAX_SHORT_FIELD], ['email', MAX_SHORT_FIELD], ['message', MAX_LONG_FIELD],
+    ]);
+    if (invalid) {
+      return jsonResponse({ success: false, ...invalid }, 400, {}, origin);
+    }
+
     // Basic validation
     if (!name || !email || !message) {
       return jsonResponse({ success: false, message: 'All fields are required' }, 400, {}, origin);
@@ -1363,19 +1408,9 @@ export async function handleContactForm(request, env, origin) {
     ].join('\n');
 
     // Send to Telegram
-    const telegramUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
-    const telegramRes = await fetch(telegramUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: env.TELEGRAM_CHAT_ID,
-        text: msg,
-        parse_mode: 'MarkdownV2',
-      }),
-    });
-
-    if (!telegramRes.ok) {
-      console.error('Telegram error:', await telegramRes.text());
+    const telegramStatus = await sendTelegram(env, msg);
+    if (telegramStatus !== 'accepted') {
+      console.error(`contact: Telegram notification ${telegramStatus}`);
       return jsonResponse({ success: false, message: 'Failed to send message. Please try again.' }, 500, {}, origin);
     }
 
@@ -1516,19 +1551,45 @@ async function sendWelcomeEmail(env, { email, name, team, customer }, fetchImpl 
   }
 }
 
-async function sendTelegram(env, text, fetchImpl = fetch) {
+const TELEGRAM_MAX_LENGTH = 4096;
+const TELEGRAM_TRUNCATION_MARK = '\n…';
+
+// Shortens a MarkdownV2 message to Telegram's cap. Cuts at a line boundary
+// when it can: every entity (bold, code, link) in this Worker's messages
+// lives on one line, so a line cut leaves the markup balanced. When even
+// the first line is over the cap, a hard cut could leave an unclosed entity
+// or a dangling backslash that Telegram rejects, so that case is sent as
+// plain text instead of formatted text.
+function fitTelegramText(text) {
+  if (text.length <= TELEGRAM_MAX_LENGTH) return { text, plain: false };
+  const room = TELEGRAM_MAX_LENGTH - TELEGRAM_TRUNCATION_MARK.length;
+  const lineEnd = text.lastIndexOf('\n', room);
+  if (lineEnd > 0) {
+    return { text: text.slice(0, lineEnd) + TELEGRAM_TRUNCATION_MARK, plain: false };
+  }
+  let cut = room;
+  // Do not split a surrogate pair.
+  const last = text.charCodeAt(cut - 1);
+  if (last >= 0xd800 && last <= 0xdbff) cut -= 1;
+  return { text: text.slice(0, cut) + TELEGRAM_TRUNCATION_MARK, plain: true };
+}
+
+export async function sendTelegram(env, text, fetchImpl = fetch) {
   if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
     console.error('Telegram: bot token or chat id is not set');
     return 'skipped';
   }
+  // The notification degrades to a shortened message; it never fails the
+  // send, because by now the tenant request has already been accepted.
+  const fitted = fitTelegramText(text);
   try {
     const res = await fetchImpl(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: env.TELEGRAM_CHAT_ID,
-        text,
-        parse_mode: 'MarkdownV2',
+        text: fitted.text,
+        ...(fitted.plain ? {} : { parse_mode: 'MarkdownV2' }),
         disable_web_page_preview: true,
       }),
     });

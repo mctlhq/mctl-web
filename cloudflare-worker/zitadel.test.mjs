@@ -1208,6 +1208,43 @@ test('google: submit creates the workspace from the Google session and names no 
   assert.ok(!network.calls.telegramText.includes('github\\.com'), network.calls.telegramText);
 });
 
+test('session submit: usecase must be a string within 1000 characters, else 400 and nothing provisioned', async () => {
+  const env = googleEnv({ AUTH_FLOW_PUBLIC: 'true', RESEND_API_KEY: 'test-resend-key' });
+  const { sessionId } = await googleSignIn(env);
+  // Each request comes from its own address so the submit rate limit is not what is under test.
+  let n = 0;
+  const cases = [
+    ['array', ['demo'], 'invalid_field_type'],
+    ['number', 5, 'invalid_field_type'],
+    ['object', { a: 1 }, 'invalid_field_type'],
+    ['null', null, 'invalid_field_type'],
+    ['1001 chars', 'u'.repeat(1001), 'field_too_long'],
+  ];
+  for (const [label, usecase, code] of cases) {
+    const network = createNetwork();
+    const res = await withNetwork(network, () => worker.fetch(request('/api/submit', {
+      method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: { ...SITE, 'CF-Connecting-IP': `203.0.113.${++n}` },
+      body: { team: 'acme', usecase, turnstile_token: 'ok' },
+    }), env));
+    assert.equal(res.status, 400, label);
+    const body = await res.json();
+    assert.equal(body.code, code, label);
+    assert.equal(body.field, 'usecase', label);
+    assert.equal(network.calls.create.length, 0, label);
+  }
+  // The maximum itself and an absent usecase are accepted.
+  for (const usecase of ['u'.repeat(1000), undefined]) {
+    const network = createNetwork();
+    const res = await withNetwork(network, () => worker.fetch(request('/api/submit', {
+      method: 'POST', cookies: { [SESSION_COOKIE]: sessionId }, headers: { ...SITE, 'CF-Connecting-IP': `203.0.113.${++n}` },
+      body: { team: 'acme', usecase, turnstile_token: 'ok' },
+    }), env));
+    assert.equal(res.status, 200);
+    assert.equal(network.calls.create.length, 1);
+    assert.equal(network.calls.create[0].body.description, usecase ?? '');
+  }
+});
+
 test('revocation: a Google customer is revoked by its Google subject only', async () => {
   const env = revocationEnv();
   env.ZITADEL_GOOGLE_IDP_ID = GOOGLE_IDP_ID;
