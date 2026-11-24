@@ -1,5 +1,23 @@
 # Changelog
 
+## [7.25.0](https://github.com/mctlhq/mctl-web/compare/7.24.0...7.25.0) (2026-11-24)
+
+
+### Features
+
+* **worker:** add the Glovo access notification bridge ([efb81ef](https://github.com/mctlhq/mctl-web/commit/efb81ef3792b3e2bac1d92d50e582f2c4bc03173))
+* **worker:** add the Glovo access notification bridge ([244d147](https://github.com/mctlhq/mctl-web/commit/244d147051cff0aff349f4653b90830f2dace684))
+* **worker:** separate email switch and token-only decide link ([26f2883](https://github.com/mctlhq/mctl-web/commit/26f2883fc06a74b6322c86bb5a1e2845ff4e8ee9))
+* **worker:** separate email switch, token-only decide link ([3631f3f](https://github.com/mctlhq/mctl-web/commit/3631f3f89a38aa9b041e3079244cb8a5b96a1273))
+
+
+### Bug Fixes
+
+* **worker:** atomic fixed-window rate limiter on a Durable Object ([dd7f22d](https://github.com/mctlhq/mctl-web/commit/dd7f22d77e51ec81aa8e99941ce5e0460614dbeb))
+* **worker:** fixed-window atomic rate limiter on a Durable Object ([5fbd742](https://github.com/mctlhq/mctl-web/commit/5fbd742655ba8b69617f712ce8ca73dae5399e6b))
+* **worker:** type-check and length-bound form fields, cap Telegram text ([d60acef](https://github.com/mctlhq/mctl-web/commit/d60acef5aad6f6509c53ef1ee319264ba16ed700))
+* **worker:** validate form field types and lengths, cap Telegram text ([95dfd33](https://github.com/mctlhq/mctl-web/commit/95dfd33a6368b487101443dfa76734cdaed2cfa4))
+
 ## [7.24.0](https://github.com/mctlhq/mctl-web/compare/7.23.0...7.24.0) (2026-11-19)
 
 
