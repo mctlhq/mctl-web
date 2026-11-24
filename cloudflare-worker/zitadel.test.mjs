@@ -1050,6 +1050,17 @@ test('internal invitation routes have bounded rate budgets, including per-ID rea
  }
 });
 
+test('glovo access bridge is routed, off by default and rate limited',async()=>{
+ const env=baseEnv();const path='/api/internal/glovo-access/notify';
+ // Off: 503 from the bridge itself, not the site's 404.
+ const off=await worker.fetch(request(path,{method:'POST'}),env);assert.equal(off.status,503);assert.match((await off.json()).error,/not enabled/);
+ // On: the service credential is required before anything is read.
+ env.GLOVO_ACCESS_NOTIFY_ENABLED='true';env.SESSION_REVOCATION_SUBJECT='1';env.SESSION_REVOCATION_AUDIENCE='2';
+ assert.equal((await worker.fetch(request(path,{method:'POST'}),env)).status,401);
+ for(let n=0;n<28;n++) {const response=await worker.fetch(request(path,{method:'POST'}),env);assert.notEqual(response.status,429)}
+ assert.equal((await worker.fetch(request(path,{method:'POST'}),env)).status,429);
+});
+
 // ─── Google customers (mctl-api#1079) ────────────────────────────────────────
 
 const GOOGLE_IDP_ID = '100000000000000001';

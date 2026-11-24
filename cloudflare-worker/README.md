@@ -211,6 +211,53 @@ ZITADEL subject for the same GitHub account is preserved.
 Deploy the Worker and pin the public machine subject/project IDs before enabling
 `CUSTOMER_DELETION_ENABLED` in the API. Keep the signup rollout gates unchanged.
 
+### Glovo access notifications
+
+`POST /api/internal/glovo-access/notify` delivers the notifications of the
+Glovo self-service access flow (mctlhq/mctl-glovo#82, stage C). mctl-api owns
+the requests and the decisions; this Worker only sends. The caller is the same
+customer-lifecycle machine as above (`SESSION_REVOCATION_SUBJECT`,
+`SESSION_REVOCATION_AUDIENCE`).
+
+It is off unless the var `GLOVO_ACCESS_NOTIFY_ENABLED` is exactly `"true"`:
+until then every call is answered 503 and nothing is sent.
+
+| `kind` | Body | What is sent |
+|---|---|---|
+| `owner_card` | `card`: masked `identity` (optional), `requested_at`, `expires_at`, `decide_url` | one plain Telegram message to `TELEGRAM_CHAT_ID` with the link to the decision page |
+| `approved`, `rejected`, `lapsed` | `to`: one bare address | the fixed email of that kind |
+
+Every body carries a `delivery_key` (64 hex characters, a hash made by
+mctl-api). The answer is `{delivery_key, delivery_id}`; anything but 200 means
+"not delivered, retry with the same key".
+
+- The emails are the three texts of the design's Appendix A, English first and
+  Russian below, kept verbatim in `glovoAccess.js`. Sender
+  `MCTL <noreply@mctl.ai>`, no reply-to, plain text. No field of the request is
+  ever copied into a mail, and there is no email for a revocation or a
+  withdrawal.
+- The card decides nothing. Its `decide_url` must be exactly the decision page
+  of one principal on `GLOVO_ACCESS_DECIDE_ORIGIN` (default
+  `https://api.mctl.ai`) with one token; any other link is refused with 400, so
+  the bridge cannot be used to post arbitrary text or links into the chat.
+- Idempotency: a `glovo-access-delivered:<delivery_key>` receipt in
+  `ACCESS_REQUESTS` (kind and delivery id only, 30 days) answers a retry without
+  sending again, and the mail provider gets
+  `glovo-access/<kind>/<delivery_key>` as its `Idempotency-Key`. A key delivered
+  as one kind is refused for another (409). An unreadable or malformed receipt
+  is 503, never a second send.
+- The card is **at least once**, like the invitation alert: a lost Telegram
+  acknowledgment or a failed receipt write can repeat it. Each copy carries its
+  own one-time link, and a decision retires all of them.
+- Nothing about a delivery is logged beyond its kind: no address, link or
+  principal.
+
+Turn it on by deploying the Worker with the var set to `"true"`, before
+`GLOVO_ACCESS_NOTIFY_ENABLED` is set in mctl-api. It uses the existing secrets
+(`RESEND_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`) and the existing
+`ACCESS_REQUESTS` namespace; no new secret or binding. Turn it off the same way;
+mctl-api then retries each notification for 23 hours and gives up.
+
 ## Invitation requests
 
 While `AUTH_FLOW_PUBLIC` is false, the website shows an invitation request form

@@ -64,6 +64,11 @@ AUTH_FLOW_PUBLIC = "false"
 # zitadel-iac are reviewed and pinned here. These are public identifiers.
 SESSION_REVOCATION_SUBJECT = "395567307109172949"
 SESSION_REVOCATION_AUDIENCE = "395567303451739861"
+# Glovo access notifications (mctlhq/mctl-glovo#82 stage C): the owner card
+# and the approved/rejected/lapsed emails mctl-api asks for through
+# POST /api/internal/glovo-access/notify. Off until this is "true"; see
+# README.md "Glovo access notifications".
+GLOVO_ACCESS_NOTIFY_ENABLED = "false"
 
 # Server-side sessions. The namespaces are owned by OpenTofu in mctl-gitops
 # (infrastructure/cloudflare/account/workers-kv.tf, mctlhq/mctl-gitops#1909);
@@ -102,6 +107,7 @@ ZITADEL_REDIRECT_URI = "http://localhost:8787/api/zitadel/callback"
 ZITADEL_POST_LOGOUT_URI = "http://localhost:8787"
 SESSION_ORIGINS = "http://localhost:3000"
 AUTH_FLOW_PUBLIC = "false"
+GLOVO_ACCESS_NOTIFY_ENABLED = "false"
 
 [[env.dev.kv_namespaces]]
 binding = "SESSIONS"
