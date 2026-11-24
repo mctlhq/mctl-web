@@ -220,7 +220,11 @@ customer-lifecycle machine as above (`SESSION_REVOCATION_SUBJECT`,
 `SESSION_REVOCATION_AUDIENCE`).
 
 It is off unless the var `GLOVO_ACCESS_NOTIFY_ENABLED` is exactly `"true"`:
-until then every call is answered 503 and nothing is sent.
+until then every call is answered 503 and nothing is sent. The emails have a
+second switch on top of it, `GLOVO_ACCESS_EMAIL_ENABLED`, also off unless
+exactly `"true"`: with only the first one on, the owner card is sent and an
+email kind is answered 503 with nothing sent or stored. So the card can run
+without any requester address reaching this Worker.
 
 | `kind` | Body | What is sent |
 |---|---|---|
@@ -236,10 +240,13 @@ mctl-api). The answer is `{delivery_key, delivery_id}`; anything but 200 means
   `MCTL <noreply@mctl.ai>`, no reply-to, plain text. No field of the request is
   ever copied into a mail, and there is no email for a revocation or a
   withdrawal.
-- The card decides nothing. Its `decide_url` must be exactly the decision page
-  of one principal on `GLOVO_ACCESS_DECIDE_ORIGIN` (default
-  `https://api.mctl.ai`) with one token; any other link is refused with 400, so
-  the bridge cannot be used to post arbitrary text or links into the chat.
+- The card decides nothing. It shows the masked identity
+  (`<provider>:<first character>***`), the two times and the link, and nothing
+  else: no email and no principal id. Its `decide_url` must be exactly
+  `/glovo/access-approvals/link?t=<token>` on `GLOVO_ACCESS_DECIDE_ORIGIN`
+  (default `https://api.mctl.ai`); any other link, one that names a principal
+  included, is refused with 400, so the bridge cannot be used to post arbitrary
+  text or links into the chat.
 - Idempotency: a `glovo-access-delivered:<delivery_key>` receipt in
   `ACCESS_REQUESTS` (kind and delivery id only, 30 days) answers a retry without
   sending again, and the mail provider gets
@@ -251,12 +258,20 @@ mctl-api). The answer is `{delivery_key, delivery_id}`; anything but 200 means
   own one-time link, and a decision retires all of them.
 - Nothing about a delivery is logged beyond its kind: no address, link or
   principal.
+- What is kept about a requester: nothing. The address in `to` is passed to
+  the mail provider for that one send and is not written to KV; the receipt
+  holds the kind and the provider's delivery id only. That is less than the
+  signup flow above keeps (its `request:<id>` record holds the applicant's
+  name, email, GitHub login and project text for 90 days). The mail provider keeps its own
+  record of the message it sent.
 
-Turn it on by deploying the Worker with the var set to `"true"`, before
-`GLOVO_ACCESS_NOTIFY_ENABLED` is set in mctl-api. It uses the existing secrets
-(`RESEND_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`) and the existing
-`ACCESS_REQUESTS` namespace; no new secret or binding. Turn it off the same way;
-mctl-api then retries each notification for 23 hours and gives up.
+Turn the card on by deploying the Worker with `GLOVO_ACCESS_NOTIFY_ENABLED`
+set to `"true"`, before the same-named switch is set in mctl-api; turn the
+emails on with `GLOVO_ACCESS_EMAIL_ENABLED` the same way, before mctl-api's.
+It uses the existing secrets (`RESEND_API_KEY`, `TELEGRAM_BOT_TOKEN`,
+`TELEGRAM_CHAT_ID`) and the existing `ACCESS_REQUESTS` namespace; no new secret
+or binding. Turn either off the same way; mctl-api then retries each
+notification for 23 hours and gives up.
 
 ## Invitation requests
 

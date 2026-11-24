@@ -9,7 +9,9 @@
 //     decision page. It decides nothing; the page asks for a fresh sign-in
 //     with a second factor.
 //   - approved, rejected, lapsed: a fixed email to the requester, from the
-//     platform no-reply sender, with no reply-to.
+//     platform no-reply sender, with no reply-to. These have a switch of
+//     their own, GLOVO_ACCESS_EMAIL_ENABLED, so the card can run without
+//     them: until it is on, an address sent here is refused unread.
 //
 // The API serializes delivery with a lease and retries with the same
 // delivery_key. A stored receipt answers a retry without sending again, and
@@ -150,13 +152,13 @@ function decideOrigin(env) {
   return /^https:\/\/[a-z0-9.-]+(?::\d{1,5})?$/.test(origin) ? origin : null;
 }
 
-// The link must be the decision page of one principal on the configured
-// origin with one token, and nothing else: it is the only caller-supplied
-// text that reaches a person.
+// The link must be the decide link on the configured origin with one token,
+// and nothing else: it is the only caller-supplied text that reaches a
+// person. It names no principal, so a principal id never reaches the chat.
 function validDecideUrl(env, value) {
   const origin = decideOrigin(env);
   if (!origin || typeof value !== 'string' || !value.startsWith(origin + '/')) return false;
-  return /^\/glovo\/access-approvals\/prn_[0-9A-HJKMNP-TV-Z]{26}\?t=[A-Za-z0-9_-]{43}$/.test(value.slice(origin.length));
+  return /^\/glovo\/access-approvals\/link\?t=[A-Za-z0-9_-]{43}$/.test(value.slice(origin.length));
 }
 
 function parse(env, body) {
@@ -246,6 +248,9 @@ export async function serveGlovoAccess(request, env, fetchImpl = fetch) {
   catch { return reply(400, { error: 'Invalid notification' }); }
   const n = parse(env, body);
   if (!n) return reply(400, { error: 'Invalid notification' });
+  // The emails are switched separately from the card. Off: nothing is sent,
+  // looked up or stored for an email kind.
+  if (n.kind !== 'owner_card' && env.GLOVO_ACCESS_EMAIL_ENABLED !== 'true') return reply(503, { error: 'Glovo access emails are not enabled' });
   try {
     const receiptKey = 'glovo-access-delivered:' + n.key;
     const receipt = await env.ACCESS_REQUESTS.get(receiptKey, 'json');

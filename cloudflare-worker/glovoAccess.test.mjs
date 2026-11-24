@@ -4,12 +4,12 @@ import { handleGlovoAccess, serveGlovoAccess, glovoAccessCardText, GLOVO_ACCESS_
 
 const key = 'a'.repeat(64);
 const principal = 'prn_01HZZZZZZZZZZZZZZZZZZZZZZZ';
-const link = 'https://api.mctl.ai/glovo/access-approvals/' + principal + '?t=' + 'T'.repeat(43);
+const link = 'https://api.mctl.ai/glovo/access-approvals/link?t=' + 'T'.repeat(43);
 const card = () => ({ identity: 'google:a***', requested_at: '2026-11-20T10:00:00Z', expires_at: '2026-11-27T10:00:00Z', decide_url: link });
 function fixture() {
   const data = new Map();
   const env = {
-    GLOVO_ACCESS_NOTIFY_ENABLED: 'true', RESEND_API_KEY: 'test-secret', TELEGRAM_BOT_TOKEN: 'test-bot', TELEGRAM_CHAT_ID: '-1',
+    GLOVO_ACCESS_NOTIFY_ENABLED: 'true', GLOVO_ACCESS_EMAIL_ENABLED: 'true', RESEND_API_KEY: 'test-secret', TELEGRAM_BOT_TOKEN: 'test-bot', TELEGRAM_CHAT_ID: '-1',
     ACCESS_REQUESTS: {
       async get(k) { return data.get(k) ?? null; },
       async put(k, raw, options) { data.set(k, JSON.parse(raw)); data.set('options:' + k, options); },
@@ -26,6 +26,24 @@ test('switch off answers 503 before anything else and sends nothing', async () =
     env.SESSION_REVOCATION_SUBJECT = '1'; env.SESSION_REVOCATION_AUDIENCE = '2';
     const response = await handleGlovoAccess(post({ delivery_key: key, kind: 'lapsed', to: 'person@example.com' }), env, refuse);
     assert.equal(response.status, 503); assert.equal(data.size, 0);
+  }
+});
+
+test('emails have their own switch: off, the card is sent and an email is refused with nothing stored', async () => {
+  for (const value of [undefined, '', 'false', 'TRUE', '1']) {
+    const { env, data } = fixture(); env.GLOVO_ACCESS_EMAIL_ENABLED = value;
+    // The provider would accept the mail: only the switch stops it.
+    let mails = 0;
+    const willing = async () => { mails++; return Response.json({ id: 'mail-1' }); };
+    for (const kind of ['approved', 'rejected', 'lapsed']) {
+      const response = await serveGlovoAccess(post({ delivery_key: key, kind, to: 'person@example.com' }), env, willing);
+      assert.equal(response.status, 503, kind); assert.deepEqual(await response.json(), { error: 'Glovo access emails are not enabled' });
+      assert.equal(mails, 0); assert.equal(data.size, 0);
+    }
+    // A malformed email is still a 400, not a retry.
+    assert.equal((await serveGlovoAccess(post({ delivery_key: key, kind: 'approved' }), env, refuse)).status, 400);
+    const sent = await serveGlovoAccess(post({ delivery_key: key, kind: 'owner_card', card: card() }), env, async () => Response.json({ ok: true, result: { message_id: 7 } }));
+    assert.equal(sent.status, 200); assert.equal(data.get('glovo-access-delivered:' + key).kind, 'owner_card');
   }
 });
 
@@ -85,6 +103,8 @@ test('owner card is one plain Telegram message with the link and no decision', a
     const body = JSON.parse(options.body);
     assert.deepEqual(Object.keys(body).sort(), ['chat_id', 'disable_web_page_preview', 'text']);
     assert.equal(body.chat_id, '-1'); assert.equal(body.text, glovoAccessCardText(card()));
+    // Masked identity and the link only: no principal id, no address.
+    assert.equal(/prn_|@/.test(body.text), false); assert.ok(body.text.includes('google:a***')); assert.ok(body.text.includes(link));
     return Response.json({ ok: true, result: { message_id: 77 } });
   };
   const response = await serveGlovoAccess(post({ delivery_key: key, kind: 'owner_card', card: card() }), env, provider);
@@ -113,9 +133,13 @@ test('malformed notifications are refused before any send', async () => {
     { delivery_key: key, kind: 'owner_card', card: { ...card(), identity: 'see https://example.org' } },
     { delivery_key: key, kind: 'owner_card', card: { ...card(), requested_at: 'yesterday' } },
     { delivery_key: key, kind: 'owner_card', card: { ...card(), expires_at: '2026-13-40T10:00:00Z' } },
-    { delivery_key: key, kind: 'owner_card', card: { ...card(), decide_url: 'https://example.org/glovo/access-approvals/' + principal + '?t=' + 'T'.repeat(43) } },
-    { delivery_key: key, kind: 'owner_card', card: { ...card(), decide_url: 'https://api.mctl.ai.example.org/glovo/access-approvals/' + principal + '?t=' + 'T'.repeat(43) } },
+    { delivery_key: key, kind: 'owner_card', card: { ...card(), decide_url: 'https://example.org/glovo/access-approvals/link?t=' + 'T'.repeat(43) } },
+    { delivery_key: key, kind: 'owner_card', card: { ...card(), decide_url: 'https://api.mctl.ai.example.org/glovo/access-approvals/link?t=' + 'T'.repeat(43) } },
+    { delivery_key: key, kind: 'owner_card', card: { ...card(), decide_url: 'https://api.mctl.ai/glovo/access-approvals/link' } },
+    // A link that names a principal is refused: no principal id reaches the chat.
+    { delivery_key: key, kind: 'owner_card', card: { ...card(), decide_url: 'https://api.mctl.ai/glovo/access-approvals/' + principal + '?t=' + 'T'.repeat(43) } },
     { delivery_key: key, kind: 'owner_card', card: { ...card(), decide_url: 'https://api.mctl.ai/glovo/access-approvals/' + principal } },
+    { delivery_key: key, kind: 'owner_card', card: { ...card(), principal_id: principal, decide_url: link + '#' + principal } },
     { delivery_key: key, kind: 'owner_card', card: { ...card(), decide_url: link + '&next=https://example.org' } },
     { delivery_key: key, kind: 'owner_card', card: { ...card(), decide_url: link + '\nhttps://example.org' } },
     { delivery_key: key, kind: 'owner_card', card: { ...card(), decide_url: 'https://api.mctl.ai/release-approvals/x?t=' + 'T'.repeat(43) } },
@@ -137,7 +161,7 @@ test('decision page origin is configurable and never open', async () => {
   assert.equal((await serveGlovoAccess(post({ delivery_key: key, kind: 'owner_card', card: moved }), env, ok)).status, 200);
   for (const origin of ['http://api.example.test', 'https://api.example.test/', 'https://']) {
     const f = fixture(); f.env.GLOVO_ACCESS_DECIDE_ORIGIN = origin;
-    const url = origin + (origin.endsWith('/') ? '' : '/') + 'glovo/access-approvals/' + principal + '?t=' + 'T'.repeat(43);
+    const url = origin + (origin.endsWith('/') ? '' : '/') + 'glovo/access-approvals/link?t=' + 'T'.repeat(43);
     assert.equal((await serveGlovoAccess(post({ delivery_key: key, kind: 'owner_card', card: { ...card(), decide_url: url } }), f.env, refuse)).status, 400, origin);
   }
 });
