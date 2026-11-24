@@ -69,7 +69,9 @@ SESSION_REVOCATION_AUDIENCE = "395567303451739861"
 # POST /api/internal/glovo-access/notify. Off until this is "true"; see
 # README.md "Glovo access notifications". The emails have a switch of their
 # own on top of it, so the card can be turned on without them.
-GLOVO_ACCESS_NOTIFY_ENABLED = "false"
+# The card is on (owner decision 2026-11-24); the emails stay off until the
+# recipient lookup is verified live.
+GLOVO_ACCESS_NOTIFY_ENABLED = "true"
 GLOVO_ACCESS_EMAIL_ENABLED = "false"
 
 # Server-side sessions. The namespaces are owned by OpenTofu in mctl-gitops
