@@ -24,6 +24,9 @@ import { handleSignupAdmin, invitationAllowed } from './signupAdmin.js';
  * Config vars (set via wrangler.toml [vars] — not secret):
  * - UNLIMITED_USERS: comma-separated GitHub logins exempt from tenant-provisioning limits
  *
+ * - GLOVO_ACCESS_NOTIFY_ENABLED: "true" turns on the Glovo access
+ *   notification bridge (glovoAccess.js); anything else and it sends nothing
+ *
  * ZITADEL sign-in with server-side sessions (stage C1a) is in zitadel.js,
  * which lists its own config. Its routes run next to the legacy GitHub flow
  * above, which they do not change.
@@ -32,6 +35,7 @@ import { handleSignupAdmin, invitationAllowed } from './signupAdmin.js';
 import { handleInvitationRequest, retryInvitations } from './invitations.js';
 
 import { handleSessionRevocation } from './sessionRevocation.js';
+import { handleGlovoAccess, GLOVO_ACCESS_NOTIFY_PATH } from './glovoAccess.js';
 import { checkRateLimit, RateLimiter } from './rateLimiter.js';
 
 // Durable Object classes must be exported from the Worker entry module.
@@ -104,6 +108,7 @@ const RATE_LIMITS = {
   'GET /api/internal/invitations/requests/:id': { max: 60, windowSec: 60 },
   'POST /api/internal/invitations/decision': { max: 30, windowSec: 60 },
   'POST /api/internal/customer-sessions/revoke': { max: 30, windowSec: 60 },
+  'POST /api/internal/glovo-access/notify': { max: 30, windowSec: 60 },
 };
 
 // Known bot User-Agent fragments — block before any processing.
@@ -184,6 +189,8 @@ export default {
     }
 
     if (path.startsWith('/api/internal/invitations/')) return handleSignupAdmin(request, env);
+
+    if (path === GLOVO_ACCESS_NOTIFY_PATH) return handleGlovoAccess(request, env);
 
     if (request.method === 'POST' && path === '/api/internal/customer-sessions/revoke') {
       return handleSessionRevocation(request, env);
